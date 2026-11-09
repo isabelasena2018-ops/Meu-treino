@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.8 · 09/11 14h';
+const APP_VERSION='3.0 · 09/11 15h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -946,18 +946,21 @@ const SH_HEAVY=['desenvolvimento','arnold','desenv_maquina','remada_alta','mergu
 const BODY_OK=['bulgaro','afundo','afundo_reverso','passada','step_up','cossaco','pant_uni','russian','stiff_uni'];
 const HALTER_OK=['stiff','terra_romeno','hip_thrust','remada_curvada','rosca_direta','triceps_testa','supino_reto','crucifixo','agach_sumo','goblet'];
 const HOME_NO=['remada_invertida','flexora_bola','rosca_inclinada','rosca_scott','supino_incl','hiperext_gluteo','hiperext_lombar','elev_joelhos_paralela'];
+const PREG_NO=['vacuo','abd_polia','abdominal_supra','elev_pernas','elev_joelhos_paralela','bicicleta','russian','hollow','abd_remador','mountain','kb_swing','frontal','good_morning'];
 function canDo(id,cfg){const x=EX[id];if(!x)return false;
  const lim=cfg.lim||[];
  if(lim.includes('joelho')&&!x.kf)return false;
  if(lim.includes('lombar')&&LB_HEAVY.includes(id))return false;
  if(lim.includes('ombro')&&SH_HEAVY.includes(id))return false;
- if(cfg.local!=='casa')return true;
- if(HOME_NO.includes(id))return false;
- const eq=cfg.homeEq||[];
+ if(cfg.gestante&&PREG_NO.includes(id))return false;
+ const casa=cfg.local==='casa';
+ if(!casa&&!cfg.gymBasic)return true;
+ if(casa&&HOME_NO.includes(id))return false;
+ const eq=new Set(casa?(cfg.homeEq||[]):(cfg.gymEq||[]));
  if(x.eq==='corpo'||BODY_OK.includes(id))return true;
- if(x.eq==='halter'||HALTER_OK.includes(id))return eq.includes('halter');
- if(x.eq==='elastico')return eq.includes('elastico');
- if(x.eq==='kettlebell')return eq.includes('kettlebell')||eq.includes('halter');
+ if(eq.has(x.eq))return true;
+ if(HALTER_OK.includes(id)&&eq.has('halter'))return true;
+ if(x.eq==='kettlebell'&&eq.has('halter'))return true;
  return false;}
 
 /* slots: cada um é uma FUNÇÃO no treino (evita redundância) */
@@ -1114,7 +1117,7 @@ AREAS.ombro.t='O ombro da frente já trabalha em todo supino e desenvolvimento. 
 AREAS.peito.t='Supino reto e inclinado cobrem quase tudo. Crucifixo ou voador complementam. Uns 30° de inclinação já focam a parte de cima.';
 AREAS.barriga.t='Core forte é estabilidade (prancha, dead bug, pallof) mais flexão com carga (abdominal na polia). Barriga aparente depende principalmente da perda de gordura, e a alimentação faz a maior parte.';
 AREAS.corpo.t='Equilíbrio: um exercício por padrão de movimento (agachar, dobrar o quadril, empurrar, puxar), sempre progredindo a carga.';
-function profileCfg(){const p=D.profile||{};return {obj:p.obj||'emagrecer',nivel:p.nivel||'intermediario',local:p.local||'academia',homeEq:p.homeEq||[],lim:p.lim||[],sub:p.sub||{},foci:(p.foci||[]).filter(f=>AREAS[f]),tempo:p.tempo||60,days:[]};}
+function profileCfg(){const p=D.profile||{};return {obj:p.obj||'emagrecer',nivel:p.nivel||'intermediario',local:p.local||'academia',homeEq:p.homeEq||[],gymBasic:!!p.gymBasic,gymEq:p.gymEq||[],lim:p.lim||[],sub:p.sub||{},foci:(p.foci||[]).filter(f=>AREAS[f]),tempo:p.tempo||60,gestante:!!(p.saude&&p.saude.gestante),days:[]};}
 const FOCUS2SESS={gluteo:'G',pernas:'L',costas:'Pull',braco:'B',barriga:'C',superiores:'Push',corpo:'F'};
 const FOCUS={
  gluteo:{l:'Glúteo',e:'🍑',ex:['hip_thrust','bulgaro','stiff','abducao_maquina','coice_cruzado','frog_pump'],
@@ -1229,7 +1232,8 @@ function generate(cfg){
   items.sort((a,b)=>ord(a)-ord(b));
   return {name:d.n,focus:d.f,day:cfg.days[i],items};});
 }
-function runGen(g){g.result=plan(Object.assign({},g,{nivel:g.nivel||'intermediario'}));}
+function runGen(g){const fl=healthFlags(g);const idade=num((g.m||{}).idade);const leve=fl.length>0||(idade&&(idade<16||idade>=65));
+ g.result=plan(Object.assign({},g,{nivel:leve?'iniciante':(g.nivel||'intermediario'),obj:leve&&g.obj==='musculo'?'saude':g.obj,gestante:!!(g.parq||{}).gestante}));}
 
 /* ================== ESTADO ================== */
 const LS='meutreino:v2';
@@ -1488,50 +1492,134 @@ function vBuilder(){
 }
 
 /* ---------- Gerador ---------- */
+/* ---------- Leitura da bioimpedância: foto (OCR no próprio celular) ou texto falado/colado ---------- */
+const BIO_FIELDS=[
+ ['visceral','Gordura visceral','',/(?:gordura visceral|nivel de gordura visceral|visceral fat|visceral)[^\d]{0,30}(\d{1,2}(?:\.\d)?)/,1,30],
+ ['peso','Peso','kg',/(?:^|[^a-z])(?:peso|weight)(?! ideal)[^\d]{0,25}(\d{2,3}(?:\.\d{1,2})?)/,30,250],
+ ['gordura','% de gordura','%',/(?:gordura corporal|percentual de gordura|taxa de gordura|% de gordura|body fat|gordura)[^\d]{0,30}(\d{1,2}(?:\.\d)?)/,3,65],
+ ['musculo','Massa muscular','kg',/(?:massa muscular esqueletica|massa muscular|muscle mass|musculo esqueletico|musculos?)[^\d]{0,30}(\d{1,3}(?:\.\d)?)/,10,90],
+ ['agua','Água corporal','%',/(?:agua corporal|taxa de agua|agua|water|body water)[^\d]{0,30}(\d{2}(?:\.\d)?)/,30,80],
+ ['tmb','Metabolismo basal','kcal',/(?:metabolismo basal|taxa metabolica basal|tmb|bmr|basal metabolic)[^\d]{0,30}(\d{3,4})/,800,4500]];
+function parseBio(text){
+ let t=norm(text).replace(/(\d),(\d)/g,'$1.$2').replace(/\s+/g,' ');
+ const out={};
+ BIO_FIELDS.forEach(([k,l,u,re,mn,mx])=>{const m=t.match(re);if(m){let v=parseFloat(m[1]);
+  if(k==='peso'&&/^\s*(lb|lbs|libras?)\b/.test(t.slice(m.index+m[0].length,m.index+m[0].length+8)))v=Math.round(v/2.20462*10)/10;
+  if(v>=mn&&v<=mx){out[k]=v;if(k==='visceral')t=t.replace(m[0],' ');}}});
+ return out;}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+async function ocrImage(file){
+ if(!window.Tesseract)await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+ const r=await window.Tesseract.recognize(file,'por+eng');return (r&&r.data&&r.data.text)||'';}
+const bioUnit=k=>(BIO_FIELDS.find(f=>f[0]===k)||[])[2]||'';
+const bioLabel=k=>(BIO_FIELDS.find(f=>f[0]===k)||[])[1]||k;
+function bioApply(target,found){/* target: 'gen' preenche a avaliação; 'mea' preenche o formulário de medidas */
+ const dst=target==='gen'?UI.gen.m:(UI.mea=UI.mea||{});
+ Object.entries(found).forEach(([k,v])=>{if(k==='peso'&&target==='mea')return;dst[k]=String(v).replace('.',',');});
+ if(target==='mea'&&found.peso!=null)UI.bioPeso=found.peso;}
+function bioBoxHtml(target){const B=UI.bio&&UI.bio.t===target?UI.bio:null;
+ return `<div style="margin-top:10px"><div class="btnrow" style="margin-top:0"><label class="btn2" style="text-align:center;cursor:pointer;flex:1">📸 Ler foto da balança<input type="file" accept="image/*" data-c="bioFile" data-t="${target}" style="display:none"></label><button class="btn2" style="flex:1" data-a="bioTalk" data-t="${target}">🎙️ Falar os números</button></div>
+  ${B&&B.talk?`<textarea class="inp" rows="2" data-i="bio.txt" style="margin-top:8px" placeholder='Ex: "peso 80, gordura 32, massa muscular 26, visceral 7". Pode usar o 🎤 do teclado.'>${esc(B.txt||'')}</textarea><button class="btn sm" style="margin-top:8px" data-a="bioParse" data-t="${target}">Preencher</button>`:''}
+  ${B&&B.loading?'<p class="small mut" style="margin:8px 0 0">📖 Lendo a foto… leva uns segundinhos (só na primeira vez demora mais).</p>':''}
+  ${B&&B.found?(Object.keys(B.found).length?`<div class="info" style="margin:8px 0 0">✅ Encontrei e preenchi: ${Object.entries(B.found).map(([k,v])=>`<b>${bioLabel(k)} ${String(v).replace('.',',')}${bioUnit(k)?' '+bioUnit(k):''}</b>`).join(' · ')}. Confira os campos e ajuste se algo estiver errado.</div>`:'<div class="info" style="margin:8px 0 0">Não consegui achar os números nessa foto 😅 Tenta um print mais nítido, só da tela com os resultados, ou use "Falar os números".</div>'):''}
+  ${B&&B.err?`<p class="small" style="margin:8px 0 0;color:#c0453a">${esc(B.err)}</p>`:''}</div>`;}
+
+/* ---------- Avaliação antes de gerar o treino ---------- */
+const GYM_EQ=[['maquina','Máquinas (leg press, cadeiras, puxada…)'],['polia','Polia / cabos (crossover)'],['barra','Barra e anilhas'],['halter','Halteres'],['kettlebell','Kettlebell'],['elastico','Elástico / mini band']];
+const PARQ=[['coracao','Algum médico já disse que você tem problema no coração ou pressão alta?'],['peito','Sente dor no peito quando faz esforço?'],['tontura','Já desmaiou ou perdeu o equilíbrio por tontura nos últimos 12 meses?'],['cronica','Tem diabetes ou outra condição de saúde crônica?'],['remedio','Toma remédio de uso contínuo pra pressão ou coração?'],['gestante','Está gestante ou teve bebê nos últimos 6 meses?']];
+const BIO=[['gordura','% de gordura','%'],['musculo','Massa muscular','kg'],['visceral','Gordura visceral','nível'],['agua','Água corporal','%'],['tmb','Metabolismo basal','kcal']];
+const MEAS2=()=>MEAS.map(([k,l])=>[k,l,'cm']).concat(BIO);
+const gnum=(g,k)=>num(g.m[k]);
+function bodyAnalysis(g){
+ const sexo=g.sexo,alt=gnum(g,'altura'),peso=gnum(g,'peso'),cint=gnum(g,'cintura'),idade=gnum(g,'idade');
+ let bf=gnum(g,'gordura'),bfSrc=bf?'da sua balança de bioimpedância':'';
+ if(!bf&&alt&&cint&&(sexo==='f'||sexo==='m')){bf=Math.round(((sexo==='f'?76:64)-20*(alt/cint))*10)/10;bfSrc='estimada pela sua cintura e altura (fórmula RFM)';}
+ const rce=alt&&cint?Math.round(cint/alt*100)/100:null;
+ const cls=bf&&(sexo==='f'||sexo==='m')?(sexo==='f'?(bf<21?'Atlética':bf<25?'Boa forma':bf<32?'Na média':'Acima do ideal'):(bf<14?'Atlética':bf<18?'Boa forma':bf<25?'Na média':'Acima do ideal')):'';
+ return {sexo,alt,peso,cint,idade,bf,bfSrc,rce,cls};}
+function goalPlan(g,A){const o=g.obj,peso=A.peso;let metaPeso=gnum(g,'metaPeso');const metaBf=gnum(g,'metaGordura');
+ if(!metaPeso&&metaBf&&A.bf&&peso&&metaBf<A.bf){const magra=peso*(1-A.bf/100);metaPeso=Math.round(magra/(1-metaBf/100)*10)/10;}
+ const out={metaPeso,metaBf};
+ if(o==='emagrecer'&&peso&&metaPeso&&metaPeso<peso){const kg=peso-metaPeso;const fast=peso*0.008,slow=peso*0.005;
+  out.wMin=Math.ceil(kg/fast);out.wMax=Math.ceil(kg/slow);out.kg=Math.round(kg*10)/10;
+  const d=w=>{const x=new Date();x.setDate(x.getDate()+w*7);return x.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});};
+  out.txt=`Pra perder ${String(out.kg).replace('.',',')} kg num ritmo saudável (${String(Math.round(slow*10)/10).replace('.',',')} a ${String(Math.round(fast*10)/10).replace('.',',')} kg por semana), a previsão é de <b>${out.wMin} a ${out.wMax} semanas</b>: entre <b>${d(out.wMin)}</b> e <b>${d(out.wMax)}</b>, mantendo a constância.`;}
+ else if(o==='musculo'){const r=g.nivel==='iniciante'?[0.5,1]:[0.25,0.5];out.txt=`No ganho de massa muscular, o realista ${g.nivel==='iniciante'?'pra quem está começando':'pra quem já treina'} é algo como <b>${String(r[0]).replace('.',',')} a ${String(r[1]).replace('.',',')} kg de músculo por mês</b>, com treino progressivo, proteína suficiente e sono. Em 3 meses: <b>${String(r[0]*3).replace('.',',')} a ${String(r[1]*3).replace('.',',')} kg</b>. Parece pouco, mas faz muita diferença no espelho.`;}
+ else if(o==='emagrecer'&&!metaPeso)out.txt='Sem meta de peso? Tudo bem! Vamos acompanhar pela cintura, pela % de gordura e pelas fotos, que mostram a mudança melhor que a balança.';
+ else out.txt='O foco é saúde e constância: treinar com regularidade já traz mais disposição, sono melhor e menos dor no corpo nas primeiras semanas.';
+ return out;}
+const healthFlags=g=>PARQ.filter(([k])=>(g.parq||{})[k]).map(([k])=>k);
 function vGerador(){
  const g=UI.gen;if(!g){UI.view='treinos';return vTreinos();}
  if(g.result)return genPreview();
- const ready=g.foci.length>0&&g.days.length>=2;
+ g.step=g.step||1;g.parq=g.parq||{};g.gymEq=g.gymEq||GYM_EQ.map(x=>x[0]);
  const chip=(on,a,attrs,label)=>`<button class="chip ${on?'on':''}" data-a="${a}" ${attrs}>${label}</button>`;
- const subs=g.foci.filter(k=>AREAS[k]&&AREAS[k].sub.length).map(k=>`<div style="margin-top:10px"><span class="small mut" style="font-weight:700">${AREAS[k].e} No ${AREAS[k].l.toLowerCase()}, quer focar mais em:</span>
-  <div class="chips" style="margin-top:6px">${AREAS[k].sub.map(([v,l])=>chip((g.sub[k]||'todo')===v,'genSub',`data-k="${k}" data-v="${v}"`,l)).join('')}</div></div>`).join('');
- return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
- <span class="kicker">Treino sob medida</span><h2 class="disp h2">Monte meu treino pra mim ✨</h2>
- <div class="card">
-  <label class="lbl" style="margin-top:0">1. Seu objetivo principal</label>
-  <div class="chips">${Object.entries(OBJ).map(([k,o])=>chip(g.obj===k,'genObj',`data-k="${k}"`,o.l)).join('')}</div>
-  <label class="lbl">2. O que você quer priorizar? <span class="mut" style="font-weight:500">(até 3)</span></label>
-  <div class="chips">${Object.entries(AREAS).map(([k,a])=>chip(g.foci.includes(k),'genFocus',`data-f="${k}"`,a.e+' '+a.l)).join('')}</div>
-  ${subs}
- </div>
- <div class="card">
-  <label class="lbl" style="margin-top:0">3. Onde você treina?</label>
-  <div class="chips">${chip(g.local==='academia','genLocal','data-v="academia"','🏋️ Academia')}${chip(g.local==='casa','genLocal','data-v="casa"','🏠 Em casa')}</div>
-  ${g.local==='casa'?`<label class="lbl">O que você tem em casa?</label><div class="chips">${chip(g.homeEq.includes('halter'),'genEq','data-v="halter"','Halteres (ou galões com peso)')}${chip(g.homeEq.includes('elastico'),'genEq','data-v="elastico"','Elástico / mini band')}${chip(g.homeEq.includes('kettlebell'),'genEq','data-v="kettlebell"','Kettlebell')}${chip(!g.homeEq.length,'genEq','data-v="nada"','Nada, só o corpo')}</div>`:''}
-  <label class="lbl">4. Quantos dias por semana?</label>
-  <div class="chips">${[2,3,4,5,6].map(n=>chip(g.days.length===n,'genCount',`data-n="${n}"`,n+' dias')).join('')}</div>
-  ${g.days.length?`<label class="lbl">Em quais dias? <span class="mut" style="font-weight:500">(toque pra trocar)</span></label><div class="chips">${DAYS.map(([k,l])=>chip(g.days.includes(k),'genDay',`data-k="${k}"`,l.slice(0,3))).join('')}</div>`:''}
-  <label class="lbl">5. Quanto tempo você tem por treino?</label>
-  <div class="chips">${[[30,'30 min'],[45,'45 min'],[60,'1 hora'],[75,'1h15 ou mais']].map(([v,l])=>chip(g.tempo===v,'genTempo',`data-v="${v}"`,l)).join('')}</div>
-  <label class="lbl">6. Há quanto tempo você treina?</label>
-  <div class="chips">${chip(g.nivel==='iniciante','genLvl','data-v="iniciante"','🌱 Estou começando')}${chip(g.nivel==='intermediario','genLvl','data-v="intermediario"','💪 Já treino há um tempo')}</div>
-  <label class="lbl">7. Alguma coisa incomoda?</label>
+ const inp=(k,l,ph,mode)=>`<div><label class="lbl">${l}</label><input class="inp" inputmode="${mode||'decimal'}" data-i="gen.m.${k}" value="${esc(g.m[k]||'')}" placeholder="${ph||''}"></div>`;
+ const TOT=6;const bar=`<div style="display:flex;gap:4px;margin:0 0 14px">${Array.from({length:TOT},(_,i)=>`<div style="flex:1;height:5px;border-radius:5px;background:${i<g.step?'var(--a2)':'var(--line)'}"></div>`).join('')}</div>`;
+ const nav=(next,label)=>`<div class="btnrow">${g.step>1?'<button class="btn2" data-a="genStep" data-d="-1">← Voltar</button>':''}<button class="btn alt" data-a="genStep" data-d="1" ${next===false?'style="opacity:.55"':''}>${label||'Continuar →'}</button></div>`;
+ const head=(k,t)=>`<button class="back" data-a="go" data-v="treinos">← Treinos</button><span class="kicker">Avaliação · ${g.step} de ${TOT}</span><h2 class="disp h2">${t}</h2>${bar}`;
+ if(g.step===1)return head(1,'Sobre você 🙂')+`
+  ${D.profile&&D.profile.saude&&(D.profile.planDays||[]).length?`<div class="card" style="border:1.5px solid var(--a)"><b style="color:var(--a)">Já tenho suas respostas da última vez 😉</b><p class="small mut" style="margin:4px 0 10px">Pode revisar etapa por etapa ou pular direto pra análise.</p><button class="btn sm" data-a="genSkip">⏩ Pular pra análise</button></div>`:''}
+  <div class="info">💡 Tudo aqui é opcional: o treino sai mesmo assim. Mas quanto mais você contar, mais certeiro ele fica.</div>
+  <div class="card">
+  <label class="lbl" style="margin-top:0">Sexo <span class="mut" style="font-weight:500">(usado só pra estimar a % de gordura)</span></label>
+  <div class="chips">${chip(g.sexo==='f','genSexo','data-v="f"','Feminino')}${chip(g.sexo==='m','genSexo','data-v="m"','Masculino')}${chip(g.sexo==='n','genSexo','data-v="n"','Prefiro não dizer')}</div>
+  <div class="row2">${inp('idade','Idade','ex: 29','numeric')}${inp('altura','Altura (cm)','ex: 170','numeric')}${inp('peso','Peso (kg)','ex: 80')}${inp('cintura','Cintura (cm)','na altura do umbigo')}</div>
+  </div><div class="card"><b>⚖️ Tem balança de bioimpedância?</b>
+   <p class="small mut" style="margin:4px 0 0">Mande um print da tela de resultados do app da balança que eu leio os números sozinha. Também dá pra falar os números.</p>
+   ${bioBoxHtml('gen')}
+   <div class="row2">${inp('gordura','% de gordura','ex: 32')}${inp('musculo','Massa muscular (kg)','ex: 26')}${inp('visceral','Gordura visceral','ex: 7')}${inp('agua','Água corporal (%)','ex: 50')}</div>
+  <p class="small mut" style="margin:12px 0 0">Tudo isso fica só no seu celular.</p></div>`+nav();
+ if(g.step===2){const fl=healthFlags(g);return head(2,'Sua saúde 💛')+`<div class="card"><p class="small mut" style="margin:0 0 8px">Perguntas de segurança, como as que as academias fazem. Responda com sinceridade: elas só ficam no seu celular.</p>
+  ${PARQ.map(([k,l])=>`<button class="toggle ${g.parq[k]?'on':''}" data-a="genParq" data-k="${k}"><span style="font-weight:500;font-size:14px">${l}</span><span class="tg"></span></button>`).join('')}
+  ${fl.length?'<div class="info" style="margin-top:10px">💛 Pelo que você marcou, o ideal é <b>conversar com um médico antes de começar</b> e, se possível, treinar com acompanhamento de um profissional. Vou montar uma versão mais leve e segura.</div>':''}
+  <label class="lbl">Alguma dor ou lesão que incomoda?</label>
   <div class="chips">${chip(g.lim.includes('joelho'),'genLim','data-v="joelho"','🦵 Joelho')}${chip(g.lim.includes('lombar'),'genLim','data-v="lombar"','🔙 Lombar')}${chip(g.lim.includes('ombro'),'genLim','data-v="ombro"','💪 Ombro')}${chip(!g.lim.length,'genLim','data-v="nada"','Nada')}</div>
-  ${g.lim.length?'<p class="small mut" style="margin:8px 0 0">Vou deixar de fora os exercícios que mais sobrecarregam essa região. Se é uma dor que não passa, vale passar por um médico ou fisioterapeuta 💛</p>':''}
- </div>
- <details class="card"><summary><span>📏 Minhas medidas <span class="mut" style="font-weight:500">(opcional)</span></span><span class="chev">▾</span></summary>
-  <p class="small mut" style="margin:8px 0 0">Ficam no Progresso pra você ver a evolução além da balança. Pode pular!</p>
-  <div class="row2">${[['peso','Peso (kg)']].concat(MEAS.map(([k,l])=>[k,l+' (cm)'])).map(([k,l])=>`<div><label class="lbl">${l}</label><input class="inp" inputmode="decimal" data-i="gen.m.${k}" value="${esc(g.m[k]||'')}"></div>`).join('')}</div>
- </details>
- <button class="btn alt" data-a="genRun" style="${ready?'':'opacity:.55'}">✨ Gerar meu treino</button>
- ${ready?'':'<p class="small mut" style="text-align:center">Escolha pelo menos uma prioridade e quantos dias você treina.</p>'}`;
-}
+  ${g.lim.length?'<p class="small mut" style="margin:8px 0 0">Vou deixar de fora os exercícios que mais sobrecarregam essa região. Se a dor não passa, vale passar com um médico ou fisioterapeuta.</p>':''}</div>`+nav();}
+ if(g.step===3){const subs=g.foci.filter(k=>AREAS[k]&&AREAS[k].sub.length).map(k=>`<div style="margin-top:10px"><span class="small mut" style="font-weight:700">${AREAS[k].e} No ${AREAS[k].l.toLowerCase()}, quer focar mais em:</span><div class="chips" style="margin-top:6px">${AREAS[k].sub.map(([v,l])=>chip((g.sub[k]||'todo')===v,'genSub',`data-k="${k}" data-v="${v}"`,l)).join('')}</div></div>`).join('');
+  return head(3,'Seu objetivo 🎯')+`<div class="card">
+  <label class="lbl" style="margin-top:0">Objetivo principal</label><div class="chips">${Object.entries(OBJ).map(([k,o])=>chip(g.obj===k,'genObj',`data-k="${k}"`,o.l)).join('')}</div>
+  ${g.obj==='emagrecer'?`<label class="lbl">Sua meta <span class="mut" style="font-weight:500">(preencha uma ou nenhuma)</span></label><div class="row2">${inp('metaPeso','Peso meta (kg)','ex: 70')}${inp('metaGordura','% de gordura meta','ex: 25')}</div>`:''}
+  <label class="lbl">O que você quer priorizar? <span class="mut" style="font-weight:500">(até 3)</span></label>
+  <div class="chips">${Object.entries(AREAS).map(([k,a])=>chip(g.foci.includes(k),'genFocus',`data-f="${k}"`,a.e+' '+a.l)).join('')}</div>${subs}</div>`+nav(g.foci.length>0);}
+ if(g.step===4)return head(4,'Onde você treina 📍')+`<div class="card">
+  <div class="chips">${chip(g.local==='academia'&&!g.gymBasic,'genWhere','data-v="full"','🏋️ Academia completa')}${chip(g.local==='academia'&&g.gymBasic,'genWhere','data-v="basic"','🏢 Academia com poucos aparelhos')}${chip(g.local==='casa','genWhere','data-v="casa"','🏠 Em casa')}</div>
+  ${g.local==='academia'&&g.gymBasic?`<label class="lbl">O que tem na sua academia?</label><div class="chips">${GYM_EQ.map(([k,l])=>chip(g.gymEq.includes(k),'genGymEq',`data-v="${k}"`,l)).join('')}</div><p class="small mut" style="margin:8px 0 0">Exercícios com o peso do corpo sempre entram.</p>`:''}
+  ${g.local==='casa'?`<label class="lbl">O que você tem em casa?</label><div class="chips">${chip(g.homeEq.includes('halter'),'genEq','data-v="halter"','Halteres (ou galões com peso)')}${chip(g.homeEq.includes('elastico'),'genEq','data-v="elastico"','Elástico / mini band')}${chip(g.homeEq.includes('kettlebell'),'genEq','data-v="kettlebell"','Kettlebell')}${chip(!g.homeEq.length,'genEq','data-v="nada"','Nada, só o corpo')}</div>`:''}</div>`+nav();
+ if(g.step===5)return head(5,'Sua rotina 🗓️')+`<div class="card">
+  <label class="lbl" style="margin-top:0">Quantos dias por semana?</label><div class="chips">${[2,3,4,5,6].map(n=>chip(g.days.length===n,'genCount',`data-n="${n}"`,n+' dias')).join('')}</div>
+  ${g.days.length?`<label class="lbl">Em quais dias? <span class="mut" style="font-weight:500">(toque pra trocar)</span></label><div class="chips">${DAYS.map(([k,l])=>chip(g.days.includes(k),'genDay',`data-k="${k}"`,l.slice(0,3))).join('')}</div>`:''}
+  <label class="lbl">Quanto tempo por treino?</label><div class="chips">${[[30,'30 min'],[45,'45 min'],[60,'1 hora'],[75,'1h15 ou mais']].map(([v,l])=>chip(g.tempo===v,'genTempo',`data-v="${v}"`,l)).join('')}</div>
+  <label class="lbl">Há quanto tempo você treina?</label><div class="chips">${chip(g.nivel==='iniciante','genLvl','data-v="iniciante"','🌱 Estou começando')}${chip(g.nivel==='intermediario','genLvl','data-v="intermediario"','💪 Já treino há um tempo')}</div></div>`+nav(g.days.length>=2,'Ver minha análise →');
+ /* passo 6: análise */
+ const A=bodyAnalysis(g),G=goalPlan(g,A),fl=healthFlags(g);const nome=(D.profile&&D.profile.nome)||'';
+ const rceTxt=A.rce?(A.rce<0.5?'✅ Adequada (abaixo de 0,5)':A.rce<0.6?'⚠️ Atenção (entre 0,5 e 0,6)':'⚠️ Acima do recomendado (0,6 ou mais)'):'';
+ return head(6,'Sua análise 📊')+`
+ ${A.bf||A.rce?`<div class="card"><b>Composição corporal</b>
+  ${A.bf?`<div class="hrow"><span>% de gordura</span><b>${String(A.bf).replace('.',',')}%${A.cls?' · '+A.cls:''}</b></div><p class="small mut" style="margin:4px 0 0">${A.bfSrc}${A.bfSrc.includes('estimada')?'. É uma estimativa: uma bioimpedância ou avaliação física dá um número mais preciso.':''}</p>`:''}
+  ${A.rce?`<div class="hrow"><span>Relação cintura/altura</span><b>${String(A.rce).replace('.',',')}</b></div><p class="small mut" style="margin:4px 0 0">${rceTxt}. Esse indicador mostra melhor que o IMC a gordura na região da barriga, que é a que mais pesa pra saúde.</p>`:''}
+  ${gnum(g,'musculo')?`<div class="hrow"><span>Massa muscular</span><b>${String(gnum(g,'musculo')).replace('.',',')} kg</b></div>`:''}
+  ${gnum(g,'visceral')?`<div class="hrow"><span>Gordura visceral</span><b>${String(gnum(g,'visceral')).replace('.',',')}${gnum(g,'visceral')<10?' · ✅ normal':gnum(g,'visceral')<15?' · ⚠️ alta':' · ⚠️ muito alta'}</b></div><p class="small mut" style="margin:4px 0 0">Na maioria das balanças, até 9 é considerado normal. É a gordura entre os órgãos, e ela responde bem a treino + alimentação.</p>`:''}</div>`:'<div class="info">Sem altura e cintura não consigo analisar a composição corporal. Dá pra voltar na etapa 1 e preencher, ou seguir assim mesmo.</div>'}
+ <div class="card"><b>🎯 Sua meta</b><p style="margin:6px 0 0;font-size:14.5px;line-height:1.55">${G.txt}</p>
+  ${G.metaPeso&&!gnum(g,'metaPeso')&&G.metaBf?`<p class="small mut" style="margin:6px 0 0">Pra chegar em ${G.metaBf}% de gordura mantendo os músculos, isso dá mais ou menos ${String(G.metaPeso).replace('.',',')} kg.</p>`:''}</div>
+ ${fl.length?'<div class="info">💛 Pelas suas respostas de saúde, vou montar uma versão <b>mais leve</b>. Antes de começar, converse com um médico e, se puder, tenha acompanhamento de um profissional de educação física.</div>':''}
+ ${A.idade&&A.idade<16?'<div class="info">Pra quem tem menos de 16 anos, o ideal é treinar com a orientação de um professor. Vou montar uma versão leve.</div>':''}
+ <div class="card"><b>💪 Como chegar lá</b><ol class="steps" style="margin-top:8px">
+  <li><b>Constância vale mais que perfeição.</b> ${g.days.length} treinos por semana, toda semana, ganham de 6 numa semana e 0 na outra.</li>
+  <li><b>A alimentação faz a maior parte</b> do resultado no peso. Se puder, passe com um nutricionista.</li>
+  <li><b>Refaça as medidas a cada 4 semanas</b> no Progresso. A balança oscila; cintura e fotos mostram a evolução de verdade.</li>
+  <li><b>Progrida aos poucos:</b> quando bater o topo das repetições, aumente a carga.</li></ol>
+  <p style="margin:8px 0 0;font-weight:700;color:var(--a)">Bora${nome?', '+esc(nome):''}? A primeira semana é a mais difícil. Depois vira rotina 🔥</p></div>
+ <div class="btnrow"><button class="btn2" data-a="genStep" data-d="-1">← Voltar</button><button class="btn alt" data-a="genRun">✨ Gerar meu treino</button></div>`;}
+
 function genPreview(){const g=UI.gen;const ini=g.nivel==='iniciante';
  const vol=weekVolume(g.result);const prio=new Set(g.foci.flatMap(f=>AREA2VOL[f]||[]));const eq=g.foci.includes('corpo');
  const volRows=Object.keys(VOLL).filter(k=>vol[k]>0||prio.has(k)).map(k=>{const isP=prio.has(k)||eq;const [lo,hi]=isP?(ini?[8,16]:[12,26]):[4,14];
   const st=vol[k]<lo?'<span style="color:var(--a2);font-weight:700">↑ dá pra subir</span>':vol[k]>hi?'<span style="color:var(--a2);font-weight:700">↓ acima do ideal</span>':'<span style="color:var(--a);font-weight:700">✓ no ponto</span>';
   return `<div class="hrow" style="padding:8px 2px"><span style="font-size:14px">${VOLL[k]}${isP?' <span class="tag" style="font-size:10.5px">prioridade</span>':''}</span><span style="display:flex;gap:8px;align-items:center;font-size:13px"><b>${vol[k]} séries</b>${st}</span></div>`;}).join('');
  const notes=[];
+ if(g.local==='academia'&&g.gymBasic)notes.push('🏢 Só entraram exercícios com o que tem na sua academia, mais os de peso do corpo.');
+ if(healthFlags(g).length)notes.push('💛 Versão mais leve por causa das respostas de saúde. Converse com um médico antes de começar.');
  if(g.local==='casa')notes.push('🏠 Só entraram exercícios que dá pra fazer em casa com '+(g.homeEq.length?g.homeEq.map(e=>({halter:'halteres',elastico:'elástico',kettlebell:'kettlebell'})[e]).join(', '):'o peso do corpo')+'.');
  if(g.lim.includes('joelho'))notes.push('🦵 Deixei de fora agachamentos, afundos, leg press e extensora, que exigem mais do joelho. Fortalecer o quadríceps costuma fazer parte da melhora, mas precisa ser ajustado pro seu caso: vale passar com um fisioterapeuta.');
  if(g.lim.includes('lombar'))notes.push('🔙 Evitei exercícios que carregam a coluna (agachamento livre, stiff com barra, remada curvada…).');
@@ -1550,12 +1638,13 @@ function genPreview(){const g=UI.gen;const ini=g.nivel==='iniciante';
  <p class="small mut" style="text-align:center">Dá pra editar qualquer treino depois e trocar exercícios com o botão 🔄. Este é um apoio: um profissional de educação física pode ajustar o treino pra você e corrigir a execução.</p>`;}
 function measHtml(){
  const ms=[...(D.measures||[])].sort((a,b)=>a.date.localeCompare(b.date));
- const rows=MEAS.filter(([k])=>ms.some(m=>m[k]!=null)).map(([k,l])=>{const f=ms.find(m=>m[k]!=null),la=[...ms].reverse().find(m=>m[k]!=null);const d=la[k]-f[k];
-  return `<div class="hrow"><span>${l}</span><span style="display:flex;gap:8px;align-items:center">${f!==la&&d?`<span class="small" style="font-weight:700;color:${d<0?'var(--a)':'var(--a2)'}">${d<0?'▼':'▲'} ${Math.abs(d).toFixed(1)}</span>`:''}<b>${la[k]} cm</b></span></div>`;}).join('');
+ const rows=MEAS2().filter(([k])=>ms.some(m=>m[k]!=null)).map(([k,l,u])=>{const f=ms.find(m=>m[k]!=null),la=[...ms].reverse().find(m=>m[k]!=null);const d=la[k]-f[k];
+  return `<div class="hrow"><span>${l}</span><span style="display:flex;gap:8px;align-items:center">${f!==la&&d?`<span class="small" style="font-weight:700;color:${d<0?'var(--a)':'var(--a2)'}">${d<0?'▼':'▲'} ${Math.abs(d).toFixed(1)}</span>`:''}<b>${String(la[k]).replace('.',',')} ${u}</b></span></div>`;}).join('');
  return `<h3 class="h3">📏 Medidas</h3>
  ${ms.length?`<div class="card" style="padding:4px 14px">${rows}<p class="small mut" style="margin:8px 0">Última medição: ${fmt(ms[ms.length-1].date)}${ms.length>1?' · comparando com '+fmt(ms[0].date):''}</p></div>`:''}
  <details class="card"><summary><span>${ms.length?'Registrar novas medidas':'Registrar medidas (opcional)'}</span><span class="chev">▾</span></summary>
-  <div class="row2">${MEAS.map(([k,l])=>`<div><label class="lbl">${l} (cm)</label><input class="inp" inputmode="decimal" data-i="mea.${k}" value="${esc(UI.mea[k]||'')}"></div>`).join('')}</div>
+  ${bioBoxHtml('mea')}
+  <div class="row2">${MEAS2().map(([k,l,u])=>`<div><label class="lbl">${l} (${u})</label><input class="inp" inputmode="decimal" data-i="mea.${k}" value="${esc(UI.mea[k]||'')}"></div>`).join('')}</div>
   <button class="btn sm" style="margin-top:12px" data-a="saveMeas">Salvar medidas</button>
   <p class="small mut" style="margin:10px 0 0">Meça a cada 2 a 4 semanas, no mesmo horário. Às vezes a balança para, mas a cintura diminui 😉</p></details>`;}
 
@@ -2512,7 +2601,18 @@ const A={
  socLeave:async()=>{const G=curG();if(!G||!confirm('Sair do grupo "'+G.name+'"? Você pode entrar de novo com o código depois.'))return;
   try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'groups',G.id,'members',uid));try{await f.deleteDoc(f.doc(db,'groups',G.id,'posts',uid+'_'+today()));}catch(e){}}catch(e){}
   const s=soc();s.groups=s.groups.filter(g=>g.id!==G.id);s.active=s.groups[0]?s.groups[0].id:'';persist();UI.soc=null;render();toast('Você saiu do grupo');},
- genOpen:()=>{const c=profileCfg();UI.gen={foci:[...c.foci],sub:Object.assign({},c.sub),local:c.local,homeEq:[...c.homeEq],tempo:c.tempo,lim:[...c.lim],days:[],nivel:(D.profile||{}).nivel||'',obj:c.obj,m:{},result:null,seed:0};PROF=null;go('gerador');},
+ genOpen:()=>{const c=profileCfg();const p=D.profile||{},b=p.body||{};const ms=[...(D.measures||[])].sort((a,b)=>a.date.localeCompare(b.date));const lm=ms[ms.length-1]||{};
+  const m={};if(lastWeight())m.peso=String(lastWeight());if(b.altura)m.altura=String(b.altura);if(b.idade)m.idade=String(b.idade);['cintura','gordura','musculo'].forEach(k=>{if(lm[k]!=null)m[k]=String(lm[k]);});if(p.meta)m.metaPeso=String(p.meta);
+  UI.gen={step:1,sexo:b.sexo||'',parq:Object.assign({},p.saude||{}),foci:[...c.foci],sub:Object.assign({},c.sub),local:c.local,gymBasic:c.gymBasic,gymEq:c.gymEq.length?[...c.gymEq]:GYM_EQ.map(x=>x[0]),homeEq:[...c.homeEq],tempo:c.tempo,lim:[...c.lim],days:[...(p.planDays||[])],nivel:p.nivel||'',obj:c.obj,m,result:null,seed:0};PROF=null;go('gerador');},
+ genStep:t=>{const g=UI.gen,d=+t.dataset.d;if(d>0){if(g.step===3&&!g.foci.length){toast('Escolha pelo menos uma prioridade');return;}if(g.step===5&&g.days.length<2){toast('Escolha quantos dias você treina');return;}}
+  g.step=Math.max(1,Math.min(6,g.step+d));render();window.scrollTo(0,0);},
+ genSkip:()=>{const g=UI.gen;if(!g.foci.length){g.step=3;toast('Só falta escolher sua prioridade');}else g.step=6;render();window.scrollTo(0,0);},
+ bioTalk:t=>{const k=t.dataset.t;UI.bio=UI.bio&&UI.bio.t===k?Object.assign(UI.bio,{talk:!UI.bio.talk}):{t:k,talk:true,txt:''};render();},
+ bioParse:t=>{const B=UI.bio;if(!B||!(B.txt||'').trim()){toast('Fale ou escreva os números primeiro');return;}const f=parseBio(B.txt);B.found=f;B.talk=!Object.keys(f).length;bioApply(t.dataset.t,f);render();},
+ genSexo:t=>{UI.gen.sexo=t.dataset.v;render();},
+ genParq:t=>{const g=UI.gen;g.parq[t.dataset.k]=!g.parq[t.dataset.k];render();},
+ genWhere:t=>{const g=UI.gen,v=t.dataset.v;g.local=v==='casa'?'casa':'academia';g.gymBasic=v==='basic';render();},
+ genGymEq:t=>{const g=UI.gen,v=t.dataset.v;const i=g.gymEq.indexOf(v);if(i>=0)g.gymEq.splice(i,1);else g.gymEq.push(v);render();},
  genSub:t=>{UI.gen.sub[t.dataset.k]=t.dataset.v;render();},
  genLocal:t=>{UI.gen.local=t.dataset.v;render();},
  genEq:t=>{const g=UI.gen,v=t.dataset.v;if(v==='nada')g.homeEq=[];else{const i=g.homeEq.indexOf(v);if(i>=0)g.homeEq.splice(i,1);else g.homeEq.push(v);}render();},
@@ -2532,12 +2632,15 @@ const A={
  genBack:()=>{UI.gen.result=null;render();window.scrollTo(0,0);},
  genUse:t=>{const g=UI.gen;const ws=g.result.map(w=>({id:uid(),name:w.name,focus:w.focus,day:w.day,items:w.items}));
   if(t.dataset.m==='replace'){if(D.workouts.length&&!confirm('Substituir seus treinos atuais? Seu histórico de cargas continua salvo.'))return;D.workouts=ws;}else D.workouts=D.workouts.concat(ws);
-  Object.assign(D.profile,{obj:g.obj,nivel:g.nivel||'intermediario',foci:[...g.foci],sub:Object.assign({},g.sub),local:g.local,homeEq:[...g.homeEq],tempo:g.tempo,lim:[...g.lim]});
-  const m={};MEAS.forEach(([k])=>{const v=num(g.m[k]);if(v!=null)m[k]=v;});
+  Object.assign(D.profile,{obj:g.obj,nivel:g.nivel||'intermediario',foci:[...g.foci],sub:Object.assign({},g.sub),local:g.local,homeEq:[...g.homeEq],gymBasic:!!g.gymBasic,gymEq:[...g.gymEq],tempo:g.tempo,lim:[...g.lim],
+   planDays:[...g.days],saude:Object.assign({},g.parq),body:{sexo:g.sexo||'',altura:num(g.m.altura),idade:num(g.m.idade)}});
+  {const GP=goalPlan(g,bodyAnalysis(g));if(GP.metaPeso)D.profile.meta=GP.metaPeso;}
+  const m={};MEAS2().forEach(([k])=>{const v=num(g.m[k]);if(v!=null)m[k]=v;});
   if(Object.keys(m).length){D.measures=(D.measures||[]).filter(x=>x.date!==today());D.measures.push(Object.assign({date:today()},m));}
   const pv=num(g.m.peso);if(pv!=null){D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:pv});if(!D.profile.pesoInicial)D.profile.pesoInicial=pv;}
   persist();UI.gen=null;toast('Treinos salvos! 💪');go('treinos');},
- saveMeas:()=>{const m={};MEAS.forEach(([k])=>{const v=num(UI.mea[k]);if(v!=null)m[k]=v;});
+ saveMeas:()=>{const m={};MEAS2().forEach(([k])=>{const v=num(UI.mea[k]);if(v!=null)m[k]=v;});
+  if(UI.bioPeso){D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:UI.bioPeso});UI.bioPeso=null;}
   if(!Object.keys(m).length){toast('Preencha pelo menos uma medida');return;}
   D.measures=(D.measures||[]).filter(x=>x.date!==today());D.measures.push(Object.assign({date:today()},m));UI.mea={};persist();render();toast('Medidas salvas! 📏');},
  swapOpen:t=>{UI.swap={exId:t.dataset.id,ctx:t.dataset.ctx,reason:null};openSheet(swapHtml());},
@@ -2622,6 +2725,7 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
  else if(k.startsWith('gen.m.'))UI.gen.m[k.slice(6)]=v;
  else if(k.startsWith('mea.'))UI.mea[k.slice(4)]=v;
  else if(k==='soc.code')UI.soc.code=v;
+ else if(k==='bio.txt'){if(UI.bio)UI.bio.txt=v;}
  else if(k.startsWith('re.')){UI.runEnd[k.slice(3)]=v;}
  else if(k.startsWith('rec.n.'))UI.recEdit[+k.slice(6)].n=v;
  else if(k.startsWith('rec.ml.'))UI.recEdit[+k.slice(7)].ml=v;
@@ -2630,6 +2734,8 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)return;
  if(k==='edit.day')UI.edit.day=el.value;
  else if(k==='prog.ex'){UI.progEx=el.value;render();}
+ else if(k==='bioFile'){const file=el.files&&el.files[0];const tg=el.dataset.t;if(!file)return;UI.bio={t:tg,loading:true};render();
+  ocrImage(file).then(txt=>{const f=parseBio(txt);UI.bio={t:tg,found:f};bioApply(tg,f);render();}).catch(()=>{UI.bio={t:tg,err:'Não consegui ler a foto agora. Confere a internet ou use "Falar os números".'};render();});}
  else if(k==='voice'){D.voiceName=el.value;persist();speakAll(['Oi! Essa é a minha voz.'],true);}
  else if(k==='act.date')UI.actForm.date=el.value||today();
  else if(k==='import'){const file=el.files&&el.files[0];if(!file)return;const r=new FileReader();
