@@ -181,7 +181,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='3.4 · 09/11 16h';
+const APP_VERSION='3.5 · 09/11 16h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1749,13 +1749,15 @@ function vProg(){
 function vAjuda(){
  return `<button class="back" data-a="go" data-v="hoje">← Voltar</button>
  <span class="kicker">Guia rápido</span><h2 class="disp h2">Como usar o app</h2>
+ <a class="ckcard" href="guia/" style="text-decoration:none;color:inherit"><span class="em">📖</span><span><b>Guia completo, passo a passo</b><span>Com as telas do app e um exemplo do começo ao fim: cadastro, avaliação, treino, corrida, grupos e mais.</span></span></a>
  <div class="card"><ol class="steps">
   <li><b>Hoje:</b> mostra o treino do dia, sua sequência 🔥, o checklist (creatina, whey, vácuo, pré-treino), a água e a alimentação.</li>
   <li><b>Check-in do dia 🎙️:</b> na aba Hoje, toque em <i>Registrar meu dia conversando</i>. Conte tudo de uma vez (falando ou escrevendo) ou vá respondendo as perguntas — o app anota treino, rotina, água e comida e te dá dicas pra amanhã.</li>
   <li><b>Treinos:</b> seus treinos. Toque em <i>Começar</i>, anote o peso e as repetições de cada exercício e, no fim, <i>Finalizar treino</i>. Pra criar um novo, use <i>Montar novo treino</i> ou uma <i>Sugestão por foco</i>.</li>
   <li><b>Exercícios:</b> todos os exercícios com passo a passo, o que sentir, o que evitar e vídeo.</li>
   <li><b>Atividades:</b> registre corrida, caminhada, yoga, dança… Tudo conta pra sua sequência, mesmo nos dias sem academia.</li>
-  <li><b>Turma 👯‍♀️:</b> crie um grupo com seus amigos ou entre com um código. O feed mostra o resumo do dia de cada um (treinos, sequência, rotina). Peso, medidas e o que você comeu nunca aparecem.</li>
+  <li><b>Card pra foto 📸:</b> terminou o treino? Toque em <i>Card pra foto</i> na aba Hoje (ou no 📸 do histórico de Atividades), escolha o que aparece e cole no seu story.</li>
+  <li><b>Grupos 👯‍♀️:</b> crie um grupo com seus amigos ou entre com um código. O feed mostra o resumo do dia de cada um (treinos, sequência, rotina). Peso, medidas e o que você comeu nunca aparecem.</li>
   <li><b>Progresso:</b> seu peso rumo à meta e a evolução de carga de cada exercício.</li>
  </ol></div>
  <h3 class="h3">📲 Deixar como app no celular</h3>
