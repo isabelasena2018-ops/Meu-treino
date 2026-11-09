@@ -1201,24 +1201,27 @@ function ckOptsHtml(){if(!CK.step)return '';const st=CKS[CK.step];
  return '<div class="qr">'+CK.opts.map((o,i)=>`<button class="chip" data-a="ckOpt" data-i="${i}">${esc(o[0])}</button>`).join('')+'</div>';}
 function vCheckin(){if(!CK)ckStart();
  return `<button class="back" data-a="ckExit">← Sair</button><span class="kicker">Check-in do dia</span><h2 class="disp h2" style="margin-bottom:12px">Me conta 🎙️</h2><div class="ck" id="ckmsgs">${ckMsgsHtml()}</div><div id="ckopts">${ckOptsHtml()}</div>`;}
-function ckBar(){return `<div class="ckbar"><div class="ckin"><button class="cb mic" id="ckmic" data-a="ckMic" aria-label="Falar">🎙️</button><textarea id="ckin" rows="1" placeholder="Fale ou escreva…"></textarea><button class="cb send" data-a="ckSend" aria-label="Enviar">➤</button></div></div>`;}
+function ckBar(){return `<div class="ckbar"><div id="ckhint" style="display:none;max-width:560px;margin:0 auto 8px;background:var(--a2soft);color:#7a4a35;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45"><b>🎤 Fale pelo teclado:</b> toque no <b>microfone do teclado</b> (no canto de baixo) e fale à vontade. Quando terminar, toque em <b>➤</b> pra enviar.<br><span style="opacity:.8">Não aparece o microfone? Ative em Ajustes → Geral → Teclado → Ativar Ditado.</span></div><div class="ckin"><button class="cb mic" id="ckmic" data-a="ckMic" aria-label="Falar">🎙️</button><textarea id="ckin" rows="1" placeholder="Fale ou escreva…"></textarea><button class="cb send" data-a="ckSend" aria-label="Enviar">➤</button></div></div>`;}
 function ckPaint(){const m=document.getElementById('ckmsgs'),o=document.getElementById('ckopts');if(!m)return;m.innerHTML=ckMsgsHtml();o.innerHTML=ckOptsHtml();ckScroll();}
 function ckScroll(){setTimeout(()=>window.scrollTo(0,document.body.scrollHeight),30);}
 function grow(ta){ta.style.height='auto';ta.style.height=Math.min(120,ta.scrollHeight)+'px';}
+function dictHint(show){const h=document.getElementById('ckhint');if(h)h.style.display=show?'block':'none';}
 function ckMic(btn){
  const ta=document.getElementById('ckin');
  if(REC){try{REC.stop();}catch(e){}return;}
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- const fallback=()=>{ta.focus();toast('Toque no 🎤 do teclado pra falar');};
- if(!SR)return fallback();
- try{REC=new SR();}catch(e){REC=null;return fallback();}
+ const kb=()=>{if(btn)btn.classList.remove('on');ta.focus();dictHint(true);};
+ /* No iPhone o reconhecimento de voz do navegador não transcreve: usa o ditado do teclado */
+ if(!SR||isIOS())return kb();
+ try{REC=new SR();}catch(e){REC=null;return kb();}
  REC.lang='pt-BR';REC.interimResults=true;REC.continuous=true;
- const base=ta.value?ta.value.trim()+' ':'';let fin='';
- REC.onresult=e=>{let it='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript+' ';else it+=r[0].transcript;}ta.value=(base+fin+it).replace(/\s+/g,' ').trimStart();grow(ta);};
- REC.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed')toast('Libere o microfone ou use o 🎤 do teclado');else if(e.error!=='aborted'&&e.error!=='no-speech')toast('Não rolou o áudio. Use o 🎤 do teclado');};
- REC.onend=()=>{REC=null;const b=document.getElementById('ckmic');if(b)b.classList.remove('on');};
- try{REC.start();btn.classList.add('on');toast('Pode falar… toque no 🎙️ pra parar');}catch(e){REC=null;fallback();}}
-function ckSendText(){const ta=document.getElementById('ckin');if(!ta)return;if(REC){try{REC.stop();}catch(e){}}const v=ta.value.trim();if(!v)return;ta.value='';grow(ta);ckAnswer(null,null,v);}
+ const base=ta.value?ta.value.trim()+' ':'';let fin='',got=false;
+ const wd=setTimeout(()=>{if(!got&&REC){try{REC.abort();}catch(e){}REC=null;kb();}},6000);
+ REC.onresult=e=>{got=true;let it='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript+' ';else it+=r[0].transcript;}ta.value=(base+fin+it).replace(/\s+/g,' ').trimStart();grow(ta);};
+ REC.onerror=e=>{clearTimeout(wd);if(e.error!=='aborted'&&e.error!=='no-speech'){REC=null;kb();}};
+ REC.onend=()=>{clearTimeout(wd);REC=null;const b=document.getElementById('ckmic');if(b)b.classList.remove('on');};
+ try{REC.start();btn.classList.add('on');toast('Pode falar… toque no 🎙️ pra parar');}catch(e){clearTimeout(wd);REC=null;kb();}}
+function ckSendText(){const ta=document.getElementById('ckin');if(!ta)return;if(REC){try{REC.stop();}catch(e){}}const v=ta.value.trim();if(!v)return;ta.value='';grow(ta);dictHint(false);ckAnswer(null,null,v);}
 
 /* ================== TURMA (grupo + feed) ================== */
 const FIREBASE_CONFIG={apiKey:"AIzaSyDcOpgpCzrc2-e8KBSJuKTI7XyhnP7axSU",authDomain:"meu-treino-79191.firebaseapp.com",projectId:"meu-treino-79191",storageBucket:"meu-treino-79191.firebasestorage.app",messagingSenderId:"498314536315",appId:"1:498314536315:web:e9c15b49d502098ac949de"};
