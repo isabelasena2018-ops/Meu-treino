@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.6 · 09/11 14h';
+const APP_VERSION='2.7 · 09/11 14h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1233,7 +1233,7 @@ function runGen(g){g.result=plan(Object.assign({},g,{nivel:g.nivel||'intermediar
 
 /* ================== ESTADO ================== */
 const LS='meutreino:v2';
-function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[],measures:[]};}
+function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[],measures:[],runs:[],run:null};}
 let D=(()=>{try{const v=localStorage.getItem(LS);if(v){const o=JSON.parse(v);return Object.assign(fresh(),o);}}catch(e){}return fresh();})();
 function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();scheduleUsage();schedulePush();}
 
@@ -1289,13 +1289,14 @@ const IC={
 function render(){
  const app=document.getElementById('app');
  if(!D.profile){app.innerHTML=vOnb();return;}
- const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin}[UI.view]||vHoje;
+ const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
- app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():nav());
+ const noNav=UI.view==='correndo'||UI.view==='corrida_fim';
+ app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():noNav?'':nav());
  if(isCk)ckScroll();
 }
 function header(){return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
-function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos'};const cur=map[UI.view]||UI.view;
+function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',corrida:'atividades',correndo:'atividades',corrida_fim:'atividades'};const cur=map[UI.view]||UI.view;
  const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['turma','Turma',IC.team],['progresso','Progresso',IC.chart]];
  return '<nav class="bottom">'+items.map(i=>`<button class="nbtn ${cur===i[0]?'on':''}" data-a="go" data-v="${i[0]}">${i[2]}${i[1]}</button>`).join('')+'</nav>';}
 
@@ -1353,6 +1354,7 @@ function vHoje(){
   </div>
   <div class="week">${wk.map((d,i)=>`<div class="wd ${set.has(d)?'done':''} ${d===t?'today':''}"><i>${set.has(d)?'✓':''}</i>${lets[i]}</div>`).join('')}</div>
  </div>
+ ${D.run&&!(D.runs||[]).some(r=>r.date===today())?`<button class="li" data-a="go" data-v="corrida" style="border:1.5px solid var(--a2)"><span><b>🏃‍♀️ Próxima corrida: treino ${nextRunKey()}</b><span>${esc(runSession(nextRunKey()).name)}</span></span><span class="mut">›</span></button>`:''}
  <button class="ckcard" data-a="ckOpen"><span class="em">🎙️</span><span><b>${c.checkin?'✓ Check-in feito · conversar de novo':'Registrar meu dia conversando'}</b><span>Fala ou escreve como foi seu dia — treino, comida, água — que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>
  ${treinoHtml}
  <div class="card">
@@ -1588,6 +1590,7 @@ function vAtiv(){
  const f=UI.actForm;const wk=weekDates();
  const sorted=[...D.activities].sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0)).slice(0,40);
  return `<span class="kicker">Estilo GymRats</span><h2 class="disp h2">Atividades</h2>
+ <button class="ckcard" data-a="go" data-v="corrida"><span class="em">🏃‍♀️</span><span><b>${D.run?'Plano de corrida · nível '+D.run.lvl:'Plano de corrida'}</b><span>${D.run?'Próximo: treino '+nextRunKey()+' · '+esc(runSession(nextRunKey()).name):'Do seu nível até onde você quiser ir, com corrida guiada por voz.'}</span></span></button>
  <div class="stats"><div class="st"><b>🔥${streak()}</b><span>dias seguidos</span></div><div class="st"><b>${activeDaysIn(wk)}</b><span>dias na semana</span></div><div class="st"><b>${monthCount()}</b><span>dias no mês</span></div></div>
  <h3 class="h3" style="margin-top:6px">Registrar atividade</h3>
  <div class="agrid">${ACT.map(a=>`<button class="at ${f&&f.type===a[0]?'on':''}" data-a="actType" data-t="${a[0]}"><span class="em">${a[2]}</span>${a[1]}</button>`).join('')}</div>
@@ -1688,6 +1691,12 @@ function vPerfil(){
   ${SUPPS.map(s=>`<button class="toggle ${PROF.supps[s.k]?'on':''}" data-a="profSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
   <button class="btn" style="margin-top:12px" data-a="saveProf">Salvar</button>
  </div>
+ ${hasTTS()?`<h3 class="h3">🔊 Voz do app</h3>
+ <div class="card">${(()=>{const vs=ptVoices().sort((a,b)=>voiceRank(b)-voiceRank(a));const cur=pickVoice();
+  return vs.length?`<label class="lbl" style="margin-top:0">Voz</label><select class="inp" data-c="voice">${vs.map(v=>`<option value="${esc(v.name)}" ${cur&&cur.name===v.name?'selected':''}>${esc(v.name)}${/pt[-_]BR/i.test(v.lang)?'':' ('+esc(v.lang)+')'}${voiceRank(v)>=150?' ⭐':''}</option>`).join('')}</select>
+  <label class="lbl">Velocidade</label><div class="chips">${[[0.9,'Mais calma'],[1,'Normal'],[1.1,'Mais rápida']].map(([r,l])=>`<button class="chip ${(D.voiceRate||1)===r?'on':''}" data-a="voiceRate" data-r="${r}">${l}</button>`).join('')}</div>
+  <button class="btn2" style="margin-top:10px" data-a="voiceTest">▶ Ouvir exemplo</button>`:'<p class="small mut" style="margin:0">Carregando as vozes do celular…</p>';})()}
+  <p class="small mut" style="margin:10px 0 0;line-height:1.5"><b>Quer uma voz bem mais natural?</b> No iPhone, baixe uma voz "Aprimorada" (é grátis): <b>Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil)</b> e escolha Luciana ou Felipe com a opção <b>Aprimorada</b> ou <b>Premium</b>. Depois feche e abra o app e escolha ela aqui. As marcadas com ⭐ são as melhores.</p></div>`:''}
  <h3 class="h3">🔔 Notificações inteligentes</h3>
  <div class="card">${pushCardHtml()}</div>
  <h3 class="h3">Privacidade</h3>
@@ -1780,7 +1789,7 @@ const actNm=a=>{const t=ACTM[a.type]||ACTM.outro;return (a.name||t[1]).toLowerCa
 const FEM=['caminhada','corrida','bike','natacao','yoga','danca','luta','musculacao'];
 const actFem=a=>FEM.includes(a.type)||/a$/.test(actNm(a));
 const TITLE_EX={caminhada:'Caminhada no parque',corrida:'Corrida na orla',bike:'Pedal com a galera',yoga:'Yoga da manhã',natacao:'Natação no clube',danca:'Aula de dança',funcional:'Funcional na praça',luta:'Treino de muay thai',alongamento:'Alongamento antes de dormir',esporte:'Vôlei com os amigos',musculacao:'Treino de perna',pilates:'Pilates no estúdio'};
-function actLine(a){const t=ACTM[a.type]||ACTM.outro;return `${t[2]} ${a.name||t[1]}${a.minutes?' · '+a.minutes+' min':''}${a.period?' · '+a.period:''}`;}
+function actLine(a){const t=ACTM[a.type]||ACTM.outro;return `${t[2]} ${a.name||t[1]}${a.minutes?' · '+a.minutes+' min':''}${a.km?' · '+String(a.km).replace('.',',')+' km':''}${a.period?' · '+a.period:''}`;}
 const ckOnSupps=()=>SUPPS.filter(s=>D.profile.supps&&D.profile.supps[s.k]);
 const hourNow=()=>new Date().getHours();
 const MEALQ={cafe:['☕','café da manhã'],almoco:['🍽️','almoço'],lanches:['🍎','lanche'],jantar:['🌙','jantar']};
@@ -1917,12 +1926,17 @@ function bot(t,say){CK.msgs.push({r:'bot',t,say});}
 let VOICE=null;
 const hasTTS=()=>typeof window!=='undefined'&&'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined';
 const ttsOn=()=>D.tts!==false&&hasTTS();
-function pickVoice(){try{const vs=speechSynthesis.getVoices();return vs.find(v=>/pt[-_]BR/i.test(v.lang)&&/luciana|francisca|thalita/i.test(v.name))||vs.find(v=>/pt[-_]BR/i.test(v.lang))||vs.find(v=>/^pt/i.test(v.lang))||null;}catch(e){return null;}}
-if(hasTTS()){try{speechSynthesis.onvoiceschanged=()=>{VOICE=pickVoice();};}catch(e){}}
+function ptVoices(){try{return speechSynthesis.getVoices().filter(v=>/^pt/i.test(v.lang));}catch(e){return [];}}
+function voiceRank(v){let r=0;if(/pt[-_]BR/i.test(v.lang))r+=100;if(/premium/i.test(v.name))r+=60;if(/enhanced|aprimorad|avan[cç]ad|neural|natural|online/i.test(v.name))r+=50;
+ if(/luciana|francisca|thalita|fernanda|maria/i.test(v.name))r+=10;if(/eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|albert|bad news|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|vov[oó]/i.test(v.name))r-=200;if(v.localService===false)r+=5;return r;}
+function pickVoice(){try{const vs=ptVoices();if(D.voiceName){const v=vs.find(x=>x.name===D.voiceName);if(v)return v;}return vs.sort((a,b)=>voiceRank(b)-voiceRank(a))[0]||null;}catch(e){return null;}}
+if(hasTTS()){try{speechSynthesis.onvoiceschanged=()=>{VOICE=pickVoice();if(UI.view==='perfil')render();};speechSynthesis.getVoices();}catch(e){}}
 function sayClean(t){return String(t).replace(/[\p{Extended_Pictographic}\uFE0F\u200D✓✔⬜]/gu,'').replace(/·/g,',').replace(/(\d+)\s*min\b/g,'$1 minutos').replace(/(\d+)\/(\d+)/g,'$1 de $2').replace(/(\d+(?:,\d+)?)\s*L\b/g,'$1 litros').replace(/(\d+)\s*ml\b/g,'$1 mililitros').replace(/½/g,'meia').replace(/["“”]/g,'').replace(/\n+/g,'. ').replace(/\s+/g,' ').replace(/\s+([,.!?:])/g,'$1').replace(/([.!?,:])(\s*[.,])+/g,'$1').trim();}
 function hush(){try{if(hasTTS())speechSynthesis.cancel();}catch(e){}}
-function speakAll(list){if(!ttsOn()||!list.length)return;try{speechSynthesis.cancel();VOICE=VOICE||pickVoice();
- list.forEach(t=>{const c=sayClean(t);if(!c)return;const u=new SpeechSynthesisUtterance(c);u.lang='pt-BR';if(VOICE)u.voice=VOICE;u.rate=1.05;speechSynthesis.speak(u);});}catch(e){}}
+function speakAll(list,force){if((!ttsOn()&&!force)||!list.length)return;try{speechSynthesis.cancel();VOICE=pickVoice();
+ /* frase por frase: deixa pausas naturais em vez de ler tudo de uma vez */
+ list.forEach(t=>{const c=sayClean(t);if(!c)return;(c.match(/[^.!?…]+[.!?…]*/g)||[c]).map(x=>x.trim()).filter(x=>x.length>1).forEach(fr=>{
+  const u=new SpeechSynthesisUtterance(fr);u.lang=(VOICE&&VOICE.lang)||'pt-BR';if(VOICE)u.voice=VOICE;u.rate=(D.voiceRate||1);u.pitch=1;u.volume=1;speechSynthesis.speak(u);});});}catch(e){}}
 function ckSpeakNew(){if(!CK)return;const from=CK.spoken||0;const out=CK.msgs.slice(from).filter(m=>m.r==='bot').map(m=>m.say!=null?m.say:m.t);CK.spoken=CK.msgs.length;speakAll(out);}
 function ckStart(){const p=D.profile;const h=hourNow();
  CK={msgs:[],q:['start','supps','agua','meal_cafe','meal_almoco','meal_lanches','meal_jantar','ontrack','note','end'],skip:new Set(),tmp:{},multi:{},step:null,opts:[]};
@@ -2017,7 +2031,7 @@ async function fb(){
 function newCode(){const ch='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';const r=new Uint32Array(8);try{crypto.getRandomValues(r);}catch(e){for(let i=0;i<8;i++)r[i]=Math.floor(Math.random()*4e9);}for(let i=0;i<8;i++)s+=ch[r[i]%ch.length];return s;}
 function daySummary(date){
  const s=soc(),sh=s.share,c=D.checks[date]||{},p={acts:null,streak:null,week:null,rotina:null,comida:null};let any=false;
- if(sh.treinos){p.acts=D.activities.filter(a=>a.date===date).map(a=>({t:a.type,n:a.name||'',m:a.minutes||null}));if(p.acts.length)any=true;}
+ if(sh.treinos){p.acts=D.activities.filter(a=>a.date===date).map(a=>({t:a.type,n:a.name||'',m:a.minutes||null,k:a.km||null}));if(p.acts.length)any=true;}
  if(sh.streak){p.streak=streak();p.week=activeDaysIn(weekDates());}
  if(sh.rotina){const r={};SUPPS.filter(x=>D.profile.supps&&D.profile.supps[x.k]).forEach(x=>{r[x.k]=!!(c.supps||{})[x.k];if(r[x.k])any=true;});r.agua=dayCheck(date).aguaMl||0;r.meta=aguaMeta();r.ml=1;if(r.agua)any=true;p.rotina=r;}
  if(sh.comida&&c.onTrack!=null&&c.onTrack!==undefined){p.comida=c.onTrack===true?'bem':c.onTrack===false?'nao':'meio';any=true;}
@@ -2046,7 +2060,7 @@ async function socLoad(){
 function dayLabel(d){if(d===today())return 'Hoje';const y=new Date();y.setDate(y.getDate()-1);if(d===keyOf(y))return 'Ontem';return fmt(d);}
 function postHtml(p){
  const me=FB&&FB.uid;const L=[];
- (p.acts||[]).forEach(a=>{const t=ACTM[a.t]||ACTM.outro;L.push(`<div style="font-weight:700;font-size:15px">${t[2]} ${esc(a.n||t[1])}${a.m?' · '+a.m+' min':''}</div>`);});
+ (p.acts||[]).forEach(a=>{const t=ACTM[a.t]||ACTM.outro;L.push(`<div style="font-weight:700;font-size:15px">${t[2]} ${esc(a.n||t[1])}${a.m?' · '+a.m+' min':''}${a.k?' · '+String(a.k).replace('.',',')+' km':''}</div>`);});
  if(p.acts&&!p.acts.length&&p.date!==today())L.push('<div class="mut small">Dia de descanso 🌿</div>');
  const tags=[];
  if(p.streak)tags.push(`🔥 ${p.streak} ${p.streak===1?'dia':'dias'} seguidos`);
@@ -2152,6 +2166,202 @@ function pushCardHtml(){const P=pushState();
   <div class="btnrow"><button class="btn2" data-a="pushTest">Testar agora</button><button class="btn2 danger" data-a="pushOff">Desativar</button></div>`;}
 
 function inviteUrl(){return location.href.split('#')[0].split('?')[0]+'?g='+soc().groupId;}
+
+/* ================== CORRIDA ================== */
+/* etapas: w=aquecer c=desaquecer r=correr k=caminhar e=leve s=acelerar t=ritmo moderado/forte */
+const WARM=['w',300],COOL=['c',300];
+const ivl=(run,walk,reps)=>{const o=[];for(let i=0;i<reps;i++){o.push(['r',run*60]);if(i<reps-1||walk)o.push(['k',walk*60]);}if(o.length&&o[o.length-1][0]==='k')o.pop();return o;};
+const cont=min=>[['r',min*60]];
+const strides=(easyMin,n)=>{const o=[['e',easyMin*60]];for(let i=0;i<n;i++){o.push(['s',20]);o.push(['e',70]);}return o;};
+const tempo=(reps,fast,easy)=>{const o=[['e',600]];for(let i=0;i<reps;i++){o.push(['t',fast*60]);o.push(['e',easy*60]);}return o;};
+const BASE=[ /* [nome A, etapas A, nome B, etapas B] */
+ ['8 × (1 min correndo + 1min30 andando)',ivl(1,1.5,8),'6 × (1min30 correndo + 2 min andando)',ivl(1.5,2,6)],
+ ['6 × (2 min correndo + 1min30 andando)',ivl(2,1.5,6),'5 × (3 min correndo + 2 min andando)',ivl(3,2,5)],
+ ['5 × (3 min correndo + 1min30 andando)',ivl(3,1.5,5),'4 × (4 min correndo + 2 min andando)',ivl(4,2,4)],
+ ['4 × (5 min correndo + 1min30 andando)',ivl(5,1.5,4),'3 × (6 min correndo + 2 min andando)',ivl(6,2,3)],
+ ['3 × (7 min correndo + 1min30 andando)',ivl(7,1.5,3),'2 × (10 min correndo + 2 min andando)',ivl(10,2,2)],
+ ['2 × (10 min correndo + 1 min andando)',ivl(10,1,2),'2 × (12 min correndo + 1 min andando)',ivl(12,1,2)],
+ ['18 min sem parar',cont(18),'2 × (14 min correndo + 1 min andando)',ivl(14,1,2)],
+ ['22 min sem parar',cont(22),'25 min sem parar',cont(25)],
+ ['25 min sem parar',cont(25),'🏅 30 min sem parar',cont(30)],
+ ['20 min leve + 4 acelerações (semana mais leve)',strides(20,4),'25 min leve (semana mais leve)',cont(25)],
+ ['25 min leve + 5 acelerações',strides(25,5),'35 min leve',cont(35)],
+ ['28 min leve + 6 acelerações',strides(28,6),'40 min leve',cont(40)]];
+function runLevel(n){
+ if(n<=BASE.length){const b=BASE[n-1];return {n,phase:n<=9?'Base: chegar nos 30 min sem parar':'Construindo distância',recovery:n===10,A:{name:b[0],steps:b[1]},B:{name:b[2],steps:b[3]}};}
+ /* depois da base: corrida longa cresce ~10% por semana, com uma semana mais leve a cada 4 */
+ let long=40,k=BASE.length;const seq=[];
+ while(k<n){k++;const cyc=(k-BASE.length)%4;if(cyc===0){seq.push({long:Math.round(long*0.8),rec:true});}else{long=Math.min(120,Math.round(long*1.1));seq.push({long,rec:false});}}
+ const cur=seq[seq.length-1];const easy=Math.min(45,25+Math.floor((n-BASE.length)/2)*2);
+ const A=cur.rec?{name:easy+' min leve (semana mais leve)',steps:cont(easy)}:(n%2?{name:'Ritmo: 10 min leve + 3 × (5 min forte + 2 min leve)',steps:tempo(3,5,2)}:{name:easy+' min leve + 6 acelerações',steps:strides(easy,6)});
+ const B={name:(cur.long>=60?'🏅 ':'')+cur.long+' min leve (corrida longa)'+(cur.rec?' · semana mais leve':''),steps:cont(cur.long)};
+ return {n,phase:'Indo cada vez mais longe',recovery:cur.rec,A,B};}
+const RUN_START={nunca:1,pausas:3,base:9};
+function runPlan(){return D.run||null;}
+function runKeys(){const p=runPlan();const d=(p&&p.days)||2;return d>=4?['A','B','C','D']:d===3?['A','B','C']:['A','B'];}
+function runSession(key){const L=runLevel(D.run.lvl);if(key==='A'||key==='B')return L[key];
+ const easy=L.n<7?L.A:{name:'Corrida leve',steps:cont(Math.max(15,Math.round(stepsMin(L.B.steps)*0.6)))};return {name:easy.name+' (leve extra)',steps:easy.steps};}
+const stepsMin=st=>Math.round(st.reduce((a,s)=>a+s[1],0)/60);
+function fullSteps(st){return [WARM].concat(st,[COOL]);}
+function nextRunKey(){const p=runPlan();if(!p)return null;return runKeys().find(k=>!p.done[k])||runKeys()[0];}
+const fmtDur=sec=>{sec=Math.round(sec);const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return h?`${h}h${String(m).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`;};
+const fmtPace=(sec,km)=>{if(!km||km<0.2)return '—';const p=sec/km;return `${Math.floor(p/60)}:${String(Math.round(p%60)).padStart(2,'0')}/km`;};
+const kmStr=km=>(Math.round(km*100)/100).toFixed(2).replace('.',',');
+const STEP_L={w:'Caminhada pra aquecer',c:'Caminhada pra desaquecer',r:'Correndo',k:'Caminhando',e:'Corrida leve',s:'Acelera!',t:'Ritmo forte'};
+const STEP_C={w:'var(--a)',c:'var(--a)',r:'var(--a2)',k:'var(--a)',e:'var(--a2)',s:'#c0453a',t:'#c0453a'};
+function stepSay(k,sec,last){const m=Math.floor(sec/60),r=Math.round(sec%60);const d=m===0?sec+' segundos':r===30?(m===1?'1 minuto e meio':m+' minutos e meio'):r===0?(m===1?'1 minuto':m+' minutos'):(m===1?'1 minuto':m+' minutos')+' e '+r+' segundos';
+ return {w:'Vamos começar! Caminhe '+d+' pra aquecer, num ritmo firme.',c:'Muito bem! Agora caminhe '+d+' pra desaquecer.',r:(last?'Último tiro! ':'')+'Corra por '+d+', no ritmo de conversa.',k:'Caminhe '+d+' e recupere o fôlego.',e:'Corrida leve por '+d+'.',s:'Acelere por 20 segundos, sem dar tudo!',t:'Ritmo moderado a forte por '+d+'. Você consegue falar só algumas palavras.'}[k];}
+
+/* ---------- corrida guiada ---------- */
+let RUN=null;
+function beep(f,ms){try{const a=RUN&&RUN.ac;if(!a)return;const o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.value=0.15;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+ms/1000);}catch(e){}}
+function runSay(t){if(!RUN||RUN.mute)return;speakAll([t]);}
+async function keepAwake(){try{if('wakeLock' in navigator&&RUN&&!RUN.paused){RUN.wl=await navigator.wakeLock.request('screen');}}catch(e){}}
+function haversine(a,b){const R=6371,r=x=>x*Math.PI/180;const dLa=r(b.lat-a.lat),dLo=r(b.lon-a.lon);const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function runStart(key,mode){
+ const ses=key==='livre'?{name:'Corrida livre',steps:[['r',3600*3]]}:runSession(key);
+ const steps=key==='livre'?ses.steps:fullSteps(ses.steps);
+ RUN={key,mode,name:ses.name,steps,idx:0,t0:Date.now(),pausedMs:0,paused:false,pauseT:0,said:{},km:0,last:null,kmSaid:0,mute:D.tts===false};
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){RUN.ac=new AC();RUN.ac.resume&&RUN.ac.resume();}}catch(e){}
+ hush();keepAwake();
+ if(mode==='rua'&&navigator.geolocation){try{RUN.watch=navigator.geolocation.watchPosition(p=>{if(!RUN||RUN.paused)return;const c=p.coords;if(c.accuracy>35)return;const pt={lat:c.latitude,lon:c.longitude,t:p.timestamp};
+   if(RUN.last){const d=haversine(RUN.last,pt);const dt=(pt.t-RUN.last.t)/1000;if(dt>0&&d/dt*1000<7&&d>0.003){RUN.km+=d;RUN.last=pt;}else if(dt>20)RUN.last=pt;}else RUN.last=pt;
+   const k=Math.floor(RUN.km);if(k>RUN.kmSaid){RUN.kmSaid=k;runSay(k+(k===1?' quilômetro':' quilômetros')+'. Ritmo de '+fmtPace(runElapsed(),RUN.km).replace('/km',' por quilômetro').replace(':',' e ')+'.');}
+  },()=>{RUN.gpsErr=true;},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});}catch(e){RUN.gpsErr=true;}}
+ runSay(key==='livre'?'Corrida livre! Vou marcando seu tempo.':'Bora! Treino '+key+' do nível '+D.run.lvl+'.');
+ go('correndo');RUN.tick=setInterval(runTick,250);runTick();}
+function runElapsed(){if(!RUN)return 0;const now=RUN.paused?RUN.pauseT:Date.now();return (now-RUN.t0-RUN.pausedMs)/1000;}
+function runPos(el){let acc=0;for(let i=0;i<RUN.steps.length;i++){const d=RUN.steps[i][1];if(el<acc+d)return {i,left:acc+d-el,into:el-acc,dur:d};acc+=d;}return {i:RUN.steps.length,left:0,into:0,dur:0};}
+function runTick(){if(!RUN)return;const el=runElapsed();const P=runPos(el);
+ if(P.i>=RUN.steps.length){runFinish(true);return;}
+ const [k,dur]=RUN.steps[P.i];
+ if(!RUN.said['s'+P.i]){RUN.said['s'+P.i]=1;const lastRun=k==='r'&&!RUN.steps.slice(P.i+1).some(s=>s[0]==='r');if(P.i>0){beep(880,180);}runSay(stepSay(k,dur,lastRun&&RUN.steps.filter(s=>s[0]==='r').length>1));}
+ if(dur>=240&&'ret'.includes(k)&&!RUN.said['h'+P.i]&&P.into>=dur/2){RUN.said['h'+P.i]=1;runSay('Metade! Tá indo muito bem.');}
+ if(dur>=900&&(k==='r'||k==='e')){const q=Math.floor(P.into/300);if(q>0&&P.left>60&&!RUN.said['q'+P.i+'_'+q]){RUN.said['q'+P.i+'_'+q]=1;runSay('Faltam '+Math.round(P.left/60)+' minutos. Continua no ritmo de conversa.');}}
+ const sl=Math.ceil(P.left);if(sl<=3&&sl>=1&&!RUN.said['c'+P.i+'_'+sl]){RUN.said['c'+P.i+'_'+sl]=1;beep(sl===1?660:520,120);}
+ const nx=RUN.steps[P.i+1];const tot=RUN.steps.reduce((a,s)=>a+s[1],0);
+ const g=id=>document.getElementById(id);
+ if(g('run-label')){g('run-label').textContent=STEP_L[k];g('run-label').style.color=STEP_C[k];g('run-left').textContent=fmtDur(P.left);
+  g('run-next').textContent=nx?'Depois: '+STEP_L[nx[0]].toLowerCase()+' · '+fmtDur(nx[1]):'Última etapa! 🎉';
+  g('run-total').textContent=RUN.key==='livre'?fmtDur(el):fmtDur(el)+' de '+fmtDur(tot);g('run-bar').style.width=(RUN.key==='livre'?0:Math.min(100,el/tot*100))+'%';
+  g('run-stepbar').style.width=Math.min(100,P.into/dur*100)+'%';g('run-stepbar').style.background=STEP_C[k];
+  if(g('run-km'))g('run-km').textContent=RUN.mode==='rua'?(RUN.gpsErr&&!RUN.km?'GPS indisponível':kmStr(RUN.km)+' km · '+fmtPace(el,RUN.km)):'Esteira';
+  g('run-pause').textContent=RUN.paused?'▶ Continuar':'⏸ Pausar';}}
+function runStopAll(){if(!RUN)return;clearInterval(RUN.tick);if(RUN.watch!=null)try{navigator.geolocation.clearWatch(RUN.watch);}catch(e){}try{RUN.wl&&RUN.wl.release();}catch(e){}try{RUN.ac&&RUN.ac.close();}catch(e){}}
+function runFinish(completed){if(!RUN)return;const el=runElapsed();runStopAll();
+ if(completed)runSay('Treino concluído! Arrasou! 🎉');else hush();
+ UI.runEnd={key:RUN.key,name:RUN.name,mode:RUN.mode,sec:Math.round(el),km:RUN.mode==='rua'?Math.round(RUN.km*100)/100:null,completed,feel:'',pain:'nenhuma',painWhere:'',note:'',kmInput:''};
+ RUN=null;go('corrida_fim');}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&RUN){keepAwake();runTick();}});
+
+/* ---------- progressão ---------- */
+function runApply(r){const p=runPlan();const msgs=[];if(!p||!['A','B','C','D'].includes(r.ses))return msgs;
+ if(r.pain==='forte'){if(p.lvl>1)p.lvl--;p.done={};msgs.push('Com dor forte, voltei um nível e zerei a semana. Descanse 2 a 3 dias. Se a dor continuar ou piorar, procure um fisioterapeuta ou médico 💛');return msgs;}
+ if(!r.completed){msgs.push('Tudo bem não completar! Esse treino continua te esperando na próxima.');return msgs;}
+ if(r.feel==='dificil'){msgs.push('Foi puxado? Normal! Vou repetir esse treino na próxima, pra seu corpo se adaptar. Avançar devagar é o que evita lesão.');return msgs;}
+ p.done[r.ses]=true;
+ if(r.pain==='leve')msgs.push('Dor leve: fique de olho. Se aparecer de novo na próxima corrida, descanse um dia a mais.');
+ if(runKeys().every(k=>p.done[k])){p.lvl++;p.done={};const L=runLevel(p.lvl);msgs.push('🎉 Subiu pro nível '+p.lvl+'! '+(L.recovery?'Essa semana é mais leve, pro corpo absorver a evolução.':'Próximo desafio: '+L.B.name.replace('🏅 ','')+'.'));}
+ else msgs.push('Treino '+r.ses+' concluído ✓ Falta '+runKeys().filter(k=>!p.done[k]).join(' e ')+' pra subir de nível.');
+ return msgs;}
+function runSave(e){
+ const km=e.km!=null&&e.km>0?e.km:num(e.kmInput);
+ const r={id:uid(),ts:Date.now(),date:today(),ses:e.key,lvl:runPlan()?runPlan().lvl:null,name:e.name,sec:e.sec,km:km||null,mode:e.mode,feel:e.feel||'ok',pain:e.pain||'nenhuma',painWhere:e.painWhere||'',note:(e.note||'').trim(),completed:!!e.completed};
+ D.runs=D.runs||[];D.runs.push(r);
+ D.activities.push({id:uid(),ts:Date.now(),date:r.date,type:'corrida',name:e.key==='livre'?'Corrida livre':'Corrida · nível '+r.lvl+' '+e.key,minutes:Math.round(r.sec/60),km:r.km,period:periodNow(),intensity:r.feel==='dificil'?'intensa':r.feel==='facil'?'leve':'moderada',runId:r.id,titled:true});
+ const msgs=runApply(r);persist();return msgs;}
+
+/* ---------- estatísticas ---------- */
+function runStats(){const R=(D.runs||[]).filter(r=>r.sec>0);const withKm=R.filter(r=>r.km>0);
+ const best=withKm.filter(r=>r.km>=2).map(r=>r.sec/r.km).sort((a,b)=>a-b)[0]||null;
+ const longest=withKm.map(r=>r.km).sort((a,b)=>b-a)[0]||0;const longestMin=R.map(r=>r.sec).sort((a,b)=>b-a)[0]||0;
+ const r5=withKm.filter(r=>r.km>=5).map(r=>r.sec/r.km*5).sort((a,b)=>a-b)[0]||null;
+ const totKm=withKm.reduce((a,r)=>a+r.km,0);return {n:R.length,totKm,best,longest,longestMin,r5};}
+function weekStart(d){const x=new Date(d+'T12:00:00');const dw=(x.getDay()+6)%7;x.setDate(x.getDate()-dw);return keyOf(x);}
+function runWeekly(n){const out=[];const t=new Date();const dw=(t.getDay()+6)%7;for(let i=n-1;i>=0;i--){const s=new Date(t.getFullYear(),t.getMonth(),t.getDate()-dw-7*i);out.push({wk:keyOf(s),km:0,min:0});}
+ (D.runs||[]).forEach(r=>{const w=weekStart(r.date);const o=out.find(x=>x.wk===w);if(o){o.km+=r.km||0;o.min+=r.sec/60;}});return out;}
+function barsSVG(data,key,unit){const W=320,H=150,L=8,B=24,max=Math.max(1,...data.map(d=>d[key]));const bw=(W-L*2)/data.length;
+ return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${data.map((d,i)=>{const h=(H-B-18)*d[key]/max;const x=L+i*bw+4;return `<rect x="${x}" y="${H-B-h}" width="${bw-8}" height="${Math.max(h,1)}" rx="5" fill="${i===data.length-1?'#E8633A':'#0F4C45'}" opacity="${d[key]?1:.18}"/>${d[key]?`<text x="${x+(bw-8)/2}" y="${H-B-h-5}" font-size="10" fill="#55625e" text-anchor="middle">${key==='km'?String(Math.round(d[key]*10)/10).replace('.',','):Math.round(d[key])}</text>`:''}<text x="${x+(bw-8)/2}" y="${H-8}" font-size="9.5" fill="#87938e" text-anchor="middle">${fmt(d.wk)}</text>`;}).join('')}</svg>`;}
+
+/* ---------- telas ---------- */
+const FEEL=[['facil','😌 Fácil'],['ok','🙂 Ok'],['dificil','😮‍💨 Difícil']];
+const PAIN=[['nenhuma','Nenhuma'],['leve','Leve'],['forte','Forte']];
+function vCorrida(){
+ const p=runPlan();
+ if(!p){UI.runSetup=UI.runSetup||{start:'pausas',days:2};const s=UI.runSetup;
+  return `<button class="back" data-a="go" data-v="atividades">← Atividades</button>
+  <span class="kicker">Corrida</span><h2 class="disp h2">Plano de corrida 🏃‍♀️</h2>
+  <div class="info">Um plano que começa do seu nível e vai aumentando aos poucos, com corrida guiada por voz. Você avança quando o treino foi tranquilo e repete quando foi difícil. Sem pressa e sem lesão.</div>
+  <div class="card"><label class="lbl" style="margin-top:0">Como está sua corrida hoje?</label>
+   <div class="chips">${[['nunca','Nunca corri / parei faz tempo'],['pausas','Corro um pouco, com pausas'],['base','Já corro 20-30 min direto']].map(([k,l])=>`<button class="chip ${s.start===k?'on':''}" data-a="runSetStart" data-k="${k}">${l}</button>`).join('')}</div>
+   <label class="lbl">Quantos dias por semana?</label>
+   <div class="chips">${[2,3,4].map(n=>`<button class="chip ${s.days===n?'on':''}" data-a="runSetDays" data-n="${n}">${n} dias</button>`).join('')}</div>
+   <p class="small mut" style="margin:10px 0 0">Deixe pelo menos 1 dia de descanso entre as corridas. Dá pra correr no mesmo dia da musculação de superiores.</p>
+   <button class="btn alt" style="margin-top:12px" data-a="runCreate">Começar meu plano</button></div>`;}
+ const L=runLevel(p.lvl);const keys=runKeys();const nk=nextRunKey();const st=runStats();const msgsH=UI.runMsgs&&UI.runMsgs.length?`<div class="info">${UI.runMsgs.map(esc).join('<br>')}</div>`:'';UI.runMsgs=null;
+ const last=(D.runs||[]).slice(-1)[0];const restToday=last&&last.date===today();
+ const y=new Date();y.setDate(y.getDate()-1);const ranYest=last&&last.date===keyOf(y)&&p.lvl<12;
+ const milestones=[[30,'30 min sem parar','min'],[5,'5 km','km'],[10,'10 km','km'],[15,'15 km','km'],[21.1,'Meia maratona','km']];
+ const ms=milestones.map(([v,l,u])=>({l,ok:u==='min'?st.longestMin>=v*60*0.98:st.longest>=v*0.98}));const nextMs=ms.find(m=>!m.ok);
+ const sesCard=k=>{const S=runSession(k);const done=p.done[k];return `<div class="card" style="${k===nk&&!done?'border:1.5px solid var(--a2)':''}">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><span class="kicker" style="color:${done?'var(--a)':'var(--a2)'}">Treino ${k}${done?' · feito ✓':k===nk?' · próximo':''}</span><h3 style="margin:3px 0 2px;font-size:16px">${esc(S.name)}</h3><span class="small mut">~${stepsMin(fullSteps(S.steps))} min com aquecimento e desaquecimento</span></div></div>
+  ${done?'':`<div class="btnrow"><button class="btn alt sm" data-a="runGo" data-k="${k}">▶ Corrida guiada</button><button class="btn2" style="padding:10px" data-a="runManual" data-k="${k}">Registrar</button></div>`}</div>`;};
+ const wk=runWeekly(8);const pacePts=(D.runs||[]).filter(r=>r.km>=1).slice(-12).map(r=>({l:fmt(r.date),v:Math.round(r.sec/r.km/6)/10}));
+ return `<button class="back" data-a="go" data-v="atividades">← Atividades</button>
+ ${msgsH}
+ <span class="kicker">Corrida · nível ${p.lvl}</span><h2 class="disp h2" style="margin-bottom:4px">${esc(L.phase)}</h2>
+ <p class="small mut" style="margin:0 0 12px">${nextMs?'Próximo marco: <b>'+nextMs.l+'</b>':'Você já passou de uma meia maratona! 🏆'}${L.recovery?' · Esta é uma semana mais leve 🌿':''}</p>
+ <div class="chips" style="margin-bottom:12px">${ms.map(m=>`<span class="tag" style="${m.ok?'':'background:var(--soft);color:var(--mut)'}">${m.ok?'🏅':'○'} ${m.l}</span>`).join('')}</div>
+ ${restToday?'<div class="info">Você já correu hoje 💪 O próximo treino é amanhã ou depois, com o corpo descansado.</div>':ranYest?'<div class="info">Você correu ontem. No começo, o ideal é deixar 1 dia de descanso entre as corridas 🌿</div>':''}
+ ${keys.map(sesCard).join('')}
+ <div class="btnrow" style="margin-top:0;margin-bottom:12px"><button class="btn2" data-a="runGo" data-k="livre">Corrida livre</button><button class="btn2" data-a="runManual" data-k="livre">Registrar corrida livre</button></div>
+ <div class="stats"><div class="st"><b>${st.n}</b><span>corridas</span></div><div class="st"><b>${String(Math.round(st.totKm*10)/10).replace('.',',')}</b><span>km no total</span></div><div class="st"><b>${st.longest?String(Math.round(st.longest*10)/10).replace('.',','):'—'}</b><span>maior distância (km)</span></div></div>
+ <div class="stats"><div class="st"><b style="font-size:19px">${st.best?fmtPace(st.best,1).replace('/km',''):'—'}</b><span>melhor ritmo (min/km)</span></div><div class="st"><b style="font-size:19px">${st.longestMin?fmtDur(st.longestMin):'—'}</b><span>corrida mais longa</span></div><div class="st"><b style="font-size:19px">${st.r5?fmtDur(st.r5):'—'}</b><span>melhor tempo nos 5 km</span></div></div>
+ <div class="card" style="padding:12px 6px 4px"><b style="padding:0 10px;font-size:14px">Km por semana</b>${barsSVG(wk,'km')}</div>
+ ${pacePts.length>=2?`<div class="card" style="padding:12px 6px 4px"><b style="padding:0 10px;font-size:14px">Ritmo (min/km) · quanto menor, mais rápido</b>${chart(pacePts)}</div>`:''}
+ <details class="card"><summary><span>📘 Regras de ouro da corrida</span><span class="chev">▾</span></summary><ol class="steps" style="margin-top:10px">
+  <li><b>Ritmo de conversa:</b> na maioria das corridas, você precisa conseguir falar frases inteiras. Correr devagar é o que constrói a base.</li>
+  <li><b>Regra dos 10%:</b> aumente no máximo uns 10% por semana. A cada 4 semanas, uma semana mais leve.</li>
+  <li><b>Descanso:</b> pelo menos 1 dia entre as corridas no começo. É no descanso que o corpo se adapta.</li>
+  <li><b>Sempre aqueça e desaqueça</b> com 5 min de caminhada.</li>
+  <li><b>Dor:</b> cansaço muscular leve no dia seguinte é normal. Dor pontual, que piora correndo ou te faz mancar: pare e procure um profissional.</li>
+  <li><b>Musculação ajuda:</b> glúteo, quadríceps e panturrilha fortes protegem o joelho e melhoram a corrida.</li>
+  <li><b>Hidratação:</b> em corridas de mais de 1 hora, leve água.</li>
+  <li><b>Tênis:</b> confortável e com amortecimento. Costuma valer trocar a cada 600 a 800 km.</li></ol></details>
+ ${(D.runs||[]).length?'<h3 class="h3">Histórico</h3><div class="card" style="padding:4px 14px">'+[...D.runs].reverse().slice(0,15).map(r=>`<div class="hrow"><div><b style="font-size:14px">${r.ses==='livre'?'Corrida livre':'Nível '+r.lvl+' · treino '+r.ses}</b><div class="small mut">${fmt(r.date)} · ${fmtDur(r.sec)}${r.km?' · '+kmStr(r.km)+' km · '+fmtPace(r.sec,r.km):''} · ${(FEEL.find(f=>f[0]===r.feel)||['','🙂'])[1]}${r.pain!=='nenhuma'?' · dor '+r.pain:''}</div></div><button class="ib del" data-a="runDel" data-id="${r.id}" aria-label="Apagar">×</button></div>`).join('')+'</div>':''}
+ <details class="card"><summary><span>⚙️ Ajustar plano</span><span class="chev">▾</span></summary>
+  <label class="lbl">Nível atual</label><div style="display:flex;gap:8px;align-items:center"><button class="round" data-a="runLvl" data-d="-1">−</button><b style="flex:1;text-align:center">Nível ${p.lvl}</b><button class="round" data-a="runLvl" data-d="1">+</button></div>
+  <label class="lbl">Dias por semana</label><div class="chips">${[2,3,4].map(n=>`<button class="chip ${p.days===n?'on':''}" data-a="runDays" data-n="${n}">${n} dias</button>`).join('')}</div>
+  <button class="btn2 danger" style="margin-top:12px" data-a="runReset">Recomeçar o plano</button></details>`;}
+function vCorrendo(){
+ if(!RUN)return vCorrida();
+ return `<div style="text-align:center;padding-top:8px">
+  <span class="kicker">${esc(RUN.name)}</span>
+  <div id="run-label" class="disp" style="font-size:30px;font-weight:600;margin:16px 0 4px">…</div>
+  <div id="run-left" class="disp" style="font-size:78px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums">0:00</div>
+  <div style="height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin:16px 0 8px"><div id="run-stepbar" style="height:100%;width:0;border-radius:8px"></div></div>
+  <div id="run-next" class="small mut" style="font-weight:600"></div>
+  <div class="card" style="margin-top:18px"><div id="run-km" style="font-size:20px;font-weight:700;color:var(--a)">—</div>
+   <div id="run-total" class="small mut" style="margin-top:4px"></div>
+   <div style="height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:10px"><div id="run-bar" style="height:100%;width:0;background:var(--a);border-radius:6px"></div></div></div>
+  <div class="btnrow"><button class="btn" id="run-pause" data-a="runPause">⏸ Pausar</button><button class="btn2" data-a="runSkip">Pular etapa</button></div>
+  <button class="btn2 danger" style="margin-top:10px" data-a="runStop">Encerrar corrida</button>
+  <button class="small mut" style="margin-top:14px;font-weight:700" data-a="runMute">${RUN.mute?'🔇 Voz desligada':'🔊 Voz ligada'}</button>
+  <p class="small mut" style="margin-top:14px;line-height:1.5">Deixe o app aberto: eu mantenho a tela acesa. Se bloquear o celular, o tempo continua contando, mas a voz e o GPS pausam.</p></div>`;}
+function vCorridaFim(){const e=UI.runEnd;if(!e)return vCorrida();
+ const manual=e.manual;
+ return `<span class="kicker">${manual?'Registrar corrida':'Corrida concluída'}</span><h2 class="disp h2">${manual?'Como foi a corrida?':e.completed?'Arrasou! 🎉':'Bom treino! 💪'}</h2>
+ ${manual?'':`<div class="stats"><div class="st"><b style="font-size:21px">${fmtDur(e.sec)}</b><span>tempo</span></div><div class="st"><b style="font-size:21px">${e.km?kmStr(e.km):'—'}</b><span>km</span></div><div class="st"><b style="font-size:21px">${e.km?fmtPace(e.sec,e.km).replace('/km',''):'—'}</b><span>min/km</span></div></div>`}
+ <div class="card">
+  ${manual?`<div class="row2"><div><label class="lbl" style="margin-top:0">Duração (min)</label><input class="inp" inputmode="numeric" data-i="re.minInput" value="${esc(e.minInput||'')}" placeholder="ex: 30"></div><div><label class="lbl" style="margin-top:0">Distância (km)</label><input class="inp" inputmode="decimal" data-i="re.kmInput" value="${esc(e.kmInput||'')}" placeholder="ex: 3,5"></div></div>
+   <label class="lbl">Completou o treino?</label><div class="chips"><button class="chip ${e.completed?'on':''}" data-a="reDone" data-v="1">Sim, completo</button><button class="chip ${!e.completed?'on':''}" data-a="reDone" data-v="0">Fiz uma parte</button></div>`
+  :(!e.km?`<label class="lbl" style="margin-top:0">Distância (km) <span class="mut" style="font-weight:500">${e.mode==='esteira'?'(veja na esteira)':'(opcional)'}</span></label><input class="inp" inputmode="decimal" data-i="re.kmInput" value="${esc(e.kmInput||'')}" placeholder="ex: 3,5">`:'')}
+  <label class="lbl">Como foi?</label><div class="chips">${FEEL.map(([k,l])=>`<button class="chip ${e.feel===k?'on':''}" data-a="reFeel" data-v="${k}">${l}</button>`).join('')}</div>
+  <label class="lbl">Sentiu alguma dor?</label><div class="chips">${PAIN.map(([k,l])=>`<button class="chip ${e.pain===k?'on':''}" data-a="rePain" data-v="${k}">${l}</button>`).join('')}</div>
+  ${e.pain!=='nenhuma'?`<input class="inp" style="margin-top:8px" data-i="re.painWhere" value="${esc(e.painWhere)}" placeholder="Onde? (ex: joelho direito, canela)">`:''}
+  <label class="lbl">Observação</label><input class="inp" data-i="re.note" value="${esc(e.note)}" placeholder="ex: subida no fim, calor">
+  <button class="btn alt" style="margin-top:14px" data-a="reSave">Salvar corrida</button>
+  ${manual?'':'<button class="btn2" style="margin-top:8px" data-a="reDiscard">Descartar</button>'}</div>`;}
 
 /* ================== SHEET ================== */
 function openSheet(html){const s=document.getElementById('sheet');s.innerHTML=`<div class="backdrop" data-a="close"></div><div class="panel"><div class="grab"></div><button class="x" data-a="close" aria-label="Fechar">×</button>${html}</div>`;s.classList.add('open');document.body.style.overflow='hidden';}
@@ -2344,6 +2554,31 @@ const A={
  pushTest:async()=>{try{const reg=await navigator.serviceWorker.ready;await reg.showNotification('💧 Exemplo de lembrete',{body:'É assim que eu vou te avisar quando faltar algo 😉',icon:'icons/icon-192.png',tag:'teste'});}catch(e){toast('Não consegui mostrar o teste');}},
  pushOff:async()=>{try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe();}catch(e){}
   pushState().on=false;persist();try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'push',uid));}catch(e){}render();toast('Notificações desativadas');},
+ runSetStart:t=>{UI.runSetup.start=t.dataset.k;render();},
+ runSetDays:t=>{UI.runSetup.days=+t.dataset.n;render();},
+ runCreate:()=>{const s=UI.runSetup;D.run={lvl:RUN_START[s.start]||3,days:s.days,start:s.start,done:{},since:today()};persist();UI.runSetup=null;render();window.scrollTo(0,0);toast('Plano criado! Bora pro treino A 🏃‍♀️');},
+ runGo:t=>{const k=t.dataset.k;openSheet(`<h2 class="disp" style="font-size:22px;margin:0 40px 6px 0;font-weight:600">Onde você vai correr?</h2><p class="small mut" style="margin:0 0 12px">Ligue o som: eu vou te guiando por voz 🔊</p>
+  <button class="bigopt" data-a="runMode" data-k="${k}" data-m="rua"><b>🌳 Na rua ou no parque</b><span>Meço a distância e o ritmo pelo GPS. Deixe o app aberto.</span></button>
+  <button class="bigopt" data-a="runMode" data-k="${k}" data-m="esteira"><b>🏃‍♀️ Na esteira</b><span>No fim, você anota a distância que aparece na esteira.</span></button>`);},
+ runMode:t=>{closeSheet();runStart(t.dataset.k,t.dataset.m);},
+ runManual:t=>{const k=t.dataset.k;UI.runEnd={key:k,name:k==='livre'?'Corrida livre':runSession(k).name,mode:'',sec:0,km:null,completed:true,feel:'',pain:'nenhuma',painWhere:'',note:'',kmInput:'',minInput:'',manual:true};go('corrida_fim');},
+ runPause:()=>{if(!RUN)return;if(RUN.paused){RUN.pausedMs+=Date.now()-RUN.pauseT;RUN.paused=false;keepAwake();runSay('Voltando!');}else{RUN.pauseT=Date.now();RUN.paused=true;hush();try{RUN.wl&&RUN.wl.release();}catch(e){}}runTick();},
+ runSkip:()=>{if(!RUN)return;const P=runPos(runElapsed());if(RUN.paused)RUN.pauseT+=P.left*1000;else RUN.t0-=P.left*1000;runTick();},
+ runStop:()=>{if(!RUN)return;if(confirm('Encerrar a corrida agora?'))runFinish(false);},
+ runMute:()=>{if(!RUN)return;RUN.mute=!RUN.mute;if(RUN.mute)hush();render();runTick();},
+ reFeel:t=>{UI.runEnd.feel=t.dataset.v;render();},
+ rePain:t=>{UI.runEnd.pain=t.dataset.v;render();},
+ reDone:t=>{UI.runEnd.completed=t.dataset.v==='1';render();},
+ reSave:()=>{const e=UI.runEnd;if(e.manual){const m=num(e.minInput);if(!m){toast('Coloque quanto tempo durou');return;}e.sec=Math.round(m*60);}
+  if(!e.feel){toast('Conta como foi: fácil, ok ou difícil 😉');return;}
+  UI.runMsgs=runSave(e);UI.runEnd=null;go('corrida');toast('Corrida salva! 🔥');},
+ reDiscard:()=>{if(!confirm('Descartar essa corrida?'))return;UI.runEnd=null;go('corrida');},
+ runDel:t=>{if(!confirm('Apagar essa corrida do histórico?'))return;const r=(D.runs||[]).find(x=>x.id===t.dataset.id);D.runs=(D.runs||[]).filter(x=>x.id!==t.dataset.id);if(r)D.activities=D.activities.filter(a=>a.runId!==r.id);persist();render();},
+ runLvl:t=>{D.run.lvl=Math.max(1,D.run.lvl+(+t.dataset.d));D.run.done={};persist();render();},
+ runDays:t=>{D.run.days=+t.dataset.n;persist();render();},
+ runReset:()=>{if(!confirm('Recomeçar o plano de corrida? Seu histórico continua salvo.'))return;D.run=null;persist();render();},
+ voiceRate:t=>{D.voiceRate=+t.dataset.r;persist();render();},
+ voiceTest:()=>{speakAll(['Oi, '+((D.profile&&D.profile.nome)||'')+'! Bora treinar? Corra por 3 minutos, no ritmo de conversa. Você consegue!'],true);},
  install:async()=>{if(!DEFERRED)return;DEFERRED.prompt();try{await DEFERRED.userChoice;}catch(e){}DEFERRED=null;render();},
  installNo:()=>{D.installDismissed=true;persist();render();},
  ckOpen:()=>{CK=null;go('checkin');},
@@ -2371,6 +2606,7 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
  else if(k.startsWith('gen.m.'))UI.gen.m[k.slice(6)]=v;
  else if(k.startsWith('mea.'))UI.mea[k.slice(4)]=v;
  else if(k==='soc.code')UI.soc.code=v;
+ else if(k.startsWith('re.')){UI.runEnd[k.slice(3)]=v;}
  else if(k.startsWith('rec.n.'))UI.recEdit[+k.slice(6)].n=v;
  else if(k.startsWith('rec.ml.'))UI.recEdit[+k.slice(7)].ml=v;
  else if(k==='soc.gname')UI.soc.gname=v;
@@ -2378,6 +2614,7 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)return;
  if(k==='edit.day')UI.edit.day=el.value;
  else if(k==='prog.ex'){UI.progEx=el.value;render();}
+ else if(k==='voice'){D.voiceName=el.value;persist();speakAll(['Oi! Essa é a minha voz.'],true);}
  else if(k==='act.date')UI.actForm.date=el.value||today();
  else if(k==='import'){const file=el.files&&el.files[0];if(!file)return;const r=new FileReader();
   r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.profile||!Array.isArray(o.workouts))throw 0;if(!confirm('Substituir os dados atuais por esse backup?'))return;D=Object.assign(fresh(),o);persist();PROF=null;UI.view='hoje';render();toast('Backup restaurado!');}catch(err){toast('Arquivo de backup inválido');}};
