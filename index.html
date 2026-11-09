@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.1 · 09/11 12h';
+const APP_VERSION='2.2 · 09/11 12h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -512,7 +512,7 @@ abducao_deitada:{n:'Abdução deitada de lado',g:'gluteo',uni:1,
  x:'Frente do quadril ou lombar.',
  e:['Girar o pé pra cima','Rolar o quadril pra trás'],
  k:'Dá pra fazer em casa. Use caneleira ou elástico pra progredir.'},
-hip_thrust_uni:{n:'Hip thrust unilateral',g:'gluteo',uni:1,
+hip_thrust_uni:{n:'Hip thrust unilateral',g:'gluteo',c:1,uni:1,
  p:['Escápulas apoiadas no banco, como no hip thrust. Um pé no chão e a outra perna no ar, dobrada.','Empurre o chão pelo calcanhar da perna de apoio e suba o quadril.','Mantenha o quadril reto, sem tombar pro lado.','Aperte o glúteo no topo e desça controlando.'],
  s:'Glúteo da perna de apoio trabalhando forte.',
  x:'Lombar ou cãibra no posterior.',
@@ -858,18 +858,34 @@ const PAT={ponte:['hip_thrust','hip_thrust_uni','elevacao_pelvica','elev_pelvica
  coredin:['abdominal_supra','elev_pernas','bicicleta','abd_polia','abd_remador','mountain','russian','elev_joelhos_paralela']};
 Object.entries(EX).forEach(([id,x])=>{x.kf=!KNEE_HEAVY.includes(id);x.eq=Object.keys(EQ).find(k=>EQ[k].includes(id))||'halter';x.pats=Object.keys(PAT).filter(k=>PAT[k].includes(id));});
 const EQL={maquina:'Máquina',polia:'Polia',barra:'Barra',halter:'Halter',kettlebell:'Kettlebell',elastico:'Elástico',corpo:'Peso do corpo'};
-function alternatives(id,reason){const x=EX[id];if(!x)return [];
- const same=new Set();x.pats.forEach(p=>PAT[p].forEach(o=>{if(o!==id)same.add(o);}));
- let list=[...same].concat(Object.keys(EX).filter(o=>o!==id&&!same.has(o)&&EX[o].g===x.g));
- if(id==='vacuo')list=[];
+/* substituto inteligente: o mais parecido em movimento, músculo e mecânica — e que ainda não está na ficha */
+function simScore(a,b){const x=EX[a],y=EX[b];let sc=0;
+ if((x.pats||[]).some(p=>(y.pats||[]).includes(p)))sc+=50;
+ const fx=x.foco||[x.g],fy=y.foco||[y.g];
+ if(fx[0]===fy[0])sc+=22;else if(fy.includes(fx[0])||fx.includes(fy[0]))sc+=10;
+ sc+=Math.min(2,fx.filter(r=>fy.includes(r)).length)*5;
+ if(!!x.uni===!!y.uni)sc+=8;if(!!x.c===!!y.c)sc+=6;if(!!x.iso===!!y.iso)sc+=4;if(x.g===y.g)sc+=5;
+ sc-=(y.tier||3)*2;if((y.tier||3)>=4)sc-=30;return sc;}
+function simWhy(a,b){const x=EX[a],y=EX[b];const t=[];
+ if((x.pats||[]).some(p=>(y.pats||[]).includes(p)))t.push('Mesmo movimento');
+ else if((y.foco||[])[0]===(x.foco||[])[0])t.push('Mesmo foco: '+(REG[y.foco[0]]||GROUPS[y.g]));
+ else t.push('Trabalha '+(REG[(y.foco||[])[0]]||GROUPS[y.g]).toLowerCase());
+ if(x.uni&&y.uni)t.push('também unilateral');
+ return t.join(' · ');}
+function alternatives(id,reason,exclude){const x=EX[id];if(!x||id==='vacuo')return [];
+ const ex=new Set(exclude||[]);
+ let list=Object.keys(EX).filter(o=>o!==id&&!ex.has(o)&&o!=='vacuo');
  if(reason==='joelho')list=list.filter(o=>EX[o].kf);
- if(reason==='lombar')list=list.filter(o=>!LB_HEAVY.includes(o));
- if(reason==='ombro')list=list.filter(o=>!SH_HEAVY.includes(o));
- if(typeof profileCfg==='function'&&D.profile){const pc=profileCfg();list=list.filter(o=>canDo(o,pc));}
- list=list.map((o,i)=>[o,i]).sort((a,b)=>((EX[a[0]].tier>=4)-(EX[b[0]].tier>=4))||a[1]-b[1]).map(z=>z[0]);
- if(reason==='aparelho'){const free=['corpo','halter','elastico'];const heavy=['maquina','polia','barra','kettlebell'].includes(x.eq);
-  if(heavy)list=list.filter(o=>EX[o].eq!==x.eq);const k=o=>(free.includes(EX[o].eq)?0:10)+(same.has(o)?0:1);list=list.map((o,i)=>[o,i]).sort((a,b)=>k(a[0])-k(b[0])||a[1]-b[1]).map(z=>z[0]);}
- return list.slice(0,7);}
+ if(reason==='lombar'&&typeof LB_HEAVY!=='undefined')list=list.filter(o=>!LB_HEAVY.includes(o));
+ if(reason==='ombro'&&typeof SH_HEAVY!=='undefined')list=list.filter(o=>!SH_HEAVY.includes(o));
+ const heavy=['maquina','polia','barra','kettlebell'].includes(x.eq);
+ if(reason==='aparelho'&&heavy)list=list.filter(o=>EX[o].eq!==x.eq);
+ if(typeof profileCfg==='function'&&D.profile){const pc=profileCfg();if(reason==='aparelho')pc.lim=pc.lim||[];list=list.filter(o=>canDo(o,pc));}
+ const free=['corpo','halter','elastico'];
+ const sc=o=>simScore(id,o)+(reason==='aparelho'&&free.includes(EX[o].eq)?12:0);
+ /* só o que é realmente parecido: mesmo movimento ou o mesmo músculo principal */
+ list=list.filter(o=>simScore(id,o)>=28);
+ return list.sort((a,b)=>sc(b)-sc(a)).slice(0,6);}
 
 /* ================== PLANEJADOR (lógica de especialista) ================== */
 /* exercícios extras pra treinar em casa */
@@ -1557,7 +1573,7 @@ function infoHtml(id){const x=EX[id];
  <div class="sec no"><h4>🚫 O que NÃO deveria sentir</h4><p>${x.x}</p></div>
  <div class="sec warn"><h4>⚠️ Erros comuns</h4><ul>${x.e.map(s=>`<li>${s}</li>`).join('')}</ul></div>
  <div class="sec care"><h4>💡 Importante</h4><p>${x.k}</p></div>
- ${alternatives(id,'').length?`<div class="sec"><h4>🔄 Variações e substitutos</h4><div class="chips">${alternatives(id,'').slice(0,6).map(o=>`<button class="chip" style="font-size:12.5px;padding:7px 11px" data-a="info" data-id="${o}">${esc(EX[o].n)}</button>`).join('')}</div></div>`:''}
+ ${alternatives(id,'').length?`<div class="sec"><h4>🔄 Variações e substitutos parecidos</h4><div class="chips">${alternatives(id,'').slice(0,6).map(o=>`<button class="chip" style="font-size:12.5px;padding:7px 11px" data-a="info" data-id="${o}">${esc(EX[o].n)}</button>`).join('')}</div></div>`:''}
  <a class="btn alt" href="${yt(id)}" target="_blank" rel="noopener">▶ Ver vídeo de demonstração</a>
  <p class="small mut" style="text-align:center;margin:12px 0 0">Na dúvida, peça pro professor da academia corrigir sua execução.</p>`;}
 
@@ -2067,7 +2083,10 @@ function pickerHtml(){const added=new Set(UI.edit.items.map(i=>i.exId));
  return `<h2 class="disp" style="font-size:22px;margin:0 40px 12px 0;font-weight:600">Adicionar exercício</h2>`+Object.entries(GROUPS).map(([g,l])=>{const list=Object.entries(EX).filter(([id,x])=>x.g===g);
   return `<h3 class="h3" style="margin-top:14px">${l}</h3>`+list.map(([id,x])=>`<button class="li" data-a="pick" data-id="${id}"><span><b>${esc(x.n)}</b><span>${rec(id)}</span></span><span class="tag">${added.has(id)?'✓ no treino':'+ adicionar'}</span></button>`).join('');}).join('');}
 
-function swapHtml(){const sw=UI.swap;const x=EX[sw.exId];const alts=alternatives(sw.exId,sw.reason||'');
+function swapHtml(){const sw=UI.swap;const x=EX[sw.exId];
+ const inSheet=(sw.ctx==='builder'?(UI.edit?UI.edit.items:[]):((D.workouts.find(w=>w.id===UI.sessionId)||{}).items||[])).map(i=>i.exId);
+ const alts=alternatives(sw.exId,sw.reason||'',inSheet);
+ const lost=sw.reason==='joelho'&&!x.kf||sw.reason==='lombar'&&LB_HEAVY.includes(sw.exId)||sw.reason==='ombro'&&SH_HEAVY.includes(sw.exId);
  const R=[['joelho','🦵 Incomoda o joelho'],['lombar','🔙 Incomoda a lombar'],['ombro','💪 Incomoda o ombro'],['dor','🤕 Outra dor ou desconforto'],['aparelho','🏋️ Sem aparelho ou ocupado'],['gosto','🙅‍♀️ Não gosto / quero variar']];
  return `<span class="kicker">Trocar exercício</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">${esc(x.n)}</h2>
  <label class="lbl" style="margin-top:0">Por que você quer trocar?</label>
@@ -2077,8 +2096,10 @@ function swapHtml(){const sw=UI.swap;const x=EX[sw.exId];const alts=alternatives
  ${sw.reason==='ombro'?'<div class="info" style="margin-top:10px">Tirei as opções com braço acima da cabeça ou que forçam o ombro 💛 Se a dor continuar, procure um profissional.</div>':''}
  ${sw.reason==='dor'?'<div class="info" style="margin-top:10px">Escolha uma opção que não doa e use carga leve 💛 Se a dor for forte ou continuar, pare e procure um profissional.</div>':''}
  ${sw.reason==='aparelho'?'<div class="info" style="margin-top:10px">Priorizei opções com peso do corpo, halter ou elástico.</div>':''}
- <h3 class="h3" style="margin-top:14px">Pode trocar por:</h3>
- ${alts.length?alts.map(o=>`<div class="it"><div class="nm"><b>${esc(EX[o].n)}</b><span class="small mut">${EQL[EX[o].eq]}${EX[o].kf?'':' · exige do joelho'}</span></div><button class="ib" data-a="info" data-id="${o}" aria-label="Como fazer">?</button><button class="mini o" data-a="swapDo" data-id="${o}">Trocar</button></div>`).join(''):'<div class="empty">Não achei um substituto parecido. Que tal tirar do treino hoje?</div>'}
+ <h3 class="h3" style="margin-top:14px">Mais parecidos com ${esc(x.n.toLowerCase())}:</h3>
+ ${lost&&alts.length&&!alts.some(o=>(EX[o].pats||[]).some(p=>(x.pats||[]).includes(p)))?`<p class="small mut" style="margin:-4px 0 10px">Os exercícios do mesmo tipo também ${sw.reason==='joelho'?'exigem do joelho':sw.reason==='lombar'?'carregam a lombar':'forçam o ombro'}, então estes são os mais próximos que trabalham ${esc((REG[x.foco[0]]||GROUPS[x.g]).toLowerCase())} sem esse incômodo.</p>`:''}
+ ${alts.length?alts.map(o=>`<div class="it"><div class="nm"><b>${esc(EX[o].n)}</b><span class="small mut">${simWhy(sw.exId,o)} · ${EQL[EX[o].eq]}</span></div><button class="ib" data-a="info" data-id="${o}" aria-label="Como fazer">?</button><button class="mini o" data-a="swapDo" data-id="${o}">Trocar</button></div>`).join(''):(sw.reason==='joelho'&&EX[sw.exId].foco[0]==='quad'?'<div class="info">Pra quadríceps, todos os exercícios exigem do joelho. O melhor caminho é um fisioterapeuta ou profissional de educação física ajustar carga e amplitude pra você 💛 Por enquanto, tire esse exercício hoje e foque nos outros.</div>':'<div class="empty">Não achei um substituto parecido que ainda não esteja no seu treino. Se preferir, tire esse exercício hoje.</div>')}
+ ${inSheet.length>1?'<p class="small mut" style="text-align:center;margin:10px 0 0">Não sugiro exercícios que já estão nesse treino.</p>':''}
  <p class="small mut" style="text-align:center;margin:10px 0 0">A troca fica salva no treino. Dá pra destrocar quando quiser.</p>`;}
 
 /* ================== AÇÕES ================== */
