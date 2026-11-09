@@ -17,6 +17,8 @@
 <style>
 :root{--a:#0F4C45;--a2:#E8633A;--bg:#FAF6EF;--ink:#1d2522;--mut:#87938e;--line:#ece6da;--soft:#fbfaf7;--card:#fff;--a2soft:#fff1ea;--asoft:#e6efed;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html.dark{--bg:#0b1311;--ink:#eaf1ed;--mut:#8ea29a;--line:#22312d;--soft:#131e1b;--card:#121c19;--a:#5cc2b0;--asoft:#17302b}
+html.dark .btn:not(.alt){background:#1d6b5f;color:#fff}html.dark .btn2{background:#16231f;color:var(--ink);border-color:#2a3a35}html.dark .ibtn{background:#16231f;color:var(--a);box-shadow:none}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px}
 button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;padding:0}
 a{color:inherit}
@@ -135,6 +137,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .st b{display:block;font-size:25px;font-family:'Fraunces',serif;color:var(--a);font-weight:600}
 .st span{font-size:11.5px;color:var(--mut);font-weight:600}
 .hrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.hrow>div:first-child{flex:1;min-width:0}
 .bar{height:12px;border-radius:12px;background:rgba(255,255,255,.18);overflow:hidden}
 .barfill{height:100%;background:var(--a2);border-radius:12px;transition:width .5s}
 .cups{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
@@ -178,7 +181,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='3.3 · 09/11 15h';
+const APP_VERSION='3.4 · 09/11 16h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1297,6 +1300,7 @@ function render(){
  const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
  const noNav=UI.view==='correndo'||UI.view==='corrida_fim';
+ document.documentElement.classList.toggle('dark',UI.view==='correndo');try{document.querySelector('meta[name=theme-color]').content=UI.view==='correndo'?'#0b1311':'#FAF6EF';}catch(e){}
  app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():noNav?'':nav());
  if(isCk)ckScroll();
 }
@@ -1341,7 +1345,7 @@ function vHoje(){
  if(todays.length){
   treinoHtml=todays.map(w=>{const done=D.activities.some(a=>a.date===t&&a.workoutId===w.id);
    return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">${esc(w.name)}</h3><p class="mut small" style="margin:0 0 12px">${w.items.length} exercícios</p>
-   ${done?`<button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button>`}</div>`;}).join('');
+   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button>`}</div>`;}).join('');
  }else{
   treinoHtml=`<div class="card"><span class="kicker">Hoje</span><p style="margin:6px 0 12px;font-weight:600">${weekend?'Fim de semana 🌿 Descanso ou uma atividade leve.':'Nenhum treino marcado pra hoje.'}</p>
   <div class="btnrow" style="margin-top:0">${D.workouts.length?'<button class="btn sm" data-a="go" data-v="treinos">Escolher treino</button>':'<button class="btn sm alt" data-a="genOpen">✨ Monte pra mim</button>'}<button class="btn2" style="padding:11px" data-a="go" data-v="atividades">Outra atividade</button></div></div>`;
@@ -1692,7 +1696,7 @@ function vAtiv(){
   <label class="lbl">Observação</label><input class="inp" data-i="act.note" value="${esc(f.note)}" placeholder="ex: 5 km no parque">
   <div class="btnrow"><button class="btn" data-a="saveAct">Salvar</button><button class="btn2" data-a="cancelAct">Cancelar</button></div></div>`:''}
  <h3 class="h3">Histórico</h3>
- ${sorted.length?'<div class="card" style="padding:4px 14px">'+sorted.map(a=>{const t=ACTM[a.type]||ACTM.outro;return `<div class="hrow"><div><b style="font-size:14px">${t[2]} ${esc(a.name||t[1])}</b><div class="small mut">${fmt(a.date)}${a.period?' · '+a.period:''}${a.minutes?' · '+a.minutes+' min':''}${a.intensity?' · '+a.intensity:''}${a.note?' · '+esc(a.note):''}</div></div><button class="ib del" data-a="delAct" data-id="${a.id}" aria-label="Apagar">×</button></div>`;}).join('')+'</div>':'<div class="card empty">Nenhuma atividade ainda. Bora registrar a primeira? 💪</div>'}`;
+ ${sorted.length?'<div class="card" style="padding:4px 14px">'+sorted.map(a=>{const t=ACTM[a.type]||ACTM.outro;return `<div class="hrow"><div><b style="font-size:14px">${t[2]} ${esc(a.name||t[1])}</b><div class="small mut">${fmt(a.date)}${a.period?' · '+a.period:''}${a.minutes?' · '+a.minutes+' min':''}${a.intensity?' · '+a.intensity:''}${a.note?' · '+esc(a.note):''}</div></div>${a.type!=='corrida'?`<button class="ib" data-a="shareAct" data-id="${a.id}" aria-label="Card pra foto">📸</button>`:''}<button class="ib del" data-a="delAct" data-id="${a.id}" aria-label="Apagar">×</button></div>`;}).join('')+'</div>':'<div class="card empty">Nenhuma atividade ainda. Bora registrar a primeira? 💪</div>'}`;
 }
 
 /* ---------- Progresso ---------- */
@@ -2458,7 +2462,7 @@ function vCorrendo(){
   <div class="btnrow"><button class="btn" id="run-pause" data-a="runPause">⏸ Pausar</button><button class="btn2" data-a="runSkip">Pular etapa</button></div>
   <button class="btn2 danger" style="margin-top:10px" data-a="runStop">Encerrar corrida</button>
   <button class="small mut" style="margin-top:14px;font-weight:700" data-a="runMute">${RUN.mute?'🔇 Voz desligada':'🔊 Voz ligada'}</button>
-  <p class="small mut" style="margin-top:14px;line-height:1.5">Deixe o app aberto: eu mantenho a tela acesa. Se bloquear o celular, o tempo continua contando, mas a voz e o GPS pausam.</p></div>`;}
+  <p class="small mut" style="margin-top:14px;line-height:1.5">Deixe o app aberto: eu mantenho a tela acesa, no modo escuro, que gasta menos bateria. Dica: abaixe o brilho. Se bloquear o celular, o tempo continua contando, mas a voz e o GPS pausam.</p></div>`;}
 function vCorridaFim(){const e=UI.runEnd;if(!e)return vCorrida();
  const manual=e.manual;
  return `<span class="kicker">${manual?'Registrar corrida':'Corrida concluída'}</span><h2 class="disp h2">${manual?'Como foi a corrida?':e.completed?'Arrasou! 🎉':'Bom treino! 💪'}</h2>
@@ -2473,6 +2477,75 @@ function vCorridaFim(){const e=UI.runEnd;if(!e)return vCorrida();
   <label class="lbl">Observação</label><input class="inp" data-i="re.note" value="${esc(e.note)}" placeholder="ex: subida no fim, calor">
   <button class="btn alt" style="margin-top:14px" data-a="reSave">Salvar corrida</button>
   ${manual?'':'<button class="btn2" style="margin-top:8px" data-a="reDiscard">Descartar</button>'}</div>`;}
+
+/* ================== CARD PRA COLAR NA FOTO (musculação e outras atividades) ================== */
+const SHARE_F={gym:[['tempo','Tempo'],['exercicios','Exercícios'],['series','Séries'],['volume','Volume'],['recordes','Recordes'],['sequencia','Sequência'],['lista','Lista de exercícios'],['data','Data']],
+ act:[['tempo','Tempo'],['km','Distância'],['intensidade','Intensidade'],['sequencia','Sequência'],['data','Data']]};
+const SHARE_DEF={gym:['tempo','exercicios','volume','lista','data'],act:['tempo','km','intensidade','data']};
+function shareInfo(a){const t=ACTM[a.type]||ACTM.outro;const recent=(Date.now()-new Date(a.date+'T12:00:00'))<2*864e5;const sq=streak();
+ const o={kind:a.type==='musculacao'?'gym':'act',title:a.name||t[1],date:a.date,f:{},lines:[]};
+ if(a.minutes)o.f.tempo={l:'Tempo',v:a.minutes+' min',big:String(a.minutes),u:'min'};
+ if(recent&&sq>1)o.f.sequencia={l:'Sequência',v:'🔥 '+sq+' dias'};
+ o.f.data={};
+ if(o.kind==='gym'){const w=D.workouts.find(x=>x.id===a.workoutId);let vol=0,series=0,ex=0,pr=0;
+  (w?w.items:[]).forEach(it=>{const list=D.history[it.exId]||[];const h=list.find(e=>e.date===a.date);if(!h)return;const n=nSets(it.sets);ex++;series+=n;vol+=(h.weight||0)*(h.reps||0)*n;
+   const prev=list.filter(e=>e.date<a.date).map(e=>e.weight||0);if(prev.length&&h.weight>Math.max(...prev))pr++;
+   o.lines.push(`${EX[it.exId]?EX[it.exId].n:it.exId}  ·  ${nf(h.weight)} kg${h.reps?' × '+h.reps:''}`);});
+  if(!ex&&w){ex=w.items.length;series=w.items.reduce((s,it)=>s+nSets(it.sets),0);o.lines=w.items.map(it=>EX[it.exId]?EX[it.exId].n:it.exId);}
+  if(ex)o.f.exercicios={l:'Exercícios',v:String(ex),big:String(ex),u:ex===1?'exercício':'exercícios'};
+  if(series)o.f.series={l:'Séries',v:String(series)};
+  if(vol)o.f.volume={l:'Volume total',v:Math.round(vol).toLocaleString('pt-BR')+' kg'};
+  if(pr)o.f.recordes={l:'Recordes',v:'🏆 '+pr};
+  if(o.lines.length)o.f.lista={};}
+ else{if(a.km)o.f.km={l:'Distância',v:nf(a.km,2)+' km',big:nf(a.km,2),u:'km'};
+  if(a.intensity)o.f.intensidade={l:'Intensidade',v:a.intensity[0].toUpperCase()+a.intensity.slice(1)};
+  o.f.tipo={l:'Atividade',v:t[1]};}
+ return o;}
+function fitFont(x,txt,max,min,weight,fam,w){let fs=max;do{x.font=weight+' '+fs+'px '+fam;fs-=2;}while(x.measureText(txt).width>w&&fs>min);}
+async function makeCard(d,sel,style,photo){
+ try{await document.fonts.ready;}catch(e){}
+ const has=k=>sel.includes(k)&&d.f[k];
+ const bigK=['tempo','km','exercicios'].find(k=>has(k)&&d.f[k].big);const big=bigK?d.f[bigK]:null;
+ const stats=['tempo','km','exercicios','series','volume','recordes','intensidade','sequencia'].filter(k=>has(k)&&k!==bigK).map(k=>d.f[k]);
+ const lines=has('lista')?d.lines.slice(0,style==='sticker'?5:6):[];const rows=Math.ceil(stats.length/3);
+ const SANS='"DM Sans", system-ui, sans-serif',SERIF='"Fraunces", Georgia, serif';
+ const contentH=80+(big?250:0)+rows*130+(lines.length?20+lines.length*52:0);
+ const W=1080,H=style==='sticker'?Math.max(420,60+110+contentH+30):1920;
+ const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const ink='#FFFFFF',acc='#E8633A';
+ if(style==='cor'){const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0F4C45');g.addColorStop(1,'#08302B');x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.globalAlpha=.08;x.fillStyle=acc;x.beginPath();x.arc(W*.85,H*.12,420,0,7);x.fill();x.globalAlpha=1;}
+ if(style==='foto'&&photo){const r=Math.max(W/photo.width,H/photo.height);const pw=photo.width*r,ph=photo.height*r;x.drawImage(photo,(W-pw)/2,(H-ph)/2,pw,ph);
+  const g=x.createLinearGradient(0,H-contentH-500,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.8)');x.fillStyle=g;x.fillRect(0,0,W,H);
+  const t=x.createLinearGradient(0,0,0,260);t.addColorStop(0,'rgba(0,0,0,.45)');t.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=t;x.fillRect(0,0,W,260);}
+ if(style!=='cor'){x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=16;x.shadowOffsetY=3;}
+ const top=style==='sticker'?60:110;
+ x.fillStyle=ink;x.font='700 36px '+SANS;x.fillText('🔥  MEU TREINO',80,top+30);
+ if(has('data')){x.font='500 32px '+SANS;x.globalAlpha=.85;x.textAlign='right';x.fillText(new Date(d.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),W-80,top+30);x.textAlign='left';x.globalAlpha=1;}
+ let y=style==='sticker'?top+110:H-110-contentH;
+ if(style==='cor'){const sz=Math.min(380,y-top-160);if(sz>140){x.save();x.translate(W/2-sz/2,top+80+(y-top-80-sz)/2);x.scale(sz/24,sz/24);x.strokeStyle=acc;x.lineWidth=1.7;x.lineCap='round';x.lineJoin='round';
+  x.stroke(new Path2D(d.kind==='gym'?'M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11':'M3 12h4l3-8 4 16 3-8h4'));x.restore();}}
+ x.fillStyle=ink;fitFont(x,d.title,58,30,600,SERIF,W-160);x.fillText(d.title,80,y+50);y+=80;
+ if(big){x.font='600 250px '+SERIF;const bw=x.measureText(big.big).width;x.fillText(big.big,72,y+210);x.font='600 64px '+SANS;x.fillStyle=acc;x.fillText(big.u,72+bw+24,y+210);x.fillStyle=ink;y+=250;}
+ const cw=(W-160)/3;stats.forEach((s,i)=>{const sx=80+(i%3)*cw,sy=y+Math.floor(i/3)*130+40;x.globalAlpha=.75;x.font='700 28px '+SANS;x.fillText(s.l.toUpperCase(),sx,sy);x.globalAlpha=1;fitFont(x,s.v,54,30,700,SANS,cw-20);x.fillText(s.v,sx,sy+64);});
+ y+=rows*130;
+ if(lines.length){y+=20;x.font='500 36px '+SANS;lines.forEach(l=>{let t=l;while(x.measureText('•  '+t).width>W-160&&t.length>8)t=t.slice(0,-2);if(t!==l)t=t.trim()+'…';x.globalAlpha=.92;x.fillText('•  '+t,80,y+38);x.globalAlpha=1;y+=52;});}
+ x.shadowColor='transparent';return c;}
+let SHARE=null;
+function shareOpen(a){const d=shareInfo(a);D.shareSel=D.shareSel||{};const def=D.shareSel[d.kind]||SHARE_DEF[d.kind];
+ SHARE={d,sel:def.slice(),style:'sticker',photo:null,url:''};shareRender();}
+async function shareRender(){const S=SHARE;if(!S)return;const c=await makeCard(S.d,S.sel,S.style,S.photo);S.canvas=c;S.url=c.toDataURL('image/png');
+ const pnl=document.querySelector('#sheet .panel');const sc=pnl?pnl.scrollTop:0;
+ const avail=SHARE_F[S.d.kind].filter(([k])=>S.d.f[k]);
+ openSheet(`<span class="kicker">Pra colar na foto</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">Seu card 📸</h2>
+ <div class="chips" style="margin-bottom:12px">${[['sticker','✨ Sticker transparente'],['cor','🎨 Card colorido']].map(([k,l])=>`<button class="chip ${S.style===k?'on':''}" data-a="shareStyle" data-s="${k}">${l}</button>`).join('')}<label class="chip ${S.style==='foto'?'on':''}" style="cursor:pointer">🖼️ Na minha foto<input type="file" accept="image/*" data-c="sharePhoto" style="display:none"></label></div>
+ <div style="border-radius:16px;overflow:hidden;background:${S.style==='sticker'?'repeating-conic-gradient(#56625e 0 25%,#4a5551 0 50%) 0 0/22px 22px':'var(--soft)'};margin-bottom:12px"><img src="${S.url}" alt="Prévia do card" style="width:100%;display:block;${S.style==='sticker'?'':'max-height:60vh;object-fit:contain'}"></div>
+ <div class="btnrow" style="margin-top:0">${S.style==='sticker'?'<button class="btn alt sm" data-a="shareCopy">📋 Copiar</button>':''}<button class="btn ${S.style==='sticker'?'':'alt '}sm" data-a="shareGo">📤 Enviar</button><button class="btn2" style="padding:10px" data-a="shareSave">⬇️ Salvar</button></div>
+ ${S.style==='sticker'?'<p class="small mut" style="margin:8px 0 0">Toque em <b>Copiar</b>, abra o story do Instagram com a sua foto e toque na tela pra <b>Colar</b>. O fundo é transparente, só os números aparecem.</p>':''}
+ <label class="lbl">O que aparece no card</label>
+ <div class="chips">${avail.map(([k,l])=>`<button class="chip ${S.sel.includes(k)?'on':''}" data-a="shareField" data-k="${k}">${S.sel.includes(k)?'✓ ':''}${l}</button>`).join('')}</div>
+ <label class="lbl">Título</label><input class="inp" data-c="shareTitle" value="${esc(S.d.title)}" maxlength="40">`);
+ const p2=document.querySelector('#sheet .panel');if(p2)p2.scrollTop=sc;}
+const cardBlob=()=>new Promise(res=>SHARE.canvas.toBlob(b=>res(b),'image/png'));
 
 /* ================== SHEET ================== */
 function openSheet(html){const s=document.getElementById('sheet');s.innerHTML=`<div class="backdrop" data-a="close"></div><div class="panel"><div class="grab"></div><button class="x" data-a="close" aria-label="Fechar">×</button>${html}</div>`;s.classList.add('open');document.body.style.overflow='hidden';}
@@ -2702,6 +2775,13 @@ const A={
  reSave:()=>{const e=UI.runEnd;if(e.manual){const m=num(e.minInput);if(!m){toast('Coloque quanto tempo durou');return;}e.sec=Math.round(m*60);}
   if(!e.feel){toast('Conta como foi: fácil, ok ou difícil 😉');return;}
   UI.runMsgs=runSave(e);UI.runEnd=null;go('corrida');toast('Corrida salva! 🔥');},
+ shareAct:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(a)shareOpen(a);},
+ shareStyle:t=>{SHARE.style=t.dataset.s;shareRender();},
+ shareField:t=>{const k=t.dataset.k,S=SHARE;S.sel=S.sel.includes(k)?S.sel.filter(x=>x!==k):S.sel.concat(k);D.shareSel=D.shareSel||{};D.shareSel[S.d.kind]=S.sel.slice();persist();shareRender();},
+ shareGo:async()=>{const b=await cardBlob();const f=new File([b],'meu-treino.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});}catch(e){}}else A.shareSave();},
+ shareCopy:async()=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':cardBlob()})]);toast('Copiado! Agora cole no story 📋');}catch(e){toast('Seu celular não deixou copiar. Use Compartilhar 😉');}},
+ shareSave:()=>{const a=document.createElement('a');a.href=SHARE.url;a.download='meu-treino-'+SHARE.d.date+'.png';document.body.appendChild(a);a.click();a.remove();},
  reDiscard:()=>{if(!confirm('Descartar essa corrida?'))return;UI.runEnd=null;go('corrida');},
  runDel:t=>{if(!confirm('Apagar essa corrida do histórico?'))return;const r=(D.runs||[]).find(x=>x.id===t.dataset.id);D.runs=(D.runs||[]).filter(x=>x.id!==t.dataset.id);if(r)D.activities=D.activities.filter(a=>a.runId!==r.id);persist();render();},
  runLvl:t=>{D.run.lvl=Math.max(1,D.run.lvl+(+t.dataset.d));D.run.done={};persist();render();},
@@ -2747,6 +2827,8 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)re
  else if(k==='prog.ex'){UI.progEx=el.value;render();}
  else if(k==='bioFile'){const file=el.files&&el.files[0];const tg=el.dataset.t;if(!file)return;UI.bio={t:tg,loading:true};render();
   ocrImage(file).then(txt=>{const f=parseBio(txt);UI.bio={t:tg,found:f};bioApply(tg,f);render();}).catch(()=>{UI.bio={t:tg,err:'Não consegui ler a foto agora. Confere a internet ou use "Falar os números".'};render();});}
+ else if(k==='sharePhoto'){const file=el.files&&el.files[0];if(!file||!SHARE)return;const img=new Image();img.onload=()=>{SHARE.photo=img;SHARE.style='foto';shareRender();};img.src=URL.createObjectURL(file);}
+ else if(k==='shareTitle'){if(SHARE){SHARE.d.title=el.value.trim()||SHARE.d.title;shareRender();}}
  else if(k==='voice'){D.voiceName=el.value;persist();speakAll(['Oi! Essa é a minha voz.'],true);}
  else if(k==='act.date')UI.actForm.date=el.value||today();
  else if(k==='import'){const file=el.files&&el.files[0];if(!file)return;const r=new FileReader();

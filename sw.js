@@ -1,5 +1,5 @@
 /* Meu Treino — funciona offline e se atualiza sozinho quando há internet */
-const CACHE = 'meutreino-v20';
+const CACHE = 'meutreino-v21';
 const CORE = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
