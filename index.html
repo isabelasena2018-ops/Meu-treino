@@ -181,7 +181,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='3.5 · 09/11 16h';
+const APP_VERSION='3.6 · 09/11 17h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1325,7 +1325,7 @@ function vOnb(){
  </div>
  <h3 class="h3">Como você quer começar?</h3>
  <button class="bigopt" data-a="onbStart" data-m="gen" style="border-color:var(--a2)"><b>✨ Monte meu treino pra mim</b><span>Me conta seu foco (glúteo, barriga, braço…), quantos dias você treina e sua experiência que eu monto a semana inteira. Medidas são opcionais.</span></button>
- <button class="bigopt" data-a="onbStart" data-m="zero"><b>🛠️ Quero montar eu mesma</b><span>Você escolhe os exercícios e eu te ajudo com séries e repetições. Dá pra pedir o treino pronto depois, a qualquer momento.</span></button>
+ <button class="bigopt" data-a="onbStart" data-m="zero"><b>🛠️ Quero montar do meu jeito</b><span>Você escolhe os exercícios e eu te ajudo com séries e repetições. Dá pra pedir o treino pronto depois, a qualquer momento.</span></button>
  <p class="small mut" style="text-align:center;margin-top:14px">Seus treinos, peso e comida ficam salvos só neste celular. Pra criadora do app saber quem está usando, seu <b>nome</b> e <b>quando você usou</b> ficam visíveis pra ela. Dá pra desligar isso no Perfil.</p>
  </main>`;
 }
@@ -1683,7 +1683,7 @@ function infoHtml(id){const x=EX[id];
 function vAtiv(){
  const f=UI.actForm;const wk=weekDates();
  const sorted=[...D.activities].sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0)).slice(0,40);
- return `<span class="kicker">Estilo GymRats</span><h2 class="disp h2">Atividades</h2>
+ return `<span class="kicker">Seu movimento</span><h2 class="disp h2">Atividades</h2>
  <button class="ckcard" data-a="go" data-v="corrida"><span class="em">🏃‍♀️</span><span><b>${D.run?'Plano de corrida · nível '+D.run.lvl:'Plano de corrida'}</b><span>${D.run?'Próximo: treino '+nextRunKey()+' · '+esc(runSession(nextRunKey()).name):'Do seu nível até onde você quiser ir, com corrida guiada por voz.'}</span></span></button>
  <div class="stats"><div class="st"><b>🔥${streak()}</b><span>dias seguidos</span></div><div class="st"><b>${activeDaysIn(wk)}</b><span>dias na semana</span></div><div class="st"><b>${monthCount()}</b><span>dias no mês</span></div></div>
  <h3 class="h3" style="margin-top:6px">Registrar atividade</h3>
@@ -2157,11 +2157,21 @@ async function socLoad(){
   await syncSocial(true);
   const {db,f}=await fb();const G=curG();if(!G)throw new Error('nogroup');const g=G.id;S.gid=g;
   const [ps,ms]=await Promise.all([f.getDocs(f.query(f.collection(db,'groups',g,'posts'),f.orderBy('ts','desc'),f.limit(40))),f.getDocs(f.collection(db,'groups',g,'members'))]);
-  S.posts=ps.docs.map(d=>Object.assign({id:d.id},d.data()));
-  S.members=ms.docs.map(d=>Object.assign({uid:d.id},d.data())).sort((a,b)=>(b.streak||0)-(a.streak||0));
+  S.posts=ps.docs.map(d=>cleanPost(Object.assign({id:d.id},d.data())));
+  S.members=ms.docs.map(d=>cleanMember(Object.assign({uid:d.id},d.data()))).sort((a,b)=>(b.streak||0)-(a.streak||0));
  }catch(e){S.err=e&&e.message==='noconfig'?'O grupo ainda não foi configurado.':'Não consegui carregar agora. Confere sua internet e tenta de novo.';}
  S.loading=false;if(UI.view==='turma')render();}
 function dayLabel(d){if(d===today())return 'Hoje';const y=new Date();y.setDate(y.getDate()-1);if(d===keyOf(y))return 'Ontem';return fmt(d);}
+/* Dados que vêm de outras pessoas (grupos, painel) passam por aqui antes de aparecer na tela: só números, datas e reações válidas */
+const sNum=v=>{if(v==null||v==='')return null;const n=Number(v);return isFinite(n)?n:null;};
+const sDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v:'';
+function cleanPost(p){const o=Object.assign({},p,{date:sDate(p.date),streak:sNum(p.streak),week:sNum(p.week),name:String(p.name||''),emoji:String(p.emoji||'').slice(0,8),
+  acts:Array.isArray(p.acts)?p.acts.slice(0,10).map(a=>({t:String(a&&a.t||''),n:String(a&&a.n||'').slice(0,60),m:sNum(a&&a.m),k:sNum(a&&a.k)})):undefined,
+  reactions:Object.fromEntries(Object.entries(p.reactions||{}).filter(([k,v])=>REACTS.includes(v))),comida:['bem','meio','nao'].includes(p.comida)?p.comida:null});
+ if(p.rotina&&typeof p.rotina==='object'){const r=p.rotina,r2={agua:sNum(r.agua),meta:sNum(r.meta),ml:!!r.ml};SUPPS.forEach(x=>{if(x.k in r)r2[x.k]=!!r[x.k];});o.rotina=r2;}else o.rotina=null;
+ return o;}
+function cleanMember(m){return Object.assign({},m,{name:String(m.name||''),emoji:String(m.emoji||'').slice(0,8),streak:sNum(m.streak),week:sNum(m.week),lastActive:sDate(m.lastActive)});}
+function cleanUser(u){return Object.assign({},u,{name:String(u.name||''),lastSeen:sNum(u.lastSeen)||0,acts:sNum(u.acts),days30:sNum(u.days30),streak:sNum(u.streak),since:sDate(u.since),installed:!!u.installed,inGroup:!!u.inGroup});}
 function postHtml(p){
  const me=FB&&FB.uid;const L=[];
  (p.acts||[]).forEach(a=>{const t=ACTM[a.t]||ACTM.outro;L.push(`<div style="font-weight:700;font-size:15px">${t[2]} ${esc(a.n||t[1])}${a.m?' · '+a.m+' min':''}${a.k?' · '+String(a.k).replace('.',',')+' km':''}</div>`);});
@@ -2245,7 +2255,7 @@ function vAdmin(){
   :'<div class="card empty">Ninguém por aqui ainda.</div>')}
  <p class="small mut" style="text-align:center">Aparece só nome e uso geral. Peso, medidas, comida e detalhes dos treinos não. Cada pessoa pode desligar isso no Perfil dela.</p>`;}
 async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='';render();
- try{await syncUsage(true);const {db,f}=await fb();const q=await f.getDocs(f.collection(db,'users'));S.list=q.docs.map(d=>Object.assign({uid:d.id},d.data())).sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));}
+ try{await syncUsage(true);const {db,f}=await fb();const q=await f.getDocs(f.collection(db,'users'));S.list=q.docs.map(d=>cleanUser(Object.assign({uid:d.id},d.data()))).sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));}
  catch(e){S.err='Não consegui carregar. Confira se as regras novas do Firebase foram publicadas e se você está com internet.';}
  S.loading=false;if(UI.view==='admin')render();}
 
