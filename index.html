@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='3.2 · 09/11 15h';
+const APP_VERSION='3.3 · 09/11 15h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1577,7 +1577,7 @@ function vGerador(){
   <label class="lbl">Alguma dor ou lesão que incomoda?</label>
   <div class="chips">${chip(g.lim.includes('joelho'),'genLim','data-v="joelho"','🦵 Joelho')}${chip(g.lim.includes('lombar'),'genLim','data-v="lombar"','🔙 Lombar')}${chip(g.lim.includes('ombro'),'genLim','data-v="ombro"','💪 Ombro')}${chip(!g.lim.length,'genLim','data-v="nada"','Nada')}</div>
   ${g.lim.length?'<p class="small mut" style="margin:8px 0 0">Vou deixar de fora os exercícios que mais sobrecarregam essa região. Se a dor não passa, vale passar com um médico ou fisioterapeuta.</p>':''}</div>`+nav();}
- if(g.step===3){const subs=g.foci.filter(k=>AREAS[k]&&AREAS[k].sub.length).map(k=>`<div style="margin-top:10px"><span class="small mut" style="font-weight:700">${AREAS[k].e} No ${AREAS[k].l.toLowerCase()}, quer focar mais em:</span><div class="chips" style="margin-top:6px">${AREAS[k].sub.map(([v,l])=>chip((g.sub[k]||'todo')===v,'genSub',`data-k="${k}" data-v="${v}"`,l)).join('')}</div></div>`).join('');
+ if(g.step===3){const subs=g.foci.filter(k=>AREAS[k]&&AREAS[k].sub.length).map(k=>`<div style="margin-top:10px"><span class="small mut" style="font-weight:700">${AREAS[k].e} ${({gluteo:'No glúteo',pernas:'Nas pernas',costas:'Nas costas',braco:'Nos braços',ombro:'Nos ombros',peito:'No peito',barriga:'Na barriga'})[k]||'Em '+AREAS[k].l.toLowerCase()}, quer focar mais em:</span><div class="chips" style="margin-top:6px">${AREAS[k].sub.map(([v,l])=>chip((g.sub[k]||'todo')===v,'genSub',`data-k="${k}" data-v="${v}"`,l)).join('')}</div></div>`).join('');
   return head(3,'Seu objetivo 🎯')+`<div class="card">
   <label class="lbl" style="margin-top:0">Objetivo principal</label><div class="chips">${Object.entries(OBJ).map(([k,o])=>chip(g.obj===k,'genObj',`data-k="${k}"`,o.l)).join('')}</div>
   ${g.obj==='emagrecer'?`<label class="lbl">Sua meta <span class="mut" style="font-weight:500">(preencha uma ou nenhuma)</span></label><div class="row2">${inp('metaPeso','Peso meta (kg)','ex: 70')}${inp('metaGordura','% de gordura meta','ex: 25')}</div>`:''}
@@ -1880,7 +1880,7 @@ function ckNeedFix(rec){if(!rec)return;CK.fix=CK.fix||[];if(!CK.fix.includes(rec
 const actRec=id=>D.activities.find(a=>a.id===id);
 const actNm=a=>{const t=ACTM[a.type]||ACTM.outro;return (a.name||t[1]).toLowerCase();};
 const FEM=['caminhada','corrida','bike','natacao','yoga','danca','luta','musculacao'];
-const actFem=a=>FEM.includes(a.type)||/a$/.test(actNm(a));
+const actFem=a=>a.name?/a$/.test(actNm(a).split(' ')[0]):FEM.includes(a.type);
 const TITLE_EX={caminhada:'Caminhada no parque',corrida:'Corrida na orla',bike:'Pedal com a galera',yoga:'Yoga da manhã',natacao:'Natação no clube',danca:'Aula de dança',funcional:'Funcional na praça',luta:'Treino de muay thai',alongamento:'Alongamento antes de dormir',esporte:'Vôlei com os amigos',musculacao:'Treino de perna',pilates:'Pilates no estúdio'};
 function actLine(a){const t=ACTM[a.type]||ACTM.outro;return `${t[2]} ${a.name||t[1]}${a.minutes?' · '+a.minutes+' min':''}${a.km?' · '+String(a.km).replace('.',',')+' km':''}${a.period?' · '+a.period:''}`;}
 const ckOnSupps=()=>SUPPS.filter(s=>D.profile.supps&&D.profile.supps[s.k]);
@@ -1914,7 +1914,7 @@ const CKS={
    if(a.minutes){CK.fix.shift();CK.q.unshift('act_title');CK.titleFor=a.id;return false;}return true;},
   q:()=>`Quantos minutos durou ${actFem(actRec(CK.curFix))?'a':'o'} ${actNm(actRec(CK.curFix))}?`,opts:()=>[['15 min',15],['20 min',20],['30 min',30],['45 min',45],['1 hora',60],['1h30',90],['Não sei','']],
   ans:(v,txt)=>{const a=actRec(CK.curFix);CK.fix.shift();if(!a)return;const m=txt?detMin(prep(txt))||parseInt(prep(txt).match(/\d+/)||'',10)||null:(v?+v:null);if(m)a.minutes=m;persist();CK.titleFor=a.id;CK.q.unshift('act_title','act_fix');}},
- act_title:{cond:()=>{const a=actRec(CK.titleFor);return !!a&&!a.workoutId&&!a.titled;},
+ act_title:{cond:()=>{const a=actRec(CK.titleFor);return !!a&&!a.workoutId&&!a.titled&&a.type!=='musculacao';},
   q:()=>{const a=actRec(CK.titleFor);return `Quer dar um título pra ess${actFem(a)?'a':'e'} ${actNm(a)}? Tipo "${TITLE_EX[a.type]||'Treino da manhã'}"`;},opts:()=>[['Sem título','skip']],
   ans:(v,txt)=>{const a=actRec(CK.titleFor);if(!a)return;a.titled=true;if(txt&&/^(pula|pular|pulei|pode pular|nao|sem titulo|sem|deixa|nenhum|nada|ok)\b/.test(norm(txt).trim()))txt=null;if(txt){a.name=txt.trim().replace(/^["“]|["”]$/g,'').slice(0,60);a.name=a.name[0].toUpperCase()+a.name.slice(1);}persist();bot('Pronto! ✓ '+actLine(a));}},
  cmd_more:{q:()=>'Quer registrar mais alguma coisa, ou fazer o check-in completo do dia?',opts:()=>[['💬 Registrar mais','more'],['📝 Fazer o check-in completo','full'],['✅ Só isso, valeu!','done']],
