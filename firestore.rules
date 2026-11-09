@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.uid == 'xs6gZ72v1rOeNYgAg69rDvF07UQ2'; }
+    function isMember(g) {
+      return exists(/databases/$(db)/documents/groups/$(g)/members/$(request.auth.uid));
+    }
+    function shortStr(v, n) { return v is string && v.size() <= n; }
+
+    match /groups/{g} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid
+        && shortStr(request.resource.data.name, 60);
+      allow update: if signedIn() && resource.data.createdBy == request.auth.uid
+        && shortStr(request.resource.data.name, 60);
+      match /members/{uid} {
+        allow read: if signedIn() && isMember(g);
+        allow create, update: if signedIn() && uid == request.auth.uid
+          && shortStr(request.resource.data.get('name', ''), 60)
+          && shortStr(request.resource.data.get('emoji', ''), 16);
+        allow delete: if signedIn() && (uid == request.auth.uid
+          || get(/databases/$(db)/documents/groups/$(g)).data.createdBy == request.auth.uid);
+      }
+      match /posts/{p} {
+        allow read: if signedIn() && isMember(g);
+        // a própria pessoa publica o resumo do dia: só os campos esperados e textos curtos
+        allow create: if signedIn() && isMember(g) && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid','name','emoji','date','ts','acts','streak','week','rotina','comida','reactions'])
+          && shortStr(request.resource.data.name, 60) && shortStr(request.resource.data.get('emoji', ''), 16);
+        // a dona do post atualiza; as outras pessoas só mexem na própria reação, com um dos 4 emojis
+        allow update: if signedIn() && isMember(g) && (
+          (resource.data.uid == request.auth.uid
+            && request.resource.data.keys().hasOnly(['uid','name','emoji','date','ts','acts','streak','week','rotina','comida','reactions'])
+            && shortStr(request.resource.data.name, 60))
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+            && request.resource.data.get('reactions', {}).diff(resource.data.get('reactions', {})).affectedKeys().hasOnly([request.auth.uid])
+            && request.resource.data.get('reactions', {}).get(request.auth.uid, '') in ['', '👏', '🔥', '💪', '❤️']));
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
+    }
+    match /push/{uid} {
+      allow read, write: if signedIn() && uid == request.auth.uid;
+    }
+    match /users/{uid} {
+      allow get: if signedIn() && (uid == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if signedIn() && uid == request.auth.uid;
+    }
+    // Backup na nuvem: o conteúdo vai criptografado com a senha da pessoa (ninguém mais consegue ler).
+    // O endereço do backup é um código aleatório; só quem tem o link de recuperação consegue baixar.
+    match /backups/{id} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner','name','at','size','salt','iter','iv','gz','data','v'])
+        && request.resource.data.data is string && request.resource.data.data.size() < 1000000
+        && shortStr(request.resource.data.name, 60);
+      allow update: if signedIn() && resource.data.owner == request.auth.uid
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner','name','at','size','salt','iter','iv','gz','data','v'])
+        && request.resource.data.data is string && request.resource.data.data.size() < 1000000
+        && shortStr(request.resource.data.name, 60);
+      allow delete: if signedIn() && (resource.data.owner == request.auth.uid || isAdmin());
+    }
+    // Índice pequeno pra criadora achar o backup de alguém (nome e data, sem conteúdo)
+    match /backupIndex/{id} {
+      allow get, list: if isAdmin();
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner','name','at','size'])
+        && shortStr(request.resource.data.name, 60);
+      allow update: if signedIn() && resource.data.owner == request.auth.uid
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner','name','at','size'])
+        && shortStr(request.resource.data.name, 60);
+      allow delete: if signedIn() && (resource.data.owner == request.auth.uid || isAdmin());
+    }
+  }
+}

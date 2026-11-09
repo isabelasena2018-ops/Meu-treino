@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.1 · 09/11 19h';
+const APP_VERSION='4.2 · 09/11 19h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1247,7 +1247,7 @@ function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}sch
 
 const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null,gen:null,mea:{}};
 let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',ok:false,supps:{vacuo:false,creatina:false,pre:false,whey:false}};
-const BACKUP_TXT='Seus treinos, cargas, peso, medidas e comida ficam salvos só neste celular. Se você trocar de celular, apagar o app ou limpar os dados do navegador, pode perder tudo. Pra não perder, faça um backup no Perfil uma vez por mês (leva 10 segundos).';
+const BACKUP_TXT='Seus treinos, cargas, peso, medidas e comida ficam salvos neste celular. Se você trocar de celular, apagar o app ou limpar os dados do navegador, pode perder tudo. Pra não perder, ligue o backup automático na nuvem no Perfil (protegido por uma senha só sua) ou salve um arquivo de backup uma vez por mês.';
 let PROF=null;
 
 /* ================== HELPERS ================== */
@@ -1304,6 +1304,7 @@ const IC={
 /* ================== RENDER ================== */
 function render(){
  const app=document.getElementById('app');
+ if(UI.restoreId){document.documentElement.classList.remove('dark');app.innerHTML=vRecuperar();return;}
  if(!D.profile){app.innerHTML=vOnb();return;}
  const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
@@ -1823,7 +1824,8 @@ function vPerfil(){
  <h3 class="h3">Compartilhar</h3>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Mande o link pra quem quiser treinar junto. Cada pessoa cria o próprio perfil e os dados ficam no celular dela.</p><button class="btn alt" data-a="share">📤 Compartilhar o app</button></div>
  <h3 class="h3">Backup</h3>
- <div class="card"><p class="small" style="margin:0 0 6px;line-height:1.5">${BACKUP_TXT}</p><p class="small mut" style="margin:0 0 10px"><b>Último backup:</b> ${D.lastBackup?new Date(D.lastBackup).toLocaleDateString('pt-BR'):'nunca'}. No iPhone, escolha <i>Salvar em Arquivos</i> ou mande o arquivo pro seu próprio WhatsApp ou e-mail. Pra recuperar, use <b>Importar</b> no celular novo.</p>
+ ${cloudCardHtml()}
+ <div class="card"><b>📁 Backup em arquivo</b><p class="small mut" style="margin:4px 0 10px">Um arquivo com todos os seus dados, pra guardar onde quiser. <b>Último backup:</b> ${D.lastBackup?new Date(D.lastBackup).toLocaleDateString('pt-BR'):'nunca'}. No iPhone, escolha <i>Salvar em Arquivos</i> ou mande o arquivo pro seu próprio WhatsApp ou e-mail. Pra recuperar, use <b>Importar</b> no celular novo.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
  <details class="card"><summary><span>⚙️ Avançado</span><span class="chev">▾</span></summary>
   <p class="small mut" style="margin:10px 0 6px">ID deste celular no app (só a criadora precisa disso):</p>
@@ -2273,8 +2275,9 @@ function vAdmin(){
   (L.length?'<div class="card" style="padding:4px 14px">'+L.map(u=>`<div class="hrow" style="align-items:flex-start"><div><b style="font-size:14.5px">${esc(u.name||'Sem nome')}${u.uid===FB.uid?' (você)':''}</b>
    <div class="small mut">Entrou em ${u.since?fmt(u.since):'—'} · último acesso ${agoLabel(u.lastSeen)}</div>
    <div class="small mut">🔥 ${u.streak||0} seguidos · ${u.days30||0} dias ativos no mês · ${u.acts||0} atividades · ${u.workouts||0} treinos montados</div></div>
-   <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${u.installed?'<span class="tag">📲 instalado</span>':'<span class="tag" style="background:var(--soft);color:var(--mut)">navegador</span>'}${u.inGroup?'<span class="tag">👯‍♀️ na Turma</span>':''}</div></div>`).join('')+'</div>'
+   <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${u.installed?'<span class="tag">📲 instalado</span>':'<span class="tag" style="background:var(--soft);color:var(--mut)">navegador</span>'}${u.inGroup?'<span class="tag">👯‍♀️ num grupo</span>':''}</div></div>`).join('')+'</div>'
   :'<div class="card empty">Ninguém por aqui ainda.</div>')}
+ ${admBackupsHtml()}
  <p class="small mut" style="text-align:center">Aparece só nome e uso geral. Peso, medidas, comida e detalhes dos treinos não. Cada pessoa pode desligar isso no Perfil dela.</p>`;}
 async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='';render();
  try{await syncUsage(true);const {db,f}=await fb();const q=await f.getDocs(f.collection(db,'users'));S.list=q.docs.map(d=>cleanUser(Object.assign({uid:d.id},d.data()))).sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));}
@@ -2623,6 +2626,65 @@ async function shareRender(){const S=SHARE;if(!S)return;const c=await makeCard(S
  const p2=document.querySelector('#sheet .panel');if(p2)p2.scrollTop=sc;}
 const cardBlob=()=>new Promise(res=>SHARE.canvas.toBlob(b=>res(b),'image/png'));
 
+/* ===== Backup na nuvem: criptografado no próprio celular com a senha da pessoa ===== */
+const CLOUD_ITER=310000,CLOUD_KEY='meutreino:cloudkey';
+const APP_URL='https://isabelasena2018-ops.github.io/Meu-treino/';
+function b64e(u8){u8=u8 instanceof Uint8Array?u8:new Uint8Array(u8);let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
+function b64d(s){const b=atob(s);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+function randId(n){const a='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=crypto.getRandomValues(new Uint8Array(n));return Array.from(r,x=>a[x%a.length]).join('');}
+async function cloudDerive(pass,salt,iter){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);}
+async function gzip(u8){if(!window.CompressionStream)return null;try{const st=new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'));return new Uint8Array(await new Response(st).arrayBuffer());}catch(e){return null;}}
+async function gunzip(u8){const st=new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'));return new Uint8Array(await new Response(st).arrayBuffer());}
+function cloudKeyRaw(){try{return localStorage.getItem(CLOUD_KEY);}catch(e){return null;}}
+async function cloudSetup(pass){/* cria a chave a partir da senha e guarda só neste celular */
+ const salt=crypto.getRandomValues(new Uint8Array(16));const key=await cloudDerive(pass,salt,CLOUD_ITER);
+ const raw=await crypto.subtle.exportKey('raw',key);try{localStorage.setItem(CLOUD_KEY,b64e(raw));}catch(e){}
+ D.cloud={id:(D.cloud&&D.cloud.id)||randId(24),salt:b64e(salt),iter:CLOUD_ITER,last:null};persist();}
+async function cloudUpload(){if(!D.cloud||!D.profile)return false;const kr=cloudKeyRaw();if(!kr)return false;
+ const key=await crypto.subtle.importKey('raw',b64d(kr),{name:'AES-GCM'},false,['encrypt']);
+ const pack=async strip=>{const o=JSON.parse(JSON.stringify(D));delete o.cloud;if(strip)(o.runs||[]).forEach(r=>{delete r.pts;});
+  const raw=new TextEncoder().encode(JSON.stringify(o));const z=await gzip(raw);const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,z||raw);return {data:b64e(ct),iv:b64e(iv),gz:!!z};};
+ let P=await pack(false);if(P.data.length>950000)P=await pack(true);if(P.data.length>950000)throw new Error('grande');
+ const {db,uid,f}=await fb();const at=Date.now();const name=String(D.profile.nome||'').slice(0,60);
+ await f.setDoc(f.doc(db,'backups',D.cloud.id),{owner:uid,name,at,size:P.data.length,salt:D.cloud.salt,iter:D.cloud.iter,iv:P.iv,gz:P.gz,data:P.data,v:1});
+ try{await f.setDoc(f.doc(db,'backupIndex',D.cloud.id),{owner:uid,name,at,size:P.data.length});}catch(e){}
+ D.cloud.last=at;D.lastBackup=at;persist();return true;}
+async function cloudRestore(id,pass){const {db,f}=await fb();const s=await f.getDoc(f.doc(db,'backups',id));
+ if(!s.exists())throw new Error('naoachei');const b=s.data();
+ let plain;try{const key=await cloudDerive(pass,b64d(b.salt),b.iter||CLOUD_ITER);plain=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(b.iv)},key,b64d(b.data)));}catch(e){throw new Error('senha');}
+ if(b.gz)plain=await gunzip(plain);const o=JSON.parse(new TextDecoder().decode(plain));if(!o||!o.profile)throw new Error('vazio');
+ D=Object.assign(fresh(),o);delete D.cloud;await cloudSetup(pass);persist();try{await cloudUpload();}catch(e){}
+ return b;}
+function cloudAuto(){if(!D.cloud||!cloudKeyRaw())return;if(D.cloud.last&&Date.now()-D.cloud.last<7*864e5)return;setTimeout(()=>cloudUpload().then(()=>{if(UI.view==='perfil')render();}).catch(()=>{}),6000);}
+function cloudCardHtml(){const C=UI.cloudUI||{};
+ if(D.cloud&&cloudKeyRaw())return `<div class="card" style="border:1.5px solid var(--a)"><b>☁️ Backup na nuvem ligado</b>
+  <p class="small mut" style="margin:4px 0 10px">Atualiza sozinho toda semana, protegido pela sua senha. Último: <b>${D.cloud.last?new Date(D.cloud.last).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'ainda não enviado'}</b>. Se perder o celular, peça o link de recuperação pra criadora do app e use a sua senha.</p>
+  <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="cloudNow">${C.busy?'Enviando…':'Fazer backup agora'}</button><button class="btn2" style="padding:10px" data-a="cloudOff">Desligar</button></div></div>`;
+ return `<div class="card" style="border:1.5px solid var(--a2)"><b>☁️ Backup automático na nuvem (recomendado)</b>
+  <p class="small" style="margin:6px 0 8px;line-height:1.5">Guarda uma cópia dos seus dados, protegida por uma senha que só você sabe, e atualiza sozinho toda semana. Se você perder ou trocar de celular, a criadora do app te manda um link e você recupera tudo com a sua senha. <b>Nem ela consegue ver seus dados.</b></p>
+  <p class="small mut" style="margin:0 0 8px">Anote a senha num lugar seguro: sem ela não dá pra recuperar. Use pelo menos 8 caracteres (uma frase curta é ótima).</p>
+  <input class="inp" id="cloud-p1" type="password" autocomplete="new-password" placeholder="Crie uma senha de backup">
+  <input class="inp" id="cloud-p2" type="password" autocomplete="new-password" placeholder="Repita a senha" style="margin-top:8px">
+  <button class="btn alt sm" style="margin-top:10px" data-a="cloudOn">${C.busy?'Ativando…':'Ativar backup na nuvem'}</button></div>`;}
+function vRecuperar(){const R=UI.rec||{};return `<main class="fade" style="padding-bottom:40px">
+ <div class="hero"><div style="font-size:44px">☁️</div><h1 class="disp">Recuperar seus dados</h1><p>Do backup na nuvem do Meu Treino</p></div>
+ <div class="card"><p class="small" style="margin:0 0 10px;line-height:1.5">Coloque a <b>senha de backup</b> que você criou no Perfil. Seus treinos, cargas, peso, medidas e o resto voltam pra este celular.</p>
+  ${D.profile?'<div class="info" style="margin:0 0 10px">⚠️ Este celular já tem dados do app. Eles serão substituídos pelos do backup.</div>':''}
+  <input class="inp" id="rec-pass" type="password" autocomplete="current-password" placeholder="Sua senha de backup">
+  ${R.err?`<p class="small" style="color:#c0453a;margin:8px 0 0">${esc(R.err)}</p>`:''}
+  <button class="btn alt" style="margin-top:12px" data-a="recGo">${R.busy?'Recuperando… (leva uns segundos)':'Recuperar meus dados'}</button>
+  <button class="btn2" style="margin-top:8px" data-a="recCancel">Agora não</button></div>
+ <p class="small mut" style="text-align:center">Esqueceu a senha? Sem ela não dá pra abrir o backup, nem a criadora do app consegue. Se tiver um arquivo de backup salvo, use Perfil → Importar.</p></main>`;}
+async function admBackups(){UI.adm=UI.adm||{};const S=UI.adm;S.bk='loading';render();
+ try{const {db,f}=await fb();const q=await f.getDocs(f.collection(db,'backupIndex'));S.bk=q.docs.map(d=>({id:d.id,name:String(d.data().name||''),at:sNum(d.data().at)||0,size:sNum(d.data().size)||0})).sort((a,b)=>b.at-a.at);}
+ catch(e){S.bk='erro';}if(UI.view==='admin')render();}
+function admBackupsHtml(){const S=UI.adm||{};const B=S.bk;
+ return `<h3 class="h3">☁️ Backups na nuvem</h3><p class="small mut" style="margin:-4px 0 10px">Pra ajudar alguém que perdeu o celular: mande o link de recuperação. A pessoa abre no celular novo e coloca a senha dela. Você vê só o nome e a data, nunca o conteúdo.</p>
+ ${!B?'<button class="btn2" data-a="admBk">Ver backups</button>':B==='loading'?'<div class="card empty">Carregando…</div>':B==='erro'?'<div class="card empty">Não consegui carregar os backups.</div>':!B.length?'<div class="card empty">Ninguém ativou o backup na nuvem ainda.</div>':
+  '<div class="card" style="padding:4px 14px">'+B.map(b=>`<div class="hrow"><div><b style="font-size:14.5px">${esc(b.name||'Sem nome')}</b><div class="small mut">Último backup: ${b.at?new Date(b.at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'} · ${Math.max(1,Math.round(b.size/1024))} KB</div></div><button class="btn alt sm" style="width:auto;padding:9px 12px" data-a="admBkLink" data-id="${esc(b.id)}" data-n="${esc(b.name)}">Enviar link</button><button class="ib del" data-a="admBkDel" data-id="${esc(b.id)}" aria-label="Apagar backup">×</button></div>`).join('')+'</div>'}`;}
+
 /* ================== SHEET ================== */
 function openSheet(html){const s=document.getElementById('sheet');s.innerHTML=`<div class="backdrop" data-a="close"></div><div class="panel"><div class="grab"></div><button class="x" data-a="close" aria-label="Fechar">×</button>${html}</div>`;s.classList.add('open');document.body.style.overflow='hidden';}
 function closeSheet(){const s=document.getElementById('sheet');s.classList.remove('open');s.innerHTML='';document.body.style.overflow='';}
@@ -2831,6 +2893,27 @@ const A={
   setTimeout(()=>location.reload(),600);},
  usageToggle:async()=>{D.usageShare=D.usageShare===false;persist();render();if(D.usageShare===false){await usageOff();toast('Pronto, você não aparece mais pra criadora');}else{syncUsage(true).catch(()=>{});toast('Ativado');}},
  admOpen:()=>{UI.adm=null;go('admin');},
+ admBk:()=>admBackups(),
+ admBkLink:async t=>{const url=APP_URL+'?recuperar='+t.dataset.id;const txt='Oi'+(t.dataset.n?', '+t.dataset.n.split(' ')[0]:'')+'! Pra recuperar seus dados do Meu Treino, abra este link no seu celular e coloque a sua senha de backup:\n'+url;
+  if(navigator.share){try{await navigator.share({text:txt});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  try{await navigator.clipboard.writeText(txt);toast('Link copiado! Cole no WhatsApp da pessoa');}catch(e){prompt('Copie o link:',url);}},
+ admBkDel:async t=>{if(!confirm('Apagar esse backup da nuvem? A pessoa não vai mais conseguir recuperar por ele.'))return;
+  try{const {db,f}=await fb();await f.deleteDoc(f.doc(db,'backups',t.dataset.id));try{await f.deleteDoc(f.doc(db,'backupIndex',t.dataset.id));}catch(e){}toast('Backup apagado');}catch(e){toast('Não consegui apagar agora');}admBackups();},
+ cloudOn:async()=>{const p1=(document.getElementById('cloud-p1')||{}).value||'',p2=(document.getElementById('cloud-p2')||{}).value||'';
+  if(p1.length<8){toast('Use pelo menos 8 caracteres 🔒');return;}if(p1!==p2){toast('As duas senhas estão diferentes');return;}
+  UI.cloudUI={busy:true};render();
+  try{await cloudSetup(p1);await cloudUpload();toast('Backup na nuvem ligado ☁️');}
+  catch(e){D.cloud=null;try{localStorage.removeItem(CLOUD_KEY);}catch(_){}persist();toast(e&&e.message==='grande'?'Seus dados ficaram grandes demais pra nuvem. Use o backup em arquivo.':'Não consegui ativar agora. Confere a internet e tenta de novo.');}
+  UI.cloudUI={};render();},
+ cloudNow:async()=>{UI.cloudUI={busy:true};render();try{await cloudUpload();toast('Backup enviado ☁️');}catch(e){toast('Não consegui enviar agora. Confere a internet.');}UI.cloudUI={};render();},
+ cloudOff:async()=>{if(!confirm('Desligar o backup na nuvem? A cópia guardada na nuvem será apagada.'))return;
+  try{const {db,f}=await fb();await f.deleteDoc(f.doc(db,'backups',D.cloud.id));try{await f.deleteDoc(f.doc(db,'backupIndex',D.cloud.id));}catch(e){}}catch(e){}
+  D.cloud=null;try{localStorage.removeItem(CLOUD_KEY);}catch(e){}persist();render();toast('Backup na nuvem desligado');},
+ recGo:async()=>{const pass=(document.getElementById('rec-pass')||{}).value||'';if(!pass){toast('Coloque sua senha de backup');return;}
+  UI.rec={busy:true};render();
+  try{await cloudRestore(UI.restoreId,pass);UI.restoreId=null;UI.rec=null;PROF=null;UI.view='hoje';render();window.scrollTo(0,0);toast('Tudo recuperado! 🎉');}
+  catch(e){const m=e&&e.message;UI.rec={err:m==='senha'?'Senha incorreta. Confere e tenta de novo.':m==='naoachei'?'Não encontrei esse backup. Peça um link novo pra criadora do app.':'Não consegui recuperar agora. Confere a internet e tenta de novo.'};render();}},
+ recCancel:()=>{UI.restoreId=null;UI.rec=null;render();},
  admLoad:()=>{if(UI.adm)UI.adm.list=null;admLoad();},
  copyId:async()=>{const id=FB&&FB.uid;if(!id)return;try{await navigator.clipboard.writeText(id);toast('ID copiado!');}catch(e){prompt('Copie o ID:',id);}},
  pushOn:async()=>{if(!pushSupported()){toast('Este navegador não aceita notificações');return;}
@@ -2937,6 +3020,8 @@ document.addEventListener('focusin',e=>{if(e.target.id==='ckin')hush();});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
 
 try{const gv=new URLSearchParams(location.search).get('go');if(gv&&D.profile&&['hoje','checkin','treinos','progresso','atividades'].includes(gv)){UI.view=gv;history.replaceState(null,'',location.pathname);}}catch(e){}
+try{const rp=new URLSearchParams(location.search).get('recuperar');if(rp&&/^[A-Za-z0-9]{10,40}$/.test(rp)){UI.restoreId=rp;history.replaceState(null,'',location.pathname);}}catch(e){}
+if(D.profile)cloudAuto();
 try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
 if(D.profile&&socOn())setTimeout(()=>syncSocial().catch(()=>{}),1500);
 if(D.profile)setTimeout(()=>syncUsage(true).then(()=>{if(UI.view==='perfil')render();}).catch(()=>{}),2500);
