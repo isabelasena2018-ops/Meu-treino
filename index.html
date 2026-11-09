@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.3 · 09/11 19h';
+const APP_VERSION='4.4 · 09/11 19h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1157,22 +1157,25 @@ const ACT=[['musculacao','Musculação','🏋️'],['corrida','Corrida','🏃‍
 const ACTM=Object.fromEntries(ACT.map(a=>[a[0],a]));
 /* detalhes de cada atividade: campos pra digitar e opções pra tocar (a última coluna true = pode escolher várias) */
 const ACT_DET={
- caminhada:{fields:[['km','Distância (km)','decimal','ex: 4,5'],['passos','Passos','numeric','ex: 8000']],chips:[['local','Onde',['Rua / parque','Esteira','Trilha','Praia']]]},
- corrida:{fields:[['km','Distância (km)','decimal','ex: 5']],chips:[['local','Onde',['Rua / parque','Esteira','Pista','Trilha']]]},
- bike:{fields:[['km','Distância (km)','decimal','ex: 15']],chips:[['local','Tipo',['Rua','Ergométrica','Spinning','Trilha / MTB']]]},
- natacao:{fields:[['metros','Distância (m)','numeric','ex: 1000'],['piscinas','Quantas piscinas','numeric','ex: 40']],chips:[['piscina','Tamanho da piscina',['25 m','50 m']],['estilo','Estilo',['Crawl','Costas','Peito','Borboleta','Medley'],true]]},
- yoga:{chips:[['estilo','Estilo',['Hatha','Vinyasa','Ashtanga','Yin','Restaurativa','Power']],['foco','Foco',['Flexibilidade','Força','Respiração','Relaxamento','Equilíbrio'],true]]},
- pilates:{chips:[['estilo','Tipo',['Solo','Aparelhos','Com acessórios']],['foco','Foco',['Core','Postura','Flexibilidade','Força'],true]]},
- danca:{chips:[['estilo','Estilo',['Zumba','Ritmos','Funk','Ballet','Jazz','Forró','Samba','Hip hop']]]},
- funcional:{chips:[['estilo','Tipo',['Funcional','Crossfit','HIIT','Circuito']]]},
- luta:{chips:[['estilo','Modalidade',['Boxe','Muay thai','Jiu-jitsu','Judô','Karatê','Kickboxing','Capoeira']]]},
- alongamento:{chips:[['foco','Foco',['Corpo todo','Pernas','Costas','Quadril','Ombros'],true]]},
- esporte:{chips:[['estilo','Modalidade',['Futebol','Vôlei','Beach tennis','Tênis','Basquete','Futevôlei','Padel','Handebol']]]},
+ musculacao:{chips:[['grupos','O que treinou',['Pernas','Glúteo','Costas','Peito','Ombros','Braços','Abdômen','Corpo todo'],true],['local','Onde',['Academia','Em casa','Ao ar livre']]]},
+ caminhada:{fields:[['km','Distância (km)','decimal','ex: 4,5'],['passos','Passos','numeric','ex: 8000']],chips:[['local','Onde',['Rua / parque','Esteira','Trilha','Praia','Shopping','Outro']],['tipo','Ritmo',['Leve','Rápida','Com inclinação','Com peso / mochila']]]},
+ corrida:{fields:[['km','Distância (km)','decimal','ex: 5']],chips:[['local','Onde',['Rua / parque','Esteira','Pista','Trilha','Prova / corrida de rua','Outro']],['tipo','Treino',['Leve','Longo','Intervalado / tiros','Ritmo','Subida']]]},
+ bike:{fields:[['km','Distância (km)','decimal','ex: 15']],chips:[['local','Tipo',['Rua / speed','Ergométrica','Spinning / bike indoor','Trilha / MTB','Bike elétrica','Outro']]]},
+ natacao:{fields:[['metros','Distância (m)','numeric','ex: 1000'],['piscinas','Quantas piscinas','numeric','ex: 40']],chips:[['piscina','Tamanho da piscina',['25 m','50 m']],['estilo','Estilo',['Crawl','Costas','Peito','Borboleta','Medley'],true],['tipo','Treino',['Livre','Aula','Técnica','Intervalado','Hidroginástica']],['local','Onde',['Piscina','Mar','Lago / represa']]]},
+ yoga:{chips:[['estilo','Estilo',['Hatha','Vinyasa','Hot yoga','Ashtanga','Yin','Restaurativa','Power','Kundalini','Yoga aérea','Iyengar','Outro']],['foco','Foco',['Flexibilidade','Força','Respiração','Relaxamento','Equilíbrio','Meditação'],true],['tipo','Foi',['Aula no estúdio','Aula online','Prática em casa']]]},
+ pilates:{chips:[['estilo','Tipo',['Solo (mat)','Reformer','Cadillac / Chair','Com acessórios','Pilates aéreo','Outro']],['foco','Foco',['Core','Postura','Flexibilidade','Força','Respiração'],true]]},
+ danca:{chips:[['estilo','Estilo',['Zumba','Ritmos','Funk','Ballet','Jazz','Forró','Samba','Hip hop','Dança de salão','Pole dance','K-pop','Outro']],['tipo','Foi',['Aula','Ensaio','Apresentação','Livre']]]},
+ funcional:{chips:[['estilo','Tipo',['Funcional','Crossfit','HIIT','Circuito','Calistenia','Treino em casa','Outro']],['foco','Foco',['Corpo todo','Pernas','Superiores','Core','Cardio'],true]]},
+ luta:{chips:[['estilo','Modalidade',['Jiu-jitsu','Muay thai','Boxe','Judô','Karatê','Kickboxing','MMA','Taekwondo','Capoeira','Krav maga','Outro']],['tipo','O que fez',['Técnica','Sparring / rola','Condicionamento','Competição'],true]]},
+ alongamento:{chips:[['foco','Foco',['Corpo todo','Pernas','Costas','Quadril','Ombros','Pescoço'],true],['tipo','Quando',['Antes do treino','Depois do treino','Ao acordar','Antes de dormir']]]},
+ esporte:{chips:[['estilo','Modalidade',['Futebol','Vôlei','Beach tennis','Tênis','Padel','Basquete','Futevôlei','Handebol','Squash','Escalada','Surf','Skate','Remo','Outro']],['tipo','Foi',['Treino','Jogo','Aula','Campeonato']]]},
  outro:{fields:[['nome','Qual atividade?','text','ex: Stand up paddle']]}};
-const detLabel=(type,k)=>{const sp=ACT_DET[type]||{};const c=(sp.chips||[]).find(x=>x[0]===k);return c?c[1]:{estilo:'Estilo',foco:'Foco',local:'Onde'}[k]||k;};
+const detLabel=(type,k)=>{const sp=ACT_DET[type]||{};const c=(sp.chips||[]).find(x=>x[0]===k);return c?c[1]:{estilo:'Estilo',foco:'Foco',local:'Onde',tipo:'Tipo',grupos:'O que treinou'}[k]||k;};
+const detMulti=(type,k)=>{const c=((ACT_DET[type]||{}).chips||[]).find(x=>x[0]===k);return !!(c&&c[3]);};
 const detVal=v=>Array.isArray(v)?v.join(' · '):String(v||'');
 function actTitle(a){const t=ACTM[a.type]||ACTM.outro;const d=a.det||{};if(a.type==='outro'&&d.nome)return d.nome;const e=d.estilo?detVal(d.estilo):'';return e?t[1].split(' /')[0]+' · '+e:t[1];}
-function actDetLine(a){const d=a.det||{};const o=[];if(a.metros)o.push(a.metros.toLocaleString('pt-BR')+' m');else if(a.km)o.push(nf(a.km,2)+' km');if(d.passos)o.push(Number(d.passos).toLocaleString('pt-BR')+' passos');if(d.local)o.push(d.local);if(d.foco&&d.foco.length)o.push('foco: '+detVal(d.foco).toLowerCase());return o.join(' · ');}
+function actDetLine(a){const d=a.det||{};const o=[];if(a.metros)o.push(a.metros.toLocaleString('pt-BR')+' m');else if(a.km)o.push(nf(a.km,2)+' km');if(d.passos)o.push(Number(d.passos).toLocaleString('pt-BR')+' passos');
+ ((ACT_DET[a.type]||{}).chips||[]).forEach(([k])=>{if(k==='estilo'||k==='piscina'||!d[k]||(Array.isArray(d[k])&&!d[k].length))return;o.push(detMulti(a.type,k)?detLabel(a.type,k).toLowerCase()+': '+detVal(d[k]).toLowerCase():detVal(d[k]));});return o.join(' · ');}
 
 const DAYS=[['seg','Segunda'],['ter','Terça'],['qua','Quarta'],['qui','Quinta'],['sex','Sexta'],['sab','Sábado'],['dom','Domingo']];
 const DAYM=Object.fromEntries(DAYS);
@@ -1725,7 +1728,7 @@ function actDetForm(f){const sp=ACT_DET[f.type]||{};const d=f.d||{};
  const fl=(sp.fields||[]);const rows=[];for(let i=0;i<fl.length;i+=2)rows.push(fl.slice(i,i+2));
  return rows.map(r=>`<div class="${r.length>1?'row2':''}">${r.map(([k,l,im,ph])=>`<div><label class="lbl">${l}</label><input class="inp" ${im==='text'?'':`inputmode="${im}"`} data-i="act.d.${k}" value="${esc(d[k]||'')}" placeholder="${ph}"></div>`).join('')}</div>`).join('')
   +(f.type==='natacao'?'<p class="small mut" style="margin:6px 0 0">Colocou as piscinas e o tamanho? Eu calculo os metros.</p>':'')
-  +(sp.chips||[]).map(([k,l,opts,multi])=>`<label class="lbl">${l}${multi?' <span class="mut" style="font-weight:500">(pode marcar mais de um)</span>':''}</label><div class="chips">${opts.map(o=>{const on=multi?(d[k]||[]).includes(o):d[k]===o;return `<button class="chip ${on?'on':''}" data-a="actChip" data-k="${k}" data-v="${esc(o)}"${multi?' data-m="1"':''}>${esc(o)}</button>`;}).join('')}</div>`).join('');}
+  +(sp.chips||[]).map(([k,l,opts,multi])=>`<label class="lbl">${l}${multi?' <span class="mut" style="font-weight:500">(pode marcar mais de um)</span>':''}</label><div class="chips">${opts.map(o=>{const on=multi?(d[k]||[]).includes(o):d[k]===o;return `<button class="chip ${on?'on':''}" data-a="actChip" data-k="${k}" data-v="${esc(o)}"${multi?' data-m="1"':''}>${esc(o)}</button>`;}).join('')}</div>${!multi&&d[k]==='Outro'?`<input class="inp" style="margin-top:8px" data-i="act.d.${k}Outro" value="${esc(d[k+'Outro']||'')}" placeholder="Qual? Escreva aqui" maxlength="30">`:''}`).join('');}
 function vAtiv(){
  const f=UI.actForm;const wk=weekDates();
  const sorted=[...D.activities].sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0)).slice(0,40);
@@ -2592,9 +2595,10 @@ function shareInfo(a){const t=ACTM[a.type]||ACTM.outro;const recent=(Date.now()-
  else{const d=a.det||{};o.title=a.name||actTitle(a);o.emoji=t[2];
   if(a.metros)o.f.km={l:'Distância',v:a.metros.toLocaleString('pt-BR')+' m',big:a.metros.toLocaleString('pt-BR'),u:'m'};
   else if(a.km)o.f.km={l:'Distância',v:nf(a.km,2)+' km',big:nf(a.km,2),u:'km'};
-  if(d.estilo)o.f.estilo={l:detLabel(a.type,'estilo'),v:detVal(d.estilo)};
-  if(d.foco&&d.foco.length)o.f.foco={l:'Foco',v:'🎯 Foco: '+detVal(d.foco)};
-  if(d.local)o.f.local={l:detLabel(a.type,'local'),v:d.local};
+  const chipKeys=((ACT_DET[a.type]||{}).chips||[]).map(c=>c[0]).filter(k=>k!=='piscina');
+  chipKeys.forEach(k=>{if(!d[k]||(Array.isArray(d[k])&&!d[k].length))return;const multi=detMulti(a.type,k);
+   if(multi&&!(k==='estilo'&&d[k].length<=2))o.f[k]={l:detLabel(a.type,k),v:(k==='foco'?'🎯 ':'')+detLabel(a.type,k)+': '+detVal(d[k]),line:true};else o.f[k]={l:detLabel(a.type,k),v:detVal(d[k])};});
+  o.fields=[['tempo','Tempo'],['km','Distância']].concat(chipKeys.map(k=>[k,detLabel(a.type,k)]),[['passos','Passos'],['piscinas','Piscinas'],['intensidade','Intensidade'],['sequencia','Sequência'],['data','Data']]);o.selKey='act_'+a.type+'3';
   if(d.passos)o.f.passos={l:'Passos',v:Number(d.passos).toLocaleString('pt-BR')};
   if(d.piscinas)o.f.piscinas={l:'Piscinas',v:d.piscinas+(d.piscina?' × '+d.piscina:'')};
   if(a.intensity)o.f.intensidade={l:'Intensidade',v:a.intensity[0].toUpperCase()+a.intensity.slice(1)};}
@@ -2606,31 +2610,35 @@ function drawRoute(ctx,route,x,y,w,h,color,width){if(route.length<2||h<60)return
  ctx.save();ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();route.forEach((p,i)=>{const [a,b]=P(p);i?ctx.lineTo(a,b):ctx.moveTo(a,b);});ctx.stroke();
  const [sx,sy]=P(route[0]),[ex,ey]=P(route[route.length-1]);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx,sy,width*1.1,0,7);ctx.fill();ctx.fillStyle=color;ctx.beginPath();ctx.arc(ex,ey,width*1.1,0,7);ctx.fill();ctx.restore();}
 function fitFont(x,txt,max,min,weight,fam,w){let fs=max;do{x.font=weight+' '+fs+'px '+fam;fs-=2;}while(x.measureText(txt).width>w&&fs>min);}
-async function makeCard(d,sel,style,photo){
+const CARD_THEMES={verde:{bg:['#0F4C45','#08302B'],ink:'#FFFFFF',acc:'#E8633A',blob:'#E8633A'},laranja:{bg:['#E8633A','#B84A26'],ink:'#FFFFFF',acc:'#FFE1CF',blob:'#FFFFFF'},creme:{bg:['#FAF6EF','#EFE5D3'],ink:'#0F4C45',acc:'#C24E28',blob:'#0F4C45'}};
+const CARD_INKS={branco:'#FFFFFF',verde:'#0F4C45',laranja:'#E8633A'};
+async function makeCard(d,sel,style,photo,tema,tinta){
  try{await document.fonts.ready;}catch(e){}
  const has=k=>sel.includes(k)&&d.f[k];
  const bigK=(d.kind==='gym'?['tempo','exercicios']:['km','tempo']).find(k=>has(k)&&d.f[k].big);const big=bigK?d.f[bigK]:null;
- const stats=['tempo','km','ritmo','elevacao','estilo','local','passos','piscinas','exercicios','series','volume','recordes','intensidade','sequencia'].filter(k=>has(k)&&k!==bigK).map(k=>d.f[k]);
- const lines=d.kind==='act'?(has('foco')?[d.f.foco.v]:[]):has(d.kind==='run'?'parciais':'lista')?d.lines.slice(0,style==='sticker'?5:6):[];const rows=Math.ceil(stats.length/3);
+ const order=d.fields?d.fields.map(f=>f[0]):['tempo','km','ritmo','elevacao','exercicios','series','volume','recordes','intensidade','sequencia'];
+ const stats=order.filter(k=>has(k)&&k!==bigK&&d.f[k].v!=null&&!d.f[k].line).map(k=>d.f[k]);
+ const lines=d.kind==='act'?order.filter(k=>has(k)&&d.f[k].line).map(k=>d.f[k].v):has(d.kind==='run'?'parciais':'lista')?d.lines.slice(0,style==='sticker'?5:6):[];const rows=Math.ceil(stats.length/3);
  const route=has('percurso')&&d.route&&d.route.length>1?d.route:null;const rH=route&&style!=='cor'?(style==='sticker'?440:380):0;
  const SANS='"DM Sans", system-ui, sans-serif',SERIF='"Fraunces", Georgia, serif';
  const contentH=rH+80+(big?250:0)+rows*130+(lines.length?20+lines.length*52:0);
  const W=1080,H=style==='sticker'?Math.max(420,60+110+contentH+30):1920;
- const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const ink='#FFFFFF',acc='#E8633A';
- if(style==='cor'){const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0F4C45');g.addColorStop(1,'#08302B');x.fillStyle=g;x.fillRect(0,0,W,H);
-  x.globalAlpha=.08;x.fillStyle=acc;x.beginPath();x.arc(W*.85,H*.12,420,0,7);x.fill();x.globalAlpha=1;}
+ const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const T=CARD_THEMES[tema]||CARD_THEMES.verde;
+ const ink=style==='cor'?T.ink:(CARD_INKS[tinta]||'#FFFFFF');const acc=style==='cor'?T.acc:(ink==='#E8633A'?'#0F4C45':'#E8633A');const routeC=style==='cor'&&tema==='laranja'?'#FFFFFF':'#E8633A';
+ if(style==='cor'){const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,T.bg[0]);g.addColorStop(1,T.bg[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.globalAlpha=tema==='creme'?.07:.1;x.fillStyle=T.blob;x.beginPath();x.arc(W*.85,H*.12,420,0,7);x.fill();x.globalAlpha=1;}
  if(style==='foto'&&photo){const r=Math.max(W/photo.width,H/photo.height);const pw=photo.width*r,ph=photo.height*r;x.drawImage(photo,(W-pw)/2,(H-ph)/2,pw,ph);
   const g=x.createLinearGradient(0,H-contentH-500,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.8)');x.fillStyle=g;x.fillRect(0,0,W,H);
   const t=x.createLinearGradient(0,0,0,260);t.addColorStop(0,'rgba(0,0,0,.45)');t.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=t;x.fillRect(0,0,W,260);}
- if(style!=='cor'){x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=16;x.shadowOffsetY=3;}
+ if(style!=='cor'){if(ink==='#FFFFFF'){x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=16;x.shadowOffsetY=3;}else{x.shadowColor='rgba(255,255,255,.65)';x.shadowBlur=12;x.shadowOffsetY=0;}}
  const top=style==='sticker'?60:110;
  x.fillStyle=ink;x.font='700 36px '+SANS;x.fillText('🔥  MEU TREINO',80,top+30);
  if(has('data')){x.font='500 32px '+SANS;x.globalAlpha=.85;x.textAlign='right';x.fillText(new Date(d.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),W-80,top+30);x.textAlign='left';x.globalAlpha=1;}
  let y=style==='sticker'?top+110:H-110-contentH;
- if(rH){drawRoute(x,route,160,y,W-320,rH-40,'#E8633A',14);y+=rH;}
- if(style==='cor'&&route){drawRoute(x,route,140,top+120,W-280,y-top-220,'#E8633A',16);}
- else if(style==='cor'){const sz=Math.min(380,y-top-160);if(sz>140){x.save();x.translate(W/2-sz/2,top+80+(y-top-80-sz)/2);x.scale(sz/24,sz/24);x.strokeStyle=acc;x.lineWidth=1.7;x.lineCap='round';x.lineJoin='round';
-  if(d.emoji){x.restore();const cx=W/2,cy=top+80+(y-top-80)/2,r=sz*0.62;x.fillStyle='rgba(255,255,255,.08)';x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.font=Math.round(sz*0.62)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.globalAlpha=1;x.fillText(d.emoji,cx,cy+sz*0.04);x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle=ink;}
+ if(rH){drawRoute(x,route,160,y,W-320,rH-40,routeC,14);y+=rH;}
+ if(style==='cor'&&route){drawRoute(x,route,140,top+120,W-280,y-top-220,routeC,16);}
+ else if(style==='cor'){const sz=Math.min(380,y-top-160);if(sz>140){x.save();x.translate(W/2-sz/2,top+80+(y-top-80-sz)/2);x.scale(sz/24,sz/24);x.strokeStyle=tema==='laranja'?'#FFFFFF':acc;x.lineWidth=1.7;x.lineCap='round';x.lineJoin='round';
+  if(d.emoji){x.restore();const cx=W/2,cy=top+80+(y-top-80)/2,r=sz*0.62;x.fillStyle=T.blob;x.globalAlpha=tema==='creme'?.08:.12;x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.globalAlpha=1;x.font=Math.round(sz*0.62)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.globalAlpha=1;x.fillText(d.emoji,cx,cy+sz*0.04);x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle=ink;}
   else{x.stroke(new Path2D(d.kind==='gym'?'M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11':'M3 12h4l3-8 4 16 3-8h4'));x.restore();}}}
  x.fillStyle=ink;fitFont(x,d.title,58,30,600,SERIF,W-160);x.fillText(d.title,80,y+50);y+=80;
  if(big){x.font='600 250px '+SERIF;const bw=x.measureText(big.big).width;x.fillText(big.big,72,y+210);x.font='600 64px '+SANS;x.fillStyle=acc;x.fillText(big.u,72+bw+24,y+210);x.fillStyle=ink;y+=250;}
@@ -2640,13 +2648,16 @@ async function makeCard(d,sel,style,photo){
  x.shadowColor='transparent';return c;}
 let SHARE=null;
 const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-function shareOpen(a,run){const d=run?shareInfoRun(run):shareInfo(a);D.shareSel=D.shareSel||{};const def=D.shareSel[d.kind+'2']||SHARE_DEF[d.kind];
+function shareOpen(a,run){const d=run?shareInfoRun(run):shareInfo(a);D.shareSel=D.shareSel||{};d.selKey=d.selKey||d.kind+'2';const def=D.shareSel[d.selKey]||(d.kind==='act'?d.fields.map(f=>f[0]).filter(k=>k!=='sequencia'):SHARE_DEF[d.kind]);
  SHARE={d,sel:def.slice(),style:'sticker',photo:null,url:''};shareRender();}
-async function shareRender(){const S=SHARE;if(!S)return;const c=await makeCard(S.d,S.sel,S.style,S.photo);S.canvas=c;S.url=c.toDataURL('image/png');
+async function shareRender(){const S=SHARE;if(!S)return;const CT=D.cardTheme||{cor:'verde',tinta:'branco'};const c=await makeCard(S.d,S.sel,S.style,S.photo,CT.cor,CT.tinta);S.canvas=c;S.url=c.toDataURL('image/png');
  const pnl=document.querySelector('#sheet .panel');const sc=pnl?pnl.scrollTop:0;
- const avail=SHARE_F[S.d.kind].filter(([k])=>S.d.f[k]);
+ const avail=(S.d.fields||SHARE_F[S.d.kind]).filter(([k])=>S.d.f[k]);
  openSheet(`<span class="kicker">Pra colar na foto</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">Seu card 📸</h2>
  <div class="chips" style="margin-bottom:12px">${[['sticker','✨ Sticker transparente'],['cor','🎨 Card colorido']].map(([k,l])=>`<button class="chip ${S.style===k?'on':''}" data-a="shareStyle" data-s="${k}">${l}</button>`).join('')}<label class="chip ${S.style==='foto'?'on':''}" style="cursor:pointer">🖼️ Na minha foto<input type="file" accept="image/*" data-c="sharePhoto" style="display:none"></label></div>
+ ${(()=>{const CT=D.cardTheme||{cor:'verde',tinta:'branco'};const sw=(c1,c2,b)=>`<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,${c1},${c2});border:1px solid ${b||'rgba(0,0,0,.12)'};vertical-align:-3px;margin-right:6px"></span>`;
+  return S.style==='cor'?`<div class="chips" style="margin:-2px 0 12px"><span class="small mut" style="align-self:center;font-weight:700;margin-right:2px">Cor:</span>${[['verde','Verde','#0F4C45','#08302B'],['laranja','Laranja','#E8633A','#B84A26'],['creme','Creme','#FAF6EF','#EFE5D3']].map(([k,l,a,b])=>`<button class="chip ${CT.cor===k?'on':''}" data-a="cardTema" data-t="cor" data-v="${k}">${sw(a,b)}${l}</button>`).join('')}</div>`
+  :`<div class="chips" style="margin:-2px 0 12px"><span class="small mut" style="align-self:center;font-weight:700;margin-right:2px">Cor do texto:</span>${[['branco','Branco','#FFFFFF','#FFFFFF'],['verde','Verde','#0F4C45','#0F4C45'],['laranja','Laranja','#E8633A','#E8633A']].map(([k,l,a,b])=>`<button class="chip ${CT.tinta===k?'on':''}" data-a="cardTema" data-t="tinta" data-v="${k}">${sw(a,b)}${l}</button>`).join('')}</div>`;})()}
  <div style="border-radius:16px;overflow:hidden;background:${S.style==='sticker'?'repeating-conic-gradient(#56625e 0 25%,#4a5551 0 50%) 0 0/22px 22px':'var(--soft)'};margin-bottom:12px"><img src="${S.url}" alt="Prévia do card" style="width:100%;display:block;${S.style==='sticker'?'':'max-height:60vh;object-fit:contain'}"></div>
  <div class="btnrow" style="margin-top:0">${S.style==='sticker'?'<button class="btn alt sm" data-a="shareCopy">📋 Copiar</button><button class="btn2" style="padding:10px" data-a="shareGo">📤 Enviar</button>':'<button class="btn alt sm" data-a="shareGo">📤 Enviar</button>'}<button class="btn2" style="padding:10px" data-a="shareSave">⬇️ Salvar</button></div>
  ${S.style==='sticker'?'<p class="small mut" style="margin:8px 0 0">Toque em <b>Copiar</b>, abra o story do Instagram com a sua foto e toque na tela pra <b>Colar</b>. O fundo é transparente, só os números aparecem.</p>':''}
@@ -2816,6 +2827,7 @@ const A={
   if(f.type==='natacao'){const pisc=parseInt(d.piscinas,10);let m=parseInt(String(d.metros||'').replace(/\D/g,''),10);if(!m&&pisc&&d.piscina)m=pisc*parseInt(d.piscina,10);if(m)a.metros=m;delete d.metros;if(pisc)d.piscinas=pisc;else delete d.piscinas;}
   if(d.passos){const ps=parseInt(String(d.passos).replace(/\D/g,''),10);if(ps)d.passos=ps;else delete d.passos;}
   if(d.nome)d.nome=String(d.nome).trim().slice(0,40);
+  Object.keys(d).filter(k=>k.endsWith('Outro')).forEach(ko=>{const k=ko.slice(0,-5);if(d[k]==='Outro'){const t=String(d[ko]||'').trim().slice(0,30);d[k]=t||'';}delete d[ko];});
   Object.keys(d).forEach(k=>{if(d[k]===''||d[k]==null||(Array.isArray(d[k])&&!d[k].length))delete d[k];});
   if(Object.keys(d).length)a.det=d;const nm=actTitle(a);if(nm!==(ACTM[a.type]||ACTM.outro)[1])a.name=nm;
   D.activities.push(a);
@@ -2992,7 +3004,8 @@ const A={
  shareAct:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;const r=a.runId&&(D.runs||[]).find(x=>x.id===a.runId);shareOpen(a,r);},
  shareRun:t=>{const r=(D.runs||[]).find(x=>x.id===t.dataset.id);if(r)shareOpen(null,r);},
  shareStyle:t=>{SHARE.style=t.dataset.s;shareRender();},
- shareField:t=>{const k=t.dataset.k,S=SHARE;S.sel=S.sel.includes(k)?S.sel.filter(x=>x!==k):S.sel.concat(k);D.shareSel=D.shareSel||{};D.shareSel[S.d.kind+'2']=S.sel.slice();persist();shareRender();},
+ cardTema:t=>{D.cardTheme=Object.assign({cor:'verde',tinta:'branco'},D.cardTheme||{},{[t.dataset.t]:t.dataset.v});persist();shareRender();},
+ shareField:t=>{const k=t.dataset.k,S=SHARE;S.sel=S.sel.includes(k)?S.sel.filter(x=>x!==k):S.sel.concat(k);D.shareSel=D.shareSel||{};D.shareSel[S.d.selKey]=S.sel.slice();persist();shareRender();},
  shareGo:async()=>{const b=await cardBlob();const f=new File([b],'meu-treino.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});}catch(e){}}else A.shareSave();},
  shareCopy:async()=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':cardBlob()})]);toast('Copiado! Agora cole no story 📋');}catch(e){toast('Seu celular não deixou copiar. Use Compartilhar 😉');}},
