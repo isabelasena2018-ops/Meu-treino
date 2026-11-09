@@ -181,7 +181,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='3.7 · 09/11 18h';
+const APP_VERSION='3.8 · 09/11 18h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1261,7 +1261,13 @@ const num=v=>{const n=parseFloat(String(v||'').replace(',','.'));return isNaN(n)
 const yt=id=>'https://www.youtube.com/results?search_query='+encodeURIComponent(EX[id].n+' execução correta');
 const periodNow=()=>{const h=new Date().getHours();return h<11?'manhã':h<14?'almoço':h<18?'tarde':'noite';};
 const dayCheck=k=>{if(!D.checks[k])D.checks[k]={supps:{},aguaMl:0,aguaLog:[],meals:{},onTrack:null};const c=D.checks[k];if(c.aguaMl==null)c.aguaMl=(c.agua||0)*250;if(!c.aguaLog)c.aguaLog=[];return c;};
-function aguaMeta(){const p=lastWeight();if(!p)return 2000;return Math.min(3500,Math.max(1500,Math.round(p*35/100)*100));}
+function delActivity(a){D.activities=D.activities.filter(x=>x.id!==a.id);
+ if(a.type==='musculacao'&&a.workoutId){const w=D.workouts.find(x=>x.id===a.workoutId);const ids=w?w.items.map(i=>i.exId):[];
+  const other=D.activities.filter(x=>x.date===a.date&&x.type==='musculacao'&&x.workoutId).map(x=>D.workouts.find(y=>y.id===x.workoutId)).filter(Boolean).flatMap(x=>x.items.map(i=>i.exId));
+  ids.filter(id=>!other.includes(id)).forEach(id=>{if(D.history[id]){D.history[id]=D.history[id].filter(e=>e.date!==a.date);if(!D.history[id].length)delete D.history[id];}});}
+ if(a.runId){D.runs=(D.runs||[]).filter(r=>r.id!==a.runId);}}
+function aguaMetaPeso(){const p=lastWeight();if(!p)return 2000;return Math.min(3500,Math.max(1500,Math.round(p*35/100)*100));}
+function aguaMeta(){if(D.aguaMetaMl>0)return D.aguaMetaMl;const p=lastWeight();if(!p)return 2000;return Math.min(3500,Math.max(1500,Math.round(p*35/100)*100));}
 const fmtL=ml=>{ml=Math.round(ml||0);return ml>=1000?String(Math.round(ml/100)/10).replace('.',',')+' L':ml+' ml';};
 function recips(){if(!Array.isArray(D.recipientes)||!D.recipientes.length)D.recipientes=[{n:'Copo',e:'🥤',ml:250},{n:'Garrafa',e:'🧴',ml:null}];return D.recipientes;}
 function aguaAddMl(ml){const c=dayCheck(today());const before=c.aguaMl;c.aguaMl=Math.max(0,before+ml);c.aguaLog.push(ml);persist();return before<aguaMeta()&&c.aguaMl>=aguaMeta();}
@@ -1416,7 +1422,11 @@ function aguaCfgHtml2(){const R=UI.recEdit;return `<h2 class="disp" style="font-
  ${R.map((r,i)=>`<div class="it"><span style="font-size:22px">${r.e}</span><div class="nm"><input data-i="rec.n.${i}" value="${esc(r.n)}" aria-label="Nome" style="margin-top:0;font-weight:700"><input data-i="rec.ml.${i}" inputmode="numeric" value="${r.ml||''}" placeholder="quantos ml?" aria-label="Quantidade em ml"></div>${R.length>1?`<button class="ib del" data-a="recDel" data-i="${i}" aria-label="Remover">×</button>`:''}</div>`).join('')}
  <button class="btn2" style="margin:6px 0 10px" data-a="recNew">+ Adicionar recipiente</button>
  <button class="btn" data-a="recSave">Salvar</button>
- <label class="lbl">Sua meta diária</label><p class="small mut" style="margin:0">${fmtL(aguaMeta())}, calculada pelo seu peso (35 ml por kg). Pra uma meta personalizada, converse com seu médico ou nutricionista.</p>`;}
+ <div style="border-top:1px solid var(--line);margin-top:18px"></div><label class="lbl">Sua meta diária de água</label>
+ <p class="small mut" style="margin:0 0 8px">${D.aguaMetaMl>0?`Hoje: <b>${fmtL(D.aguaMetaMl)}</b>, a meta que você escolheu.`:`Hoje: <b>${fmtL(aguaMeta())}</b>, calculada pelo seu peso (35 ml por kg). Se sua nutricionista ou médico indicou outra quantidade, coloque aqui.`}</p>
+ <div style="display:flex;gap:8px"><input class="inp" id="agua-meta" inputmode="decimal" placeholder="ex: 3 litros ou 3000 ml" value="${D.aguaMetaMl>0?String(D.aguaMetaMl/1000).replace('.',','):''}"><button class="btn sm" style="width:auto;padding:0 16px" data-a="aguaMetaSave">Salvar meta</button></div>
+ <p class="small mut" style="margin:6px 0 0">Pode escrever em litros (3 ou 2,5) ou em ml (3000).</p>
+ ${D.aguaMetaMl>0?`<button class="small" style="margin-top:8px;font-weight:700;color:var(--a)" data-a="aguaMetaReset">Voltar pra meta calculada pelo peso (${fmtL(aguaMetaPeso())})</button>`:''}`;}
 
 /* ---------- Treinos ---------- */
 function vTreinos(){
@@ -1445,7 +1455,7 @@ function vSessao(){
    <div style="display:flex;gap:8px;align-items:flex-start">${done?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
    <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
    ${prev?`<div class="last"><b>Última vez:</b> ${prev.weight} kg${prev.reps?' × '+prev.reps+' reps':''} (${fmt(prev.date)})</div>`:''}
-   ${done?`<div class="last"><b style="color:var(--a)">Hoje:</b> ${last.weight} kg${last.reps?' × '+last.reps+' reps':''}</div>`:''}
+   ${done?`<div class="last" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b style="color:var(--a)">Hoje:</b> ${last.weight} kg${last.reps?' × '+last.reps+' reps':''}</span><button class="small mut" style="font-weight:700" data-a="delSet" data-id="${it.exId}">Apagar</button></div>`:''}
    ${hint}
    <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" placeholder="${prev?prev.weight:'0'}"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" placeholder="${prev&&prev.reps?prev.reps:'reps'}"><span>REPS</span></div><button class="sv" data-a="saveSet" data-id="${it.exId}">${done?'Atualizar':'Salvar'}</button></div>
   </div>`;}).join('');
@@ -1456,7 +1466,8 @@ function vSessao(){
  <div class="card">${doneW?`<p style="margin:0 0 10px;font-weight:700;color:var(--a)">✓ Treino registrado hoje${doneW.minutes?' · '+doneW.minutes+' min':''}</p>`:''}
   <label class="lbl" style="margin-top:0">Quanto tempo durou? (min)</label>
   <input class="inp" id="fin-min" inputmode="numeric" placeholder="ex: 60" value="${doneW&&doneW.minutes?doneW.minutes:''}">
-  <button class="btn alt" style="margin-top:10px" data-a="finish" data-id="${w.id}">${doneW?'Atualizar registro':'Finalizar treino 🔥'}</button></div>
+  <button class="btn alt" style="margin-top:10px" data-a="finish" data-id="${w.id}">${doneW?'Atualizar registro':'Finalizar treino 🔥'}</button>
+  ${doneW?`<button class="btn2 danger" style="margin-top:8px" data-a="delSess" data-id="${doneW.id}">Excluir o treino de hoje</button>`:''}</div>
  <p class="small mut" style="text-align:center">Sentiu dor forte ou nas articulações? Pare e procure orientação de um profissional de educação física.</p>`;
 }
 
@@ -2654,6 +2665,10 @@ const A={
  aguaCfg:()=>{UI.recEdit=JSON.parse(JSON.stringify(recips()));openSheet(aguaCfgHtml2());},
  recNew:()=>{UI.recEdit.push({n:'Squeeze',e:'🫗',ml:null});openSheet(aguaCfgHtml2());},
  recDel:t=>{UI.recEdit.splice(+t.dataset.i,1);openSheet(aguaCfgHtml2());},
+ aguaMetaSave:()=>{const v=num(document.getElementById('agua-meta').value);if(!v){toast('Coloque a meta, ex: 3 ou 3000');return;}
+  const ml=Math.round(v<=10?v*1000:v);if(ml<500||ml>8000){toast('Confere o valor: entre 0,5 e 8 litros');return;}
+  D.aguaMetaMl=ml;persist();openSheet(aguaCfgHtml2());toast('Meta de água: '+fmtL(ml)+' 💧');},
+ aguaMetaReset:()=>{D.aguaMetaMl=null;persist();openSheet(aguaCfgHtml2());toast('Meta pelo peso: '+fmtL(aguaMeta()));},
  recSave:()=>{const list=UI.recEdit.filter(r=>String(r.n||'').trim()).map(r=>({n:String(r.n).trim(),e:r.e||'💧',ml:num(r.ml)?Math.round(num(r.ml)):null}));if(!list.length){toast('Deixe pelo menos um recipiente');return;}
   D.recipientes=list;persist();closeSheet();render();toast('Recipientes salvos! 💧');},
  track:t=>{const c=dayCheck(today());c.onTrack=t.dataset.v==='1';persist();render();},
@@ -2689,7 +2704,12 @@ const A={
  saveAct:()=>{const f=UI.actForm;const min=parseInt(f.minutes,10);
   D.activities.push({id:uid(),ts:Date.now(),date:f.date||today(),type:f.type,minutes:isNaN(min)?null:min,intensity:f.intensity,note:f.note.trim(),period:f.date===today()?periodNow():''});
   persist();UI.actForm=null;render();toast('Atividade registrada! 🔥');},
- delAct:t=>{if(!confirm('Apagar essa atividade?'))return;D.activities=D.activities.filter(a=>a.id!==t.dataset.id);persist();render();},
+ delAct:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;
+  if(!confirm(a.type==='musculacao'&&a.workoutId?'Apagar esse treino? As cargas anotadas nele nesse dia também serão apagadas.':'Apagar essa atividade?'))return;delActivity(a);persist();render();toast('Apagado');},
+ delSess:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;
+  if(!confirm('Excluir o treino de hoje? Ele sai da sua sequência e do histórico, e as cargas anotadas hoje nesse treino também são apagadas.'))return;
+  delActivity(a);persist();render();window.scrollTo(0,0);toast('Treino excluído');},
+ delSet:t=>{const id=t.dataset.id;D.history[id]=(D.history[id]||[]).filter(e=>e.date!==today());if(!D.history[id].length)delete D.history[id];persist();const y=window.scrollY;render();window.scrollTo(0,y);toast('Carga de hoje apagada');},
  saveWeight:()=>{const v=num(document.getElementById('wnew').value);if(v==null){toast('Digite seu peso');return;}
   D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:v});if(!D.profile.pesoInicial){D.profile.pesoInicial=v;}persist();render();toast('Peso salvo!');},
  delWeight:t=>{D.weights=D.weights.filter(e=>e.date!==t.dataset.d);persist();render();},
