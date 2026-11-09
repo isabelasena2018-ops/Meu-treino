@@ -1,0 +1,22 @@
+name: Testar regras do banco
+
+on:
+  workflow_dispatch:
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependências
+        working-directory: robo
+        run: npm install --no-save --no-audit --no-fund firebase@10.12.2 firebase-admin@12
+      - name: Testar
+        working-directory: robo
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node teste-regras.mjs
