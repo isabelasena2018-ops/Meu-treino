@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.0 · 09/11 11h';
+const APP_VERSION='2.1 · 09/11 12h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -863,10 +863,238 @@ function alternatives(id,reason){const x=EX[id];if(!x)return [];
  let list=[...same].concat(Object.keys(EX).filter(o=>o!==id&&!same.has(o)&&EX[o].g===x.g));
  if(id==='vacuo')list=[];
  if(reason==='joelho')list=list.filter(o=>EX[o].kf);
+ if(reason==='lombar')list=list.filter(o=>!LB_HEAVY.includes(o));
+ if(reason==='ombro')list=list.filter(o=>!SH_HEAVY.includes(o));
+ if(typeof profileCfg==='function'&&D.profile){const pc=profileCfg();list=list.filter(o=>canDo(o,pc));}
+ list=list.map((o,i)=>[o,i]).sort((a,b)=>((EX[a[0]].tier>=4)-(EX[b[0]].tier>=4))||a[1]-b[1]).map(z=>z[0]);
  if(reason==='aparelho'){const free=['corpo','halter','elastico'];const heavy=['maquina','polia','barra','kettlebell'].includes(x.eq);
   if(heavy)list=list.filter(o=>EX[o].eq!==x.eq);const k=o=>(free.includes(EX[o].eq)?0:10)+(same.has(o)?0:1);list=list.map((o,i)=>[o,i]).sort((a,b)=>k(a[0])-k(b[0])||a[1]-b[1]).map(z=>z[0]);}
  return list.slice(0,7);}
 
+/* ================== PLANEJADOR (lógica de especialista) ================== */
+/* exercícios extras pra treinar em casa */
+Object.assign(EX,{
+remada_elastico:{n:'Remada com elástico',g:'costas',c:1,
+ p:['Prenda o elástico num ponto firme na altura do peito (ou passe pelos pés, sentada com as pernas esticadas).','Coluna reta e peito aberto.','Puxe as pontas em direção à barriga, cotovelos rentes ao corpo, juntando as escápulas.','Volte devagar, sem deixar o elástico puxar você.'],
+ s:'Meio das costas, entre as escápulas.',x:'Pescoço tenso ou lombar fazendo força.',
+ e:['Encolher os ombros','Inclinar o tronco pra trás pra puxar'],k:'Pra progredir, use um elástico mais forte ou afaste mais do ponto de apoio.'},
+puxada_elastico:{n:'Puxada alta com elástico',g:'costas',c:1,
+ p:['Prenda o elástico no alto (topo da porta com protetor de porta) e ajoelhe-se de frente.','Braços esticados pra cima segurando as pontas.','Puxe levando os cotovelos pra baixo e pra trás, até as mãos chegarem perto dos ombros.','Volte devagar.'],
+ s:'Lateral das costas (dorsal).',x:'Só bíceps ou ombro trabalhando.',
+ e:['Puxar com as mãos em vez dos cotovelos','Arquear a lombar'],k:'Substitui a puxada da academia em casa. Confira se a porta está bem fechada e travada.'},
+abducao_elastico:{n:'Abdução sentada com elástico',g:'gluteo',
+ p:['Sentada na beirada de uma cadeira, mini band acima dos joelhos.','Tronco levemente inclinado à frente, pés firmes.','Abra os joelhos contra o elástico e segure 1s.','Feche devagar sem deixar o elástico vencer.'],
+ s:'Lateral e parte de cima do glúteo (glúteo médio).',x:'Dor no joelho ou na virilha.',
+ e:['Abrir rápido e soltar','Pés saindo do chão'],k:'Versão de casa da cadeira abdutora. Ótima com muitas repetições.'},
+superman:{n:'Superman (extensão no chão)',g:'costas',
+ p:['Deite de barriga pra baixo, braços esticados à frente.','Olhe pro chão (pescoço neutro).','Suba braços, peito e pernas um pouquinho do chão, apertando glúteo e costas.','Segure 2s e desça.'],
+ s:'Lombar, glúteo e parte de cima das costas.',x:'Dor aguda na lombar ou no pescoço.',
+ e:['Subir demais arqueando','Olhar pra frente'],k:'Fortalece a postura. Amplitude pequena já basta.'}
+});
+PAT.remar.push('remada_elastico');PAT.puxvert.push('puxada_elastico');PAT.abducao.push('abducao_elastico');PAT.lombar.push('superman');
+EQ.elastico.push('remada_elastico','puxada_elastico','abducao_elastico');EQ.corpo.push('superman');
+['remada_elastico','puxada_elastico','abducao_elastico','superman'].forEach(id=>{const x=EX[id];x.kf=true;x.eq=Object.keys(EQ).find(k=>EQ[k].includes(id));x.pats=Object.keys(PAT).filter(k=>PAT[k].includes(id));});
+
+/* foco anatômico (região principal primeiro) e nível: 1 essencial · 2 ótimo · 3 complementar · 4 pouco eficiente no plano */
+const REG={glu_max:'Glúteo máximo',glu_med:'Glúteo médio',glu_sup:'Parte de cima do glúteo',quad:'Quadríceps',post:'Posterior de coxa',adutor:'Adutores',pant:'Panturrilha',dorsal:'Dorsal (largura)',costas_meio:'Meio das costas',post_ombro:'Ombro posterior',lombar:'Lombar',peito:'Peito',peito_sup:'Peito superior',ombro_ant:'Ombro frontal',ombro_lat:'Ombro lateral',biceps:'Bíceps',triceps:'Tríceps',core:'Core',reto:'Reto abdominal',obliquos:'Oblíquos',antebraco:'Antebraço'};
+const FOCO={
+hip_thrust:[['glu_max'],1],hip_thrust_uni:[['glu_max','glu_med'],2],elevacao_pelvica:[['glu_max'],3],elev_pelvica_uni:[['glu_max','glu_med'],2],frog_pump:[['glu_max'],3],
+bulgaro:[['glu_max','quad'],1],afundo_reverso:[['glu_max','quad'],2],passada:[['glu_max','quad'],2],step_up:[['glu_max','glu_med','quad'],2],cossaco:[['adutor','glu_max'],3],agach_sumo:[['glu_max','adutor','quad'],2],
+abducao_maquina:[['glu_med','glu_sup'],1],abducao_polia:[['glu_med','glu_sup'],2],abducao_elastico:[['glu_med','glu_sup'],2],abducao_deitada:[['glu_med'],3],caminhada_lateral:[['glu_med'],3],clamshell:[['glu_med'],3],fire_hydrant:[['glu_med','glu_sup'],3],
+coice_polia:[['glu_max'],2],coice_cruzado:[['glu_sup','glu_med'],2],coice_4apoios:[['glu_max'],3],kickback_maquina:[['glu_max'],2],hiperext_gluteo:[['glu_max','post'],2],pull_through:[['glu_max','post'],3],kb_swing:[['glu_max','post'],3],
+agachamento:[['quad','glu_max'],1],smith:[['quad','glu_max'],1],hack:[['quad'],1],leg_press:[['quad','glu_max'],1],leg_press_uni:[['quad','glu_max'],2],goblet:[['quad','glu_max'],2],frontal:[['quad'],2],agach_livre_pc:[['quad'],3],wall_sit:[['quad'],3],extensora:[['quad'],2],afundo:[['quad','glu_max'],2],
+stiff:[['post','glu_max'],1],terra_romeno:[['post','glu_max'],1],stiff_uni:[['post','glu_max'],2],good_morning:[['post','lombar'],3],flexora_sentada:[['post'],1],flexora_deitada:[['post'],2],flexora_pe:[['post'],2],flexora_bola:[['post'],3],
+pant_pe:[['pant'],1],pant_sentada:[['pant'],2],pant_leg:[['pant'],2],pant_uni:[['pant'],2],
+puxada:[['dorsal','biceps'],1],barra_assistida:[['dorsal','biceps'],1],puxada_triangulo:[['dorsal','costas_meio'],2],puxada_supinada:[['dorsal','biceps'],2],puxada_elastico:[['dorsal'],2],pullover:[['dorsal'],3],
+remada_baixa:[['costas_meio','dorsal'],1],remada_maquina:[['costas_meio'],1],serrote:[['dorsal','costas_meio'],1],remada_curvada:[['costas_meio','dorsal'],2],remada_cavalinho:[['costas_meio'],2],remada_uni_polia:[['dorsal'],2],remada_invertida:[['costas_meio'],2],remada_elastico:[['costas_meio'],2],
+crucifixo_inverso:[['post_ombro','costas_meio'],2],face_pull:[['post_ombro'],2],hiperext_lombar:[['lombar','glu_max'],3],superman:[['lombar'],3],
+supino_reto:[['peito','triceps'],1],supino_incl:[['peito_sup','ombro_ant'],1],supino_maquina:[['peito','triceps'],2],flexao:[['peito','triceps'],2],flexao_inclinada:[['peito','triceps'],3],crossover:[['peito'],2],voador:[['peito'],2],crucifixo:[['peito'],3],
+desenvolvimento:[['ombro_ant','ombro_lat'],1],arnold:[['ombro_ant','ombro_lat'],2],desenv_maquina:[['ombro_ant','ombro_lat'],2],elev_lateral:[['ombro_lat'],1],elev_lateral_polia:[['ombro_lat'],1],elev_frontal:[['ombro_ant'],4],remada_alta:[['ombro_lat'],4],
+rosca_direta:[['biceps'],1],rosca_inclinada:[['biceps'],1],rosca_martelo:[['biceps','antebraco'],2],rosca_scott:[['biceps'],2],rosca_alternada:[['biceps'],2],rosca_polia:[['biceps'],2],rosca_concentrada:[['biceps'],3],
+triceps_frances:[['triceps'],1],triceps_corda:[['triceps'],1],triceps_barra:[['triceps'],2],triceps_testa:[['triceps'],2],triceps_uni_polia:[['triceps'],2],triceps_coice:[['triceps'],3],mergulho_banco:[['triceps'],3],supino_fechado:[['triceps','peito'],2],
+dead_bug:[['core'],1],pallof:[['obliquos','core'],1],prancha:[['core'],2],hollow:[['core'],2],prancha_lateral:[['obliquos'],2],abd_polia:[['reto'],1],elev_joelhos_paralela:[['reto'],1],abdominal_supra:[['reto'],2],elev_pernas:[['reto'],2],abd_remador:[['reto'],3],bicicleta:[['obliquos'],3],russian:[['obliquos'],3],mountain:[['core'],3],vacuo:[['core'],4]};
+const NOTE4={elev_frontal:'Raramente necessária: o ombro da frente já trabalha bastante em supinos e desenvolvimentos. Por isso não entra automaticamente nos treinos.',remada_alta:'Pode incomodar o ombro e a elevação lateral trabalha a mesma região com mais segurança. Por isso não entra automaticamente.',vacuo:'Bom pra consciência do abdômen profundo e postura, mas não substitui o treino de core.'};
+Object.entries(FOCO).forEach(([id,[r,t]])=>{if(EX[id]){EX[id].foco=r;EX[id].tier=t;}});
+Object.values(EX).forEach(x=>{if(!x.foco){x.foco=[x.g];x.tier=3;}});
+const TIERL={1:'⭐ Essencial',2:'👍 Ótimo',3:'➕ Complementar',4:'⚠️ Pouco eficiente no plano'};
+
+/* restrições */
+const LB_HEAVY=['agachamento','frontal','good_morning','terra_romeno','stiff','remada_curvada','remada_cavalinho','kb_swing','hiperext_lombar','hiperext_gluteo','smith','superman'];
+const SH_HEAVY=['desenvolvimento','arnold','desenv_maquina','remada_alta','mergulho_banco','supino_fechado','crucifixo','pullover','triceps_frances','triceps_testa','elev_frontal','supino_reto','flexao','barra_assistida'];
+/* dá pra fazer em casa? */
+const BODY_OK=['bulgaro','afundo','afundo_reverso','passada','step_up','cossaco','pant_uni','russian','stiff_uni'];
+const HALTER_OK=['stiff','terra_romeno','hip_thrust','remada_curvada','rosca_direta','triceps_testa','supino_reto','crucifixo','agach_sumo','goblet'];
+const HOME_NO=['remada_invertida','flexora_bola','rosca_inclinada','rosca_scott','supino_incl','hiperext_gluteo','hiperext_lombar','elev_joelhos_paralela'];
+function canDo(id,cfg){const x=EX[id];if(!x)return false;
+ const lim=cfg.lim||[];
+ if(lim.includes('joelho')&&!x.kf)return false;
+ if(lim.includes('lombar')&&LB_HEAVY.includes(id))return false;
+ if(lim.includes('ombro')&&SH_HEAVY.includes(id))return false;
+ if(cfg.local!=='casa')return true;
+ if(HOME_NO.includes(id))return false;
+ const eq=cfg.homeEq||[];
+ if(x.eq==='corpo'||BODY_OK.includes(id))return true;
+ if(x.eq==='halter'||HALTER_OK.includes(id))return eq.includes('halter');
+ if(x.eq==='elastico')return eq.includes('elastico');
+ if(x.eq==='kettlebell')return eq.includes('kettlebell')||eq.includes('halter');
+ return false;}
+
+/* slots: cada um é uma FUNÇÃO no treino (evita redundância) */
+const SLOT={
+ ponte:{pats:['ponte'],why:'Base do glúteo: maior carga com o glúteo máximo bem contraído.'},
+ dobradica:{pats:['dobradica'],why:'Glúteo e posterior trabalhando alongados. Complementa a ponte em vez de repetir.'},
+ unilat:{pats:['unilat'],why:'Uma perna por vez: glúteo, estabilidade do quadril e equilíbrio entre os lados.'},
+ abducao:{pats:['abducao'],why:'Glúteo médio (lateral e parte de cima): dá o contorno lateral e protege joelho e quadril.'},
+ extquad:{pats:['extquad'],why:'Isolamento do glúteo pra fechar o treino sem sobrecarregar a lombar.'},
+ agacha:{pats:['agacha'],why:'Base das pernas: quadríceps e glúteo com carga.'},
+ quadiso:{pats:['quadiso'],why:'Isola o quadríceps sem cansar a lombar.'},
+ flexjoelho:{pats:['flexjoelho'],why:'Posterior na função de dobrar o joelho. É diferente do stiff, por isso não é redundante.'},
+ pant:{pats:['pant'],why:'Panturrilha precisa de trabalho direto: os outros exercícios quase não estimulam.'},
+ puxvert:{pats:['puxvert'],why:'Puxada vertical: largura das costas (dorsal), o famoso "V".'},
+ remar:{pats:['remar'],why:'Remada: espessura das costas e postura.'},
+ postombro:{pats:['postombro'],why:'Ombro posterior e escápulas: postura e ombro saudável. Quase sempre esquecido.'},
+ supino:{pats:['supino'],why:'Empurrar na horizontal: peito, ombro da frente e tríceps de uma vez.'},
+ desenv:{pats:['desenv'],why:'Empurrar pra cima: ombros completos.'},
+ lateral:{pats:['lateral'],why:'Deltoide lateral: deixa o ombro "redondinho". O supino quase não pega essa parte.'},
+ crucif:{pats:['crucif'],why:'Isolamento do peito pra complementar o supino.'},
+ rosca:{pats:['rosca'],why:'Bíceps direto.'},
+ triceps:{pats:['triceps'],why:'Tríceps é 2/3 do braço: é ele que mais ajuda no braço firme.'},
+ coreiso:{pats:['coreiso'],why:'Core de estabilidade: protege a coluna e firma a barriga por dentro.'},
+ coredin:{pats:['coredin'],why:'Abdômen com movimento e carga progressiva.'}
+};
+/* sessões: [slot, prioridade (menor = mais importante), dica de escolha] */
+const SESS={
+ G:{n:'Glúteo',f:'gluteo',s:[['ponte',1],['dobradica',2],['unilat',3,'glu'],['abducao',4],['extquad',6],['abducao',8,'alt']]},
+ Q:{n:'Quadríceps',f:'pernas',s:[['agacha',1],['unilat',2,'quad'],['quadiso',4],['flexjoelho',5],['pant',7],['abducao',8]]},
+ P:{n:'Posterior + Glúteo',f:'gluteo',s:[['dobradica',1],['ponte',2],['flexjoelho',3],['abducao',4],['unilat',6,'glu'],['extquad',8]]},
+ L:{n:'Inferiores',f:'pernas',s:[['agacha',1],['ponte',2],['dobradica',3],['abducao',5],['flexjoelho',6],['unilat',7,'glu'],['pant',8]]},
+ Pull:{n:'Costas + Bíceps',f:'costas',s:[['puxvert',1],['remar',2],['remar',4,'uni'],['postombro',5],['rosca',6],['rosca',9,'alongado'],['puxvert',8]]},
+ Push:{n:'Peito + Ombro + Tríceps',f:'superiores',s:[['supino',1],['lateral',2],['desenv',3],['triceps',4],['supino',5,'inclinado'],['crucif',7],['triceps',9,'alongado']]},
+ U:{n:'Superiores',f:'superiores',s:[['puxvert',1],['supino',2],['remar',3],['lateral',4],['triceps',5],['postombro',6],['rosca',7],['desenv',8]]},
+ F:{n:'Corpo todo',f:'corpo',s:[['agacha',1],['puxvert',2],['ponte',3],['supino',4],['remar',5],['dobradica',6],['lateral',7],['abducao',8]]},
+ B:{n:'Braços',f:'braco',s:[['triceps',1],['rosca',1],['triceps',3,'alongado'],['rosca',3,'alongado'],['lateral',5]]},
+ C:{n:'Abdômen',f:'barriga',s:[['coreiso',1],['coredin',2],['coreiso',3,'obl'],['coredin',4]]}
+};
+const AREAS={
+ gluteo:{l:'Glúteo',e:'🍑',sub:[['todo','Glúteo completo'],['max','Volume (glúteo máximo)'],['med','Lateral e parte de cima (glúteo médio)']]},
+ pernas:{l:'Pernas',e:'🦵',sub:[['todo','Coxa completa'],['quad','Frente (quadríceps)'],['post','Posterior de coxa']]},
+ costas:{l:'Costas',e:'🦋',sub:[['todo','Costas completas'],['largura','Largura ("V")'],['postura','Espessura e postura']]},
+ braco:{l:'Braços',e:'💪',sub:[['todo','Braço completo'],['triceps','Tríceps (braço firme)'],['biceps','Bíceps']]},
+ ombro:{l:'Ombros',e:'✨',sub:[['todo','Ombro completo'],['lateral','Ombro "redondinho" (lateral)']]},
+ peito:{l:'Peito',e:'🫀',sub:[['todo','Peito completo'],['superior','Parte de cima']]},
+ barriga:{l:'Barriga / core',e:'🔥',sub:[['todo','Core completo'],['estab','Firmeza e postura'],['reto','Abdominal "tanquinho"']]},
+ corpo:{l:'Corpo equilibrado',e:'⚖️',sub:[]}
+};
+function pickTemplate(cfg){const n=cfg.days.length,P=new Set(cfg.foci);
+ const low=P.has('gluteo')||P.has('pernas'),up=P.has('costas')||P.has('braco')||P.has('ombro')||P.has('peito');
+ if(n===2)return ['F','F'];
+ if(n===3)return P.has('gluteo')?['G','U','L']:low&&!up?['L','U','P']:['L','U','F'];
+ if(n===4)return P.has('gluteo')?['G','U','Q','U']:P.has('pernas')?['Q','U','P','U']:up&&!low?['U','L','U','L']:['L','U','P','U'];
+ if(n===5)return up&&!low?['Pull','L','Push','U','L']:['G','Pull','Q','Push','P'];
+ return ['G','Pull','Q','Push','P',P.has('braco')?'B':'U'];}
+function tuneSlots(type,cfg){
+ const P=new Set(cfg.foci),sub=cfg.sub||{};let s=SESS[type].s.map(x=>[...x]);
+ const has=k=>s.find(x=>x[0]===k);const pr=(k,p)=>{const z=has(k);if(z)z[1]=Math.min(z[1],p);};
+ const lower=['G','Q','P','L','F'].includes(type),upper=['Pull','Push','U','F','B'].includes(type);
+ if(P.has('gluteo')&&lower){pr('ponte',type==='Q'?4:1);pr('abducao',3);
+  if(sub.gluteo==='med'){pr('abducao',2);if(type==='G'){if(!s.some(x=>x[0]==='abducao'&&x[2]==='alt'))s.push(['abducao',4,'alt']);else s.forEach(x=>{if(x[0]==='abducao'&&x[2]==='alt')x[1]=4;});}}
+  if(sub.gluteo==='max'){pr('ponte',1);pr('dobradica',2);pr('unilat',3);}}
+ if(P.has('pernas')&&lower){if(sub.pernas==='post'){pr('dobradica',1);pr('flexjoelho',2);}else{pr('agacha',1);pr('quadiso',3);}}
+ if(P.has('costas')&&upper){pr('puxvert',1);pr('remar',2);if(sub.costas==='largura')s.push(['puxvert',3,'alt']);if(sub.costas==='postura'){s.push(['remar',3,'uni']);pr('postombro',3);}}
+ if(P.has('braco')&&upper){if(!has('triceps'))s.push(['triceps',5]);if(!has('rosca'))s.push(['rosca',6]);pr('triceps',sub.braco==='biceps'?4:3);pr('rosca',sub.braco==='triceps'?5:3);}
+ if(P.has('ombro')&&upper){if(!has('lateral'))s.push(['lateral',3]);pr('lateral',2);if(!has('postombro'))s.push(['postombro',5]);}
+ if(P.has('peito')&&upper){pr('supino',1);if(!has('crucif'))s.push(['crucif',5]);if(sub.peito==='superior')s.push(['supino',3,'inclinado']);}
+ return s;}
+function scoreEx(id,slot,hint,cfg,usedWeek){const x=EX[id];let sc=x.tier*10;
+ const sub=cfg.sub||{};
+ if(hint==='quad'&&x.foco[0]==='quad')sc-=6;
+ if(hint==='glu'&&x.foco[0]==='glu_max')sc-=6;
+ if(hint==='uni'&&x.uni)sc-=6;
+ if(hint==='inclinado'&&x.foco.includes('peito_sup'))sc-=12;
+ if(hint==='alongado'&&['rosca_inclinada','triceps_frances','flexora_sentada','stiff'].includes(id))sc-=8;
+ if(hint==='obl'&&x.foco.includes('obliquos'))sc-=12;
+ if(slot==='abducao'&&sub.gluteo==='med'&&x.foco.includes('glu_sup'))sc-=4;
+ if(slot==='coredin'&&sub.barriga==='reto'&&x.foco[0]==='reto')sc-=5;
+ if(slot==='coreiso'&&sub.barriga==='estab')sc-=2;
+ if(cfg.nivel==='iniciante'&&['frontal','barra_assistida','elev_joelhos_paralela','good_morning','kb_swing','cossaco','hollow'].includes(id))sc+=12;
+ if(usedWeek.has(id))sc+=(x.tier===1?7:9);
+ if(cfg.seed){sc+=((cfg.seed*9301+id.length*49297+id.charCodeAt(0)*233)%11)/2;}
+ return sc;}
+function setsFor(id,cfg,main){const x=EX[id],o=cfg.obj||'emagrecer',ini=cfg.nivel==='iniciante',u=x.uni?' (cada lado)':'';
+ if(id==='vacuo')return '3-5 × 15-20s';
+ if(x.iso)return '3 × '+(ini?'20-30s':'30-45s')+u;
+ if(x.g==='abdomen')return '3 × 12-15'+u;
+ if(x.g==='panturrilha')return (ini?'3':'4')+' × 12-15'+u;
+ if(x.pats.includes('abducao'))return '3 × 15-20'+u;
+ if(x.c){if(main&&!ini)return (o==='musculo'?'4 × 6-10':o==='saude'?'3 × 8-12':'4 × 8-12')+u;return (ini?'3 × 10-12':o==='musculo'?'3 × 8-12':'3 × 10-12')+u;}
+ return (o==='musculo'&&!ini?'3 × 10-15':'3 × 12-15')+u;}
+const nSets=s=>{const m=String(s).match(/^(\d+)/);return m?+m[1]:3;};
+const volGroup=r=>Object.keys(VOLG).find(k=>VOLG[k].includes(r));
+function isPrio(g,cfg){return new Set(cfg.foci.flatMap(f=>AREA2VOL[f]||[])).has(g);}
+function volCap(g,cfg){const ini=cfg.nivel==='iniciante';
+ if(cfg.foci.includes('corpo'))return ini?12:16;if(isPrio(g,cfg))return ini?14:22;return g==='abdomen'?8:(ini?9:12);}
+function sessCap(g,cfg){const ini=cfg.nivel==='iniciante';if(isPrio(g,cfg))return ini?10:13;return ini?6:8;}
+function addVol(vol,id,sets){const n=nSets(sets);const seen={};EX[id].foco.forEach((r,i)=>{const g=volGroup(r);if(!g)return;const w=i===0?n:n/2;if(w>(seen[g]||0))seen[g]=w;});Object.entries(seen).forEach(([g,w])=>vol[g]=(vol[g]||0)+w);}
+function fitsVol(vol,id,sets,cfg,sv){const g=volGroup(EX[id].foco[0]);if(!g)return true;const n=nSets(sets);
+ if(sv&&(sv[g]||0)+n>sessCap(g,cfg)+1)return false;return (vol[g]||0)+n<=volCap(g,cfg)+1;}
+const FILL_LOW=['ponte','dobradica','abducao','flexjoelho','extquad','unilat','pant'],FILL_UP=['remar','puxvert','lateral','postombro','triceps','rosca','supino'];
+function pickFor(slot,hint,cfg,used,usedWeek,vol,main,sv){
+ const cands=[...new Set(SLOT[slot].pats.flatMap(p=>PAT[p]||[]))].filter(id=>EX[id]&&EX[id].tier<=3&&!used.has(id)&&canDo(id,cfg));
+ cands.sort((a,b)=>scoreEx(a,slot,hint,cfg,usedWeek)-scoreEx(b,slot,hint,cfg,usedWeek));
+ for(const id of cands){const sets=setsFor(id,cfg,main&&!!EX[id].c);if(vol&&!fitsVol(vol,id,sets,cfg,sv))continue;return {id,sets};}
+ return null;}
+function planSession(type,cfg,usedWeek,count,vol){
+ const slots=tuneSlots(type,cfg).sort((a,b)=>a[1]-b[1]);
+ const used=new Set(),items=[],sv={},usedSlots=new Set();
+ const take=(slot,pr,hint)=>{const r=pickFor(slot,hint,cfg,used,usedWeek,vol,pr<=1,sv);if(!r)return;used.add(r.id);usedWeek.add(r.id);usedSlots.add(slot);if(vol){addVol(vol,r.id,r.sets);addVol(sv,r.id,r.sets);}
+  items.push({exId:r.id,sets:r.sets,why:SLOT[slot].why,pr,main:pr<=1&&!!EX[r.id].c});};
+ for(const [slot,pr,hint] of slots){if(items.length>=count)break;take(slot,pr,hint);}
+ if(items.length<Math.min(count,4)){const lower=['G','Q','P','L'].includes(type);(lower?FILL_LOW:FILL_UP).forEach((sl,k)=>{if(items.length<Math.min(count,4)&&!usedSlots.has(sl))take(sl,20+k,'');});}
+ const ord=it=>{const x=EX[it.exId];if(x.g==='abdomen')return 9;if(x.g==='panturrilha')return 8;return (x.c?0:3)+(it.main?-1:0);};
+ items.sort((a,b)=>ord(a)-ord(b));
+ return items.map(it=>({exId:it.exId,sets:it.sets,why:it.why,pr:it.pr}));}
+function plan(cfg){
+ const tpl=pickTemplate(cfg);const P=new Set(cfg.foci);
+ const base={30:4,45:5,60:6,75:7}[cfg.tempo||60]||6;const count=cfg.nivel==='iniciante'?Math.min(base,6):base;
+ const usedWeek=new Set(),vol={};
+ /* dias com core: com prioridade em barriga, até 3 dias (o core conta dentro do tempo); senão, 1 exercício de estabilidade em até 2 dias */
+ const nCore=P.has('barriga')?Math.min(3,tpl.length):Math.min(2,tpl.length);
+ const order=tpl.map((t,i)=>[i,['G','Q','P','L'].includes(t)?0:1]).sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
+ const coreIdx=new Set((P.has('barriga')?order.map(x=>x[0]):order.filter(x=>x[1]===1).concat(order.filter(x=>x[1]===0)).map(x=>x[0])).slice(0,nCore));
+ /* monta primeiro os dias da prioridade, pra eles garantirem os exercícios-chave */
+ const rel={G:'gluteo',P:'gluteo',Q:'pernas',L:'pernas',Pull:'costas',Push:'peito',U:'costas',B:'braco',C:'barriga',F:'corpo'};
+ const rank=t=>P.has(rel[t])||(t==='Push'&&(P.has('ombro')||P.has('braco')))||(t==='U'&&(P.has('ombro')||P.has('braco')||P.has('peito')))||((t==='P'||t==='L')&&P.has('pernas'))?0:1;
+ const days=new Array(tpl.length);
+ tpl.map((t,i)=>[t,i]).sort((a,b)=>rank(a[0])-rank(b[0])||a[1]-b[1]).forEach(([t,i])=>{const c=coreIdx.has(i)&&P.has('barriga')?Math.max(3,count-1):count;
+  const items=planSession(t,cfg,usedWeek,c,vol);let name=SESS[t].n;
+  if(t==='Q'&&!items.some(it=>EX[it.exId].foco[0]==='quad'))name='Inferiores (poupando o joelho)';
+  days[i]={type:t,name,focus:SESS[t].f,day:cfg.days[i],items};});
+ [...coreIdx].sort((a,b)=>a-b).forEach((i,k)=>{const d=days[i];const add=P.has('barriga')?['coreiso','coredin']:['coreiso'];
+  add.forEach(slot=>{const hint=P.has('barriga')&&k===1&&slot==='coreiso'?'obl':'';
+   const r=pickFor(slot,hint,cfg,new Set(d.items.map(x=>x.exId)),usedWeek,vol,false);
+   if(r){usedWeek.add(r.id);addVol(vol,r.id,r.sets);d.items.push({exId:r.id,sets:r.sets,why:SLOT[slot].why});}});
+  if(P.has('barriga')&&!/Abd/.test(d.name))d.name+=' + Abdômen';});
+ days.forEach(d=>d.items.forEach(it=>delete it.pr));
+ return days;}
+/* volume semanal por músculo */
+const VOLG={gluteo:['glu_max','glu_med','glu_sup'],quadriceps:['quad'],posterior:['post'],costas:['dorsal','costas_meio','post_ombro'],peito:['peito','peito_sup'],ombros:['ombro_lat','ombro_ant'],biceps:['biceps'],triceps:['triceps'],abdomen:['core','reto','obliquos']};
+const VOLL={gluteo:'🍑 Glúteo',quadriceps:'🦵 Quadríceps',posterior:'🦵 Posterior',costas:'🦋 Costas',peito:'🫀 Peito',ombros:'✨ Ombros',biceps:'💪 Bíceps',triceps:'💪 Tríceps',abdomen:'🔥 Abdômen'};
+const AREA2VOL={gluteo:['gluteo'],pernas:['quadriceps','posterior'],costas:['costas'],braco:['biceps','triceps'],ombro:['ombros'],peito:['peito'],barriga:['abdomen']};
+function weekVolume(days){const v={};Object.keys(VOLG).forEach(k=>v[k]=0);
+ days.forEach(d=>d.items.forEach(it=>{const x=EX[it.exId];if(!x)return;const n=nSets(it.sets);
+  const seen={};x.foco.forEach((r,i)=>{const g=Object.keys(VOLG).find(k=>VOLG[k].includes(r));if(!g)return;const w=i===0?n:n/2;if(w>(seen[g]||0))seen[g]=w;});Object.entries(seen).forEach(([g,w])=>v[g]+=w);}));
+ Object.keys(v).forEach(k=>v[k]=Math.round(v[k]));return v;}
+
+AREAS.gluteo.t='O glúteo responde a carga progressiva em 3 funções: estender o quadril (hip thrust), trabalhar alongado com carga (stiff/RDL) e abrir a perna (glúteo médio). Queimação não é sinal de resultado: o que conta é subir carga ou repetições ao longo das semanas.';
+AREAS.pernas.t='Quadríceps cresce com agachamento ou leg press com boa amplitude, mais a extensora. O posterior precisa de 2 funções: dobrar o quadril (stiff) e dobrar o joelho (flexora; a sentada costuma render mais).';
+AREAS.costas.t='Largura vem das puxadas (cotovelo descendo rente ao corpo). Espessura e postura vêm das remadas e do ombro posterior. Pense em puxar com o cotovelo, não com a mão.';
+AREAS.braco.t='Tríceps é 2/3 do braço. Exercícios com o braço acima da cabeça (francês) alongam a cabeça longa e costumam render mais. No bíceps, a rosca inclinada trabalha o músculo alongado.';
+AREAS.ombro.t='O ombro da frente já trabalha em todo supino e desenvolvimento. O que costuma faltar é o lateral (elevação lateral) e o posterior (crucifixo inverso, face pull).';
+AREAS.peito.t='Supino reto e inclinado cobrem quase tudo. Crucifixo ou voador complementam. Uns 30° de inclinação já focam a parte de cima.';
+AREAS.barriga.t='Core forte é estabilidade (prancha, dead bug, pallof) mais flexão com carga (abdominal na polia). Barriga aparente depende principalmente da perda de gordura, e a alimentação faz a maior parte.';
+AREAS.corpo.t='Equilíbrio: um exercício por padrão de movimento (agachar, dobrar o quadril, empurrar, puxar), sempre progredindo a carga.';
+function profileCfg(){const p=D.profile||{};return {obj:p.obj||'emagrecer',nivel:p.nivel||'intermediario',local:p.local||'academia',homeEq:p.homeEq||[],lim:p.lim||[],sub:p.sub||{},foci:(p.foci||[]).filter(f=>AREAS[f]),tempo:p.tempo||60,days:[]};}
+const FOCUS2SESS={gluteo:'G',pernas:'L',costas:'Pull',braco:'B',barriga:'C',superiores:'Push',corpo:'F'};
 const FOCUS={
  gluteo:{l:'Glúteo',e:'🍑',ex:['hip_thrust','bulgaro','stiff','abducao_maquina','coice_cruzado','frog_pump'],
   t:'Pra glúteo, o que mais funciona é juntar um exercício "pesado" de quadril (hip thrust, búlgaro, stiff) com exercícios de isolamento (abdução, coice). Treine glúteo 2-3x por semana e foque em sentir o glúteo apertar em cada repetição.'},
@@ -980,8 +1208,7 @@ function generate(cfg){
   items.sort((a,b)=>ord(a)-ord(b));
   return {name:d.n,focus:d.f,day:cfg.days[i],items};});
 }
-function runGen(g){const keep={obj:D.profile.obj,nivel:D.profile.nivel};D.profile.obj=g.obj;D.profile.nivel=g.nivel||'intermediario';
- g.result=generate(g);D.profile.obj=keep.obj;D.profile.nivel=keep.nivel;}
+function runGen(g){g.result=plan(Object.assign({},g,{nivel:g.nivel||'intermediario'}));}
 
 /* ================== ESTADO ================== */
 const LS='meutreino:v2';
@@ -1182,7 +1409,7 @@ function vSessao(){
   const prev=done?list[list.length-2]:last;const mr=maxReps(it.sets);
   const hint=prev&&prev.reps&&mr&&prev.reps>=mr&&!done?`<div class="hint">🔼 Você bateu ${prev.reps} reps da última vez — tente subir um pouquinho a carga!</div>`:'';
   return `<div class="ex ${done?'done':''}">
-   <div style="display:flex;gap:8px;align-items:flex-start">${done?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span></div></div>
+   <div style="display:flex;gap:8px;align-items:flex-start">${done?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
    <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
    ${prev?`<div class="last"><b>Última vez:</b> ${prev.weight} kg${prev.reps?' × '+prev.reps+' reps':''} (${fmt(prev.date)})</div>`:''}
    ${done?`<div class="last"><b style="color:var(--a)">Hoje:</b> ${last.weight} kg${last.reps?' × '+last.reps+' reps':''}</div>`:''}
@@ -1241,36 +1468,62 @@ function vGerador(){
  const g=UI.gen;if(!g){UI.view='treinos';return vTreinos();}
  if(g.result)return genPreview();
  const ready=g.foci.length>0&&g.days.length>=2;
+ const chip=(on,a,attrs,label)=>`<button class="chip ${on?'on':''}" data-a="${a}" ${attrs}>${label}</button>`;
+ const subs=g.foci.filter(k=>AREAS[k]&&AREAS[k].sub.length).map(k=>`<div style="margin-top:10px"><span class="small mut" style="font-weight:700">${AREAS[k].e} No ${AREAS[k].l.toLowerCase()}, quer focar mais em:</span>
+  <div class="chips" style="margin-top:6px">${AREAS[k].sub.map(([v,l])=>chip((g.sub[k]||'todo')===v,'genSub',`data-k="${k}" data-v="${v}"`,l)).join('')}</div></div>`).join('');
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
- <span class="kicker">Treino sugerido</span><h2 class="disp h2">Monte meu treino pra mim ✨</h2>
+ <span class="kicker">Treino sob medida</span><h2 class="disp h2">Monte meu treino pra mim ✨</h2>
  <div class="card">
-  <label class="lbl" style="margin-top:0">1. Qual seu foco? <span class="mut" style="font-weight:500">(até 3)</span></label>
-  <div class="chips">${Object.entries(FOCUS).map(([k,f])=>`<button class="chip ${g.foci.includes(k)?'on':''}" data-a="genFocus" data-f="${k}">${f.e} ${f.l}</button>`).join('')}</div>
-  <label class="lbl">2. Quantos dias por semana você consegue treinar?</label>
-  <div class="chips">${[2,3,4,5,6].map(n=>`<button class="chip ${g.days.length===n?'on':''}" data-a="genCount" data-n="${n}">${n} dias</button>`).join('')}</div>
-  ${g.days.length?`<label class="lbl">Em quais dias? <span class="mut" style="font-weight:500">(toque pra trocar)</span></label><div class="chips">${DAYS.map(([k,l])=>`<button class="chip ${g.days.includes(k)?'on':''}" data-a="genDay" data-k="${k}">${l.slice(0,3)}</button>`).join('')}</div>`:''}
-  <label class="lbl">3. Há quanto tempo você treina?</label>
-  <div class="chips"><button class="chip ${g.nivel==='iniciante'?'on':''}" data-a="genLvl" data-v="iniciante">🌱 Estou começando</button><button class="chip ${g.nivel==='intermediario'?'on':''}" data-a="genLvl" data-v="intermediario">💪 Já treino há um tempo</button></div>
-  <label class="lbl">4. Seu objetivo</label>
-  <div class="chips">${Object.entries(OBJ).map(([k,o])=>`<button class="chip ${g.obj===k?'on':''}" data-a="genObj" data-k="${k}">${o.l}</button>`).join('')}</div>
+  <label class="lbl" style="margin-top:0">1. Seu objetivo principal</label>
+  <div class="chips">${Object.entries(OBJ).map(([k,o])=>chip(g.obj===k,'genObj',`data-k="${k}"`,o.l)).join('')}</div>
+  <label class="lbl">2. O que você quer priorizar? <span class="mut" style="font-weight:500">(até 3)</span></label>
+  <div class="chips">${Object.entries(AREAS).map(([k,a])=>chip(g.foci.includes(k),'genFocus',`data-f="${k}"`,a.e+' '+a.l)).join('')}</div>
+  ${subs}
+ </div>
+ <div class="card">
+  <label class="lbl" style="margin-top:0">3. Onde você treina?</label>
+  <div class="chips">${chip(g.local==='academia','genLocal','data-v="academia"','🏋️ Academia')}${chip(g.local==='casa','genLocal','data-v="casa"','🏠 Em casa')}</div>
+  ${g.local==='casa'?`<label class="lbl">O que você tem em casa?</label><div class="chips">${chip(g.homeEq.includes('halter'),'genEq','data-v="halter"','Halteres (ou galões com peso)')}${chip(g.homeEq.includes('elastico'),'genEq','data-v="elastico"','Elástico / mini band')}${chip(g.homeEq.includes('kettlebell'),'genEq','data-v="kettlebell"','Kettlebell')}${chip(!g.homeEq.length,'genEq','data-v="nada"','Nada, só o corpo')}</div>`:''}
+  <label class="lbl">4. Quantos dias por semana?</label>
+  <div class="chips">${[2,3,4,5,6].map(n=>chip(g.days.length===n,'genCount',`data-n="${n}"`,n+' dias')).join('')}</div>
+  ${g.days.length?`<label class="lbl">Em quais dias? <span class="mut" style="font-weight:500">(toque pra trocar)</span></label><div class="chips">${DAYS.map(([k,l])=>chip(g.days.includes(k),'genDay',`data-k="${k}"`,l.slice(0,3))).join('')}</div>`:''}
+  <label class="lbl">5. Quanto tempo você tem por treino?</label>
+  <div class="chips">${[[30,'30 min'],[45,'45 min'],[60,'1 hora'],[75,'1h15 ou mais']].map(([v,l])=>chip(g.tempo===v,'genTempo',`data-v="${v}"`,l)).join('')}</div>
+  <label class="lbl">6. Há quanto tempo você treina?</label>
+  <div class="chips">${chip(g.nivel==='iniciante','genLvl','data-v="iniciante"','🌱 Estou começando')}${chip(g.nivel==='intermediario','genLvl','data-v="intermediario"','💪 Já treino há um tempo')}</div>
+  <label class="lbl">7. Alguma coisa incomoda?</label>
+  <div class="chips">${chip(g.lim.includes('joelho'),'genLim','data-v="joelho"','🦵 Joelho')}${chip(g.lim.includes('lombar'),'genLim','data-v="lombar"','🔙 Lombar')}${chip(g.lim.includes('ombro'),'genLim','data-v="ombro"','💪 Ombro')}${chip(!g.lim.length,'genLim','data-v="nada"','Nada')}</div>
+  ${g.lim.length?'<p class="small mut" style="margin:8px 0 0">Vou deixar de fora os exercícios que mais sobrecarregam essa região. Se é uma dor que não passa, vale passar por um médico ou fisioterapeuta 💛</p>':''}
  </div>
  <details class="card"><summary><span>📏 Minhas medidas <span class="mut" style="font-weight:500">(opcional)</span></span><span class="chev">▾</span></summary>
-  <p class="small mut" style="margin:8px 0 0">Ficam salvas no Progresso pra você ver a evolução além da balança. Pode pular sem problema!</p>
+  <p class="small mut" style="margin:8px 0 0">Ficam no Progresso pra você ver a evolução além da balança. Pode pular!</p>
   <div class="row2">${[['peso','Peso (kg)']].concat(MEAS.map(([k,l])=>[k,l+' (cm)'])).map(([k,l])=>`<div><label class="lbl">${l}</label><input class="inp" inputmode="decimal" data-i="gen.m.${k}" value="${esc(g.m[k]||'')}"></div>`).join('')}</div>
  </details>
  <button class="btn alt" data-a="genRun" style="${ready?'':'opacity:.55'}">✨ Gerar meu treino</button>
- ${ready?'':'<p class="small mut" style="text-align:center">Escolha pelo menos um foco e quantos dias você treina.</p>'}`;
+ ${ready?'':'<p class="small mut" style="text-align:center">Escolha pelo menos uma prioridade e quantos dias você treina.</p>'}`;
 }
-function genPreview(){const g=UI.gen;
- const tips=g.foci.filter(f=>FOCUS[f]).slice(0,2).map(f=>`<p style="margin:0 0 8px"><b>${FOCUS[f].e} ${FOCUS[f].l}:</b> ${FOCUS[f].t}</p>`).join('');
+function genPreview(){const g=UI.gen;const ini=g.nivel==='iniciante';
+ const vol=weekVolume(g.result);const prio=new Set(g.foci.flatMap(f=>AREA2VOL[f]||[]));const eq=g.foci.includes('corpo');
+ const volRows=Object.keys(VOLL).filter(k=>vol[k]>0||prio.has(k)).map(k=>{const isP=prio.has(k)||eq;const [lo,hi]=isP?(ini?[8,16]:[12,26]):[4,14];
+  const st=vol[k]<lo?'<span style="color:var(--a2);font-weight:700">↑ dá pra subir</span>':vol[k]>hi?'<span style="color:var(--a2);font-weight:700">↓ acima do ideal</span>':'<span style="color:var(--a);font-weight:700">✓ no ponto</span>';
+  return `<div class="hrow" style="padding:8px 2px"><span style="font-size:14px">${VOLL[k]}${isP?' <span class="tag" style="font-size:10.5px">prioridade</span>':''}</span><span style="display:flex;gap:8px;align-items:center;font-size:13px"><b>${vol[k]} séries</b>${st}</span></div>`;}).join('');
+ const notes=[];
+ if(g.local==='casa')notes.push('🏠 Só entraram exercícios que dá pra fazer em casa com '+(g.homeEq.length?g.homeEq.map(e=>({halter:'halteres',elastico:'elástico',kettlebell:'kettlebell'})[e]).join(', '):'o peso do corpo')+'.');
+ if(g.lim.includes('joelho'))notes.push('🦵 Deixei de fora agachamentos, afundos, leg press e extensora, que exigem mais do joelho. Fortalecer o quadríceps costuma fazer parte da melhora, mas precisa ser ajustado pro seu caso: vale passar com um fisioterapeuta.');
+ if(g.lim.includes('lombar'))notes.push('🔙 Evitei exercícios que carregam a coluna (agachamento livre, stiff com barra, remada curvada…).');
+ if(g.lim.includes('ombro'))notes.push('💪 Evitei desenvolvimentos, mergulho e exercícios com o braço muito acima da cabeça.');
+ const tips=g.foci.filter(f=>AREAS[f]&&AREAS[f].t).slice(0,3).map(f=>`<p style="margin:0 0 8px"><b>${AREAS[f].e} ${AREAS[f].l}:</b> ${AREAS[f].t}</p>`).join('');
  return `<button class="back" data-a="genBack">← Ajustar respostas</button>
- <span class="kicker">Sua semana</span><h2 class="disp h2">Seu treino está pronto 🎉</h2>
- <div class="info">${tips}⏱️ ${OBJ[g.obj].rest}</div>
+ <span class="kicker">Sua semana · ${g.days.length} dias · ~${g.tempo>=75?'75+':g.tempo} min</span><h2 class="disp h2">Seu treino está pronto 🎉</h2>
+ ${notes.length?`<div class="info">${notes.join('<br>')}</div>`:''}
  ${g.result.map(w=>`<div class="card"><span class="kicker" style="color:var(--a)">${DAYM[w.day]}</span><h3 style="margin:3px 0 6px;font-size:17px">${esc(w.name)}</h3>
-  ${w.items.map(it=>`<div class="hrow" style="padding:8px 2px"><button style="text-align:left;font-size:14px;flex:1" data-a="info" data-id="${it.exId}">${esc(EX[it.exId].n)} <span class="mut">ⓘ</span></button><span class="sch" style="white-space:nowrap">${esc(it.sets)}</span></div>`).join('')}</div>`).join('')}
+  ${w.items.map(it=>`<div style="padding:9px 2px;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><button style="text-align:left;font-size:14.5px;font-weight:700;flex:1" data-a="info" data-id="${it.exId}">${EX[it.exId].tier===1?'⭐ ':''}${esc(EX[it.exId].n)} <span class="mut" style="font-weight:500">ⓘ</span></button><span class="sch" style="white-space:nowrap">${esc(it.sets)}</span></div>
+   <div class="small mut" style="margin-top:3px">🎯 ${EX[it.exId].foco.slice(0,2).map(r=>REG[r]||r).join(' + ')} · ${esc(it.why)}</div></div>`).join('')}</div>`).join('')}
+ <div class="card"><b>📊 Volume semanal</b><p class="small mut" style="margin:4px 0 6px">Séries por músculo na semana. Pra prioridade, o ideal é ${ini?'8 a 16':'12 a 26'} (contando pela metade os exercícios que ajudam indiretamente). Pra manutenção, de 4 a 14.</p>${volRows}</div>
+ ${tips?`<div class="info">${tips}⏱️ ${OBJ[g.obj].rest} Progrida aos poucos: quando bater o topo das repetições em todas as séries, suba a carga.</div>`:''}
  <button class="btn2" style="margin-bottom:10px" data-a="genAgain">🔄 Gerar outra variação</button>
  ${D.workouts.length?`<button class="btn alt" data-a="genUse" data-m="replace">Usar esses treinos (substituir os atuais)</button><button class="btn2" style="margin-top:10px" data-a="genUse" data-m="add">Adicionar sem apagar os atuais</button>`:`<button class="btn alt" data-a="genUse" data-m="replace">Usar esses treinos 💪</button>`}
- <p class="small mut" style="text-align:center">Depois dá pra editar qualquer treino na aba Treinos: trocar, tirar ou adicionar exercícios.</p>`;}
+ <p class="small mut" style="text-align:center">Dá pra editar qualquer treino depois e trocar exercícios com o botão 🔄. Este é um apoio: um profissional de educação física pode ajustar o treino pra você e corrigir a execução.</p>`;}
 function measHtml(){
  const ms=[...(D.measures||[])].sort((a,b)=>a.date.localeCompare(b.date));
  const rows=MEAS.filter(([k])=>ms.some(m=>m[k]!=null)).map(([k,l])=>{const f=ms.find(m=>m[k]!=null),la=[...ms].reverse().find(m=>m[k]!=null);const d=la[k]-f[k];
@@ -1296,7 +1549,9 @@ function libList(){
  return items.map(([id,x])=>`<button class="li" data-a="info" data-id="${id}"><span><b>${esc(x.n)}</b><span>${x.s.split('.')[0]}</span></span><span class="tag">${GROUPS[x.g]}</span></button>`).join('');
 }
 function infoHtml(id){const x=EX[id];
- return `<span class="kicker">${GROUPS[x.g]} · ${EQL[x.eq]}${x.kf?'':' · exige do joelho'}</span><h2 class="disp" style="font-size:24px;margin:2px 40px 12px 0;font-weight:600">${esc(x.n)}</h2>
+ return `<span class="kicker">${GROUPS[x.g]} · ${EQL[x.eq]}${x.kf?'':' · exige do joelho'}</span><h2 class="disp" style="font-size:24px;margin:2px 40px 8px 0;font-weight:600">${esc(x.n)}</h2>
+ <div class="chips" style="margin-bottom:10px"><span class="tag">${TIERL[x.tier]}</span>${x.foco.map(r=>`<span class="tag" style="background:var(--a2soft);color:var(--a2)">🎯 ${REG[r]||GROUPS[r]||r}</span>`).join('')}</div>
+ ${NOTE4[id]?`<div class="info">${NOTE4[id]}</div>`:''}
  <div class="sec"><h4>👣 Como fazer</h4><ol>${x.p.map(s=>`<li>${s}</li>`).join('')}</ol></div>
  <div class="sec ok"><h4>✅ O que você deve sentir</h4><p>${x.s}</p></div>
  <div class="sec no"><h4>🚫 O que NÃO deveria sentir</h4><p>${x.x}</p></div>
@@ -1813,11 +2068,13 @@ function pickerHtml(){const added=new Set(UI.edit.items.map(i=>i.exId));
   return `<h3 class="h3" style="margin-top:14px">${l}</h3>`+list.map(([id,x])=>`<button class="li" data-a="pick" data-id="${id}"><span><b>${esc(x.n)}</b><span>${rec(id)}</span></span><span class="tag">${added.has(id)?'✓ no treino':'+ adicionar'}</span></button>`).join('');}).join('');}
 
 function swapHtml(){const sw=UI.swap;const x=EX[sw.exId];const alts=alternatives(sw.exId,sw.reason||'');
- const R=[['joelho','🦵 Incomoda o joelho'],['dor','🤕 Outra dor ou desconforto'],['aparelho','🏋️ Sem aparelho ou ocupado'],['gosto','🙅‍♀️ Não gosto / quero variar']];
+ const R=[['joelho','🦵 Incomoda o joelho'],['lombar','🔙 Incomoda a lombar'],['ombro','💪 Incomoda o ombro'],['dor','🤕 Outra dor ou desconforto'],['aparelho','🏋️ Sem aparelho ou ocupado'],['gosto','🙅‍♀️ Não gosto / quero variar']];
  return `<span class="kicker">Trocar exercício</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">${esc(x.n)}</h2>
  <label class="lbl" style="margin-top:0">Por que você quer trocar?</label>
  <div class="chips">${R.map(([k,l])=>`<button class="chip ${sw.reason===k?'on':''}" data-a="swapReason" data-r="${k}">${l}</button>`).join('')}</div>
  ${sw.reason==='joelho'?'<div class="info" style="margin-top:10px">Separei opções que poupam o joelho 💛 Se a dor for forte ou não passar, pare e procure um profissional.</div>':''}
+ ${sw.reason==='lombar'?'<div class="info" style="margin-top:10px">Tirei as opções que carregam a coluna 💛 Se a dor for forte ou continuar, procure um profissional.</div>':''}
+ ${sw.reason==='ombro'?'<div class="info" style="margin-top:10px">Tirei as opções com braço acima da cabeça ou que forçam o ombro 💛 Se a dor continuar, procure um profissional.</div>':''}
  ${sw.reason==='dor'?'<div class="info" style="margin-top:10px">Escolha uma opção que não doa e use carga leve 💛 Se a dor for forte ou continuar, pare e procure um profissional.</div>':''}
  ${sw.reason==='aparelho'?'<div class="info" style="margin-top:10px">Priorizei opções com peso do corpo, halter ou elástico.</div>':''}
  <h3 class="h3" style="margin-top:14px">Pode trocar por:</h3>
@@ -1868,7 +2125,7 @@ const A={
  suggest:t=>{const f=t.dataset.f;UI.edit={name:'Treino de '+FOCUS[f].l,focus:f,day:'',items:FOCUS[f].ex.map(id=>({exId:id,sets:rec(id)})),helped:true};go('builder');},
  editW:t=>{const w=D.workouts.find(x=>x.id===t.dataset.id);UI.edit=JSON.parse(JSON.stringify(w));UI.edit.helped=false;go('builder');},
  focus:t=>{const e=UI.edit;e.focus=t.dataset.f;if(!e.items.length)e.helped=null;else if(e.helped)e.helped=true;render();},
- helpYes:()=>{const e=UI.edit;if(e.items.length&&!confirm('Trocar os exercícios atuais pelos sugeridos?'))return;e.items=FOCUS[e.focus].ex.map(id=>({exId:id,sets:rec(id)}));e.helped=true;if(!e.name.trim())e.name='Treino de '+FOCUS[e.focus].l;render();},
+ helpYes:()=>{const e=UI.edit;if(e.items.length&&!confirm('Trocar os exercícios atuais pelos sugeridos?'))return;{const c=profileCfg();c.foci=[e.focus==='superiores'?'peito':e.focus];e.items=planSession(FOCUS2SESS[e.focus]||'F',c,new Set(),c.nivel==='iniciante'?5:6,null).map(({pr,...it})=>it);}e.helped=true;if(!e.name.trim())e.name='Treino de '+FOCUS[e.focus].l;render();},
  helpNo:()=>{UI.edit.helped=false;render();},
  itUp:t=>{const i=+t.dataset.i2;const it=UI.edit.items;if(i>0){[it[i-1],it[i]]=[it[i],it[i-1]];render();}},
  itDel:t=>{UI.edit.items.splice(+t.dataset.i2,1);render();},
@@ -1929,8 +2186,13 @@ const A={
  socLeave:async()=>{if(!confirm('Sair do grupo? Você pode entrar de novo com o código depois.'))return;
   try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'groups',soc().groupId,'members',uid));}catch(e){}
   D.social=Object.assign(socDefaults(),{emoji:soc().emoji,share:soc().share});persist();UI.soc=null;render();},
- genOpen:()=>{const p=D.profile||{};UI.gen={foci:[...(p.foci||[])],days:[],nivel:p.nivel||'',obj:p.obj||'emagrecer',m:{},result:null,seed:0};PROF=null;go('gerador');},
- genFocus:t=>{const g=UI.gen,k=t.dataset.f,i=g.foci.indexOf(k);if(i>=0)g.foci.splice(i,1);else{if(g.foci.length>=3){toast('Escolha até 3 focos');return;}g.foci.push(k);}render();},
+ genOpen:()=>{const c=profileCfg();UI.gen={foci:[...c.foci],sub:Object.assign({},c.sub),local:c.local,homeEq:[...c.homeEq],tempo:c.tempo,lim:[...c.lim],days:[],nivel:(D.profile||{}).nivel||'',obj:c.obj,m:{},result:null,seed:0};PROF=null;go('gerador');},
+ genSub:t=>{UI.gen.sub[t.dataset.k]=t.dataset.v;render();},
+ genLocal:t=>{UI.gen.local=t.dataset.v;render();},
+ genEq:t=>{const g=UI.gen,v=t.dataset.v;if(v==='nada')g.homeEq=[];else{const i=g.homeEq.indexOf(v);if(i>=0)g.homeEq.splice(i,1);else g.homeEq.push(v);}render();},
+ genTempo:t=>{UI.gen.tempo=+t.dataset.v;render();},
+ genLim:t=>{const g=UI.gen,v=t.dataset.v;if(v==='nada')g.lim=[];else{const i=g.lim.indexOf(v);if(i>=0)g.lim.splice(i,1);else g.lim.push(v);}render();},
+ genFocus:t=>{const g=UI.gen,k=t.dataset.f,i=g.foci.indexOf(k);if(i>=0)g.foci.splice(i,1);else{if(k==='corpo')g.foci=[];else g.foci=g.foci.filter(f=>f!=='corpo');if(g.foci.length>=3){toast('Escolha até 3 prioridades');return;}g.foci.push(k);}render();},
  genCount:t=>{UI.gen.days=[...DEFDAYS[t.dataset.n]];render();},
  genDay:t=>{const g=UI.gen,k=t.dataset.k,i=g.days.indexOf(k);
   if(i>=0){if(g.days.length<=2){toast('Mínimo de 2 dias');return;}g.days.splice(i,1);}
@@ -1938,13 +2200,13 @@ const A={
   const o=d=>DAYS.findIndex(x=>x[0]===d);g.days.sort((a,b)=>o(a)-o(b));render();},
  genLvl:t=>{UI.gen.nivel=t.dataset.v;render();},
  genObj:t=>{UI.gen.obj=t.dataset.k;render();},
- genRun:()=>{const g=UI.gen;if(!g.foci.length){toast('Escolha pelo menos um foco');return;}if(g.days.length<2){toast('Escolha quantos dias você treina');return;}
+ genRun:()=>{const g=UI.gen;if(!g.foci.length){toast('Escolha pelo menos uma prioridade');return;}if(g.days.length<2){toast('Escolha quantos dias você treina');return;}
   runGen(g);render();window.scrollTo(0,0);},
  genAgain:()=>{const g=UI.gen;g.seed++;runGen(g);render();window.scrollTo(0,0);toast('Nova variação! 🔄');},
  genBack:()=>{UI.gen.result=null;render();window.scrollTo(0,0);},
  genUse:t=>{const g=UI.gen;const ws=g.result.map(w=>({id:uid(),name:w.name,focus:w.focus,day:w.day,items:w.items}));
   if(t.dataset.m==='replace'){if(D.workouts.length&&!confirm('Substituir seus treinos atuais? Seu histórico de cargas continua salvo.'))return;D.workouts=ws;}else D.workouts=D.workouts.concat(ws);
-  D.profile.obj=g.obj;D.profile.nivel=g.nivel||'intermediario';D.profile.foci=[...g.foci];
+  Object.assign(D.profile,{obj:g.obj,nivel:g.nivel||'intermediario',foci:[...g.foci],sub:Object.assign({},g.sub),local:g.local,homeEq:[...g.homeEq],tempo:g.tempo,lim:[...g.lim]});
   const m={};MEAS.forEach(([k])=>{const v=num(g.m[k]);if(v!=null)m[k]=v;});
   if(Object.keys(m).length){D.measures=(D.measures||[]).filter(x=>x.date!==today());D.measures.push(Object.assign({date:today()},m));}
   const pv=num(g.m.peso);if(pv!=null){D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:pv});if(!D.profile.pesoInicial)D.profile.pesoInicial=pv;}
@@ -1956,7 +2218,7 @@ const A={
  swapReason:t=>{UI.swap.reason=t.dataset.r;openSheet(swapHtml());},
  swapDo:t=>{const sw=UI.swap,nid=t.dataset.id;
   const fix=items=>{const it=items.find(i=>i.exId===sw.exId);if(!it)return false;if(items.some(i=>i.exId===nid)){toast('Esse já está no treino 😉');return false;}
-   const old=EX[sw.exId],nx=EX[nid];if(!!old.iso!==!!nx.iso||old.g!==nx.g||!!old.uni!==!!nx.uni)it.sets=rec(nid);it.exId=nid;return true;};
+   const old=EX[sw.exId],nx=EX[nid];if(!!old.iso!==!!nx.iso||old.g!==nx.g||!!old.uni!==!!nx.uni)it.sets=setsFor(nid,profileCfg(),false);it.exId=nid;return true;};
   if(sw.ctx==='builder'){if(!fix(UI.edit.items))return;}
   else{const w=D.workouts.find(x=>x.id===UI.sessionId);if(!w||!fix(w.items))return;persist();}
   closeSheet();const y=window.scrollY;render();window.scrollTo(0,y);toast('Trocado por '+EX[nid].n+' 🔄');},
