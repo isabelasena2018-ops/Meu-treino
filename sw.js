@@ -1,5 +1,5 @@
 /* Meu Treino — funciona offline e se atualiza sozinho quando há internet */
-const CACHE = 'meutreino-v7';
+const CACHE = 'meutreino-v8';
 const CORE = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
   // Página do app: tenta a internet primeiro (pega a versão nova), sem internet usa a salva
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); return res; })
         .catch(() => caches.match('./index.html'))
     );

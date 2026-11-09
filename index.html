@@ -178,6 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
+const APP_VERSION='1.8 · 09/11 10h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -996,7 +997,8 @@ function vAjuda(){
  <div class="card"><p style="margin:0 0 8px">Use o app <b>Lembretes</b> do iPhone (ou Google Tarefas/Relógio no Android): crie o lembrete, ative <b>Hora</b> e em <b>Repetir</b> escolha <b>Diariamente</b>.</p><p class="small mut" style="margin:0">Os lembretes do celular avisam mesmo com este app fechado. Depois é só marcar aqui na aba Hoje ✓</p></div>
  <h3 class="h3">💾 Seus dados</h3>
  <div class="card"><p style="margin:0">Tudo fica salvo neste celular, neste navegador. Se trocar de celular ou limpar o navegador, os dados somem — por isso faça um <b>backup</b> de vez em quando no seu perfil (👤).</p></div>
- <p class="small mut" style="text-align:center">Este app é um apoio e não substitui um profissional de educação física ou nutricionista.</p>`;
+ <p class="small mut" style="text-align:center">Este app é um apoio e não substitui um profissional de educação física ou nutricionista.</p>
+ <p class="small mut" style="text-align:center">Versão ${APP_VERSION}</p>`;
 }
 
 /* ---------- Perfil ---------- */
@@ -1018,7 +1020,8 @@ function vPerfil(){
  <h3 class="h3">Backup</h3>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Salve um arquivo com todos os seus dados pra não perder nada se trocar de celular.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
- <button class="btn2 danger" data-a="reset">Apagar todos os dados</button>`;
+ <button class="btn2 danger" data-a="reset">Apagar todos os dados</button>
+ <p class="small mut" style="text-align:center;margin-top:14px">Versão ${APP_VERSION}</p>`;
 }
 
 /* ================== CHECK-IN (conversa) ================== */
@@ -1500,7 +1503,7 @@ document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'
 
 try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
 if(D.profile&&socOn())setTimeout(()=>syncSocial().catch(()=>{}),1500);
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{}));
 
 render();
 </script>
