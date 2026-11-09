@@ -1221,7 +1221,7 @@ function ckMic(btn){
 function ckSendText(){const ta=document.getElementById('ckin');if(!ta)return;if(REC){try{REC.stop();}catch(e){}}const v=ta.value.trim();if(!v)return;ta.value='';grow(ta);ckAnswer(null,null,v);}
 
 /* ================== TURMA (grupo + feed) ================== */
-const FIREBASE_CONFIG=null; /* preenchido com a configuração do projeto Firebase */
+const FIREBASE_CONFIG={apiKey:"AIzaSyDcOpgpCzrc2-e8KBSJuKTI7XyhnP7axSU",authDomain:"meu-treino-79191.firebaseapp.com",projectId:"meu-treino-79191",storageBucket:"meu-treino-79191.firebasestorage.app",messagingSenderId:"498314536315",appId:"1:498314536315:web:e9c15b49d502098ac949de"};
 const FBV='10.12.2';
 const AVATARS=['💪','🔥','🍑','🦋','⚡','🌱','🏃‍♀️','🧘‍♀️','🏋️‍♀️','🌸','🌻','🐯'];
 const REACTS=['👏','🔥','💪','❤️'];
