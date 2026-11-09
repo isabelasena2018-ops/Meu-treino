@@ -20,6 +20,8 @@ let enviados = 0;
 for (const docSnap of snap.docs) {
   const doc = docSnap.data();
   const devidos = lembretesDevidos(doc, agora);
+  const st = doc.status || {};
+  console.log('Pessoa', docSnap.id.slice(0, 5) + '…', '| app aberto hoje:', st.day || '-', '| ativos:', Object.keys(st.en || {}).filter(k => st.en[k]).join(',') || '-', '| devidos agora:', devidos.map(d => d.chave).join(',') || 'nenhum', '| já enviados:', Object.keys(doc.sent || {}).join(',') || '-');
   if (!devidos.length) continue;
   const n = montarNotificacao(devidos);
   try {
