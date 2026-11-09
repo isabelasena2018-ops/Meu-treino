@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.3 · 09/11 12h';
+const APP_VERSION='2.4 · 09/11 13h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1235,7 +1235,7 @@ function runGen(g){g.result=plan(Object.assign({},g,{nivel:g.nivel||'intermediar
 const LS='meutreino:v2';
 function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[],measures:[]};}
 let D=(()=>{try{const v=localStorage.getItem(LS);if(v){const o=JSON.parse(v);return Object.assign(fresh(),o);}}catch(e){}return fresh();})();
-function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();}
+function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();scheduleUsage();}
 
 const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null,gen:null,mea:{}};
 let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',supps:{vacuo:false,creatina:false,pre:false,whey:false}};
@@ -1289,7 +1289,7 @@ const IC={
 function render(){
  const app=document.getElementById('app');
  if(!D.profile){app.innerHTML=vOnb();return;}
- const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma}[UI.view]||vHoje;
+ const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
  app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():nav());
  if(isCk)ckScroll();
@@ -1316,7 +1316,7 @@ function vOnb(){
  <h3 class="h3">Como você quer começar?</h3>
  <button class="bigopt" data-a="onbStart" data-m="gen" style="border-color:var(--a2)"><b>✨ Monte meu treino pra mim</b><span>Me conta seu foco (glúteo, barriga, braço…), quantos dias você treina e sua experiência que eu monto a semana inteira. Medidas são opcionais.</span></button>
  <button class="bigopt" data-a="onbStart" data-m="zero"><b>🛠️ Quero montar eu mesma</b><span>Você escolhe os exercícios e eu te ajudo com séries e repetições. Dá pra pedir o treino pronto depois, a qualquer momento.</span></button>
- <p class="small mut" style="text-align:center;margin-top:14px">Seus dados ficam salvos só neste celular.</p>
+ <p class="small mut" style="text-align:center;margin-top:14px">Seus treinos, peso e comida ficam salvos só neste celular. Pra criadora do app saber quem está usando, seu <b>nome</b> e <b>quando você usou</b> ficam visíveis pra ela. Dá pra desligar isso no Perfil.</p>
  </main>`;
 }
 
@@ -1687,11 +1687,17 @@ function vPerfil(){
   ${SUPPS.map(s=>`<button class="toggle ${PROF.supps[s.k]?'on':''}" data-a="profSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
   <button class="btn" style="margin-top:12px" data-a="saveProf">Salvar</button>
  </div>
+ <h3 class="h3">Privacidade</h3>
+ <div class="card"><button class="toggle ${D.usageShare!==false?'on':''}" data-a="usageToggle"><span>Mostrar pra criadora do app que eu uso<br><span class="small mut" style="font-weight:500">Só nome e quando usou. Treinos, peso e comida não.</span></span><span class="tg"></span></button></div>
+ ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?`<button class="li" data-a="admOpen" style="border:1.5px solid var(--a)"><span><b>👀 Quem usa o app</b><span>Seu painel de criadora</span></span><span class="mut">›</span></button>`:''}
  <h3 class="h3">Compartilhar</h3>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Mande o link pra quem quiser treinar junto. Cada pessoa cria o próprio perfil e os dados ficam no celular dela.</p><button class="btn alt" data-a="share">📤 Compartilhar o app</button></div>
  <h3 class="h3">Backup</h3>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Salve um arquivo com todos os seus dados pra não perder nada se trocar de celular.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
+ <details class="card"><summary><span>⚙️ Avançado</span><span class="chev">▾</span></summary>
+  <p class="small mut" style="margin:10px 0 6px">ID deste celular no app (só a criadora precisa disso):</p>
+  <div style="display:flex;gap:8px;align-items:center"><code style="flex:1;background:var(--soft);border-radius:10px;padding:10px;font-size:12.5px;word-break:break-all">${FB?esc(FB.uid):'carregando… abra com internet'}</code>${FB?`<button class="mini g" data-a="copyId">Copiar</button>`:''}</div></details>
  <button class="btn2 danger" data-a="reset">Apagar todos os dados</button>
  <p class="small mut" style="text-align:center;margin-top:14px">Versão ${APP_VERSION}</p>
  <button class="btn2" style="margin-top:4px" data-a="forceUpdate">🔄 Buscar atualização</button>`;
@@ -2081,6 +2087,41 @@ function vTurma(){
   <p class="small mut" style="margin:12px 0 0">Peso, medidas e o que você comeu nunca são compartilhados.</p>
   <button class="btn2 danger" style="margin-top:12px" data-a="socLeave">Sair do grupo</button></details>
  <p class="small mut" style="text-align:center">Código do grupo: <b style="letter-spacing:2px">${esc(s.groupId)}</b></p>`;}
+/* ===== painel da criadora: quem usa o app (sem dados de saúde) ===== */
+const ADMIN_UID=''; /* preenchido com o ID do celular da Isabela */
+let USAGE_T=null,USAGE_LAST=0,USAGE_SIG='';
+const usageOn=()=>!!(FIREBASE_CONFIG&&D.profile&&D.usageShare!==false);
+function usageDoc(){const t=today();const d30=new Date();d30.setDate(d30.getDate()-29);const from=keyOf(d30);
+ return {name:D.profile.nome,since:D.profile.criado||t,lastSeen:Date.now(),lastDay:t,version:APP_VERSION,
+  installed:!!(typeof isStandalone==='function'&&isStandalone()),streak:streak(),days30:new Set(D.activities.filter(a=>a.date>=from).map(a=>a.date)).size,
+  acts:D.activities.length,workouts:D.workouts.length,inGroup:!!(D.social&&D.social.groupId)};}
+async function syncUsage(force){if(!usageOn())return;if(navigator.onLine===false)return;
+ const doc=usageDoc();const sig=JSON.stringify([doc.name,doc.lastDay,doc.version,doc.installed,doc.streak,doc.days30,doc.acts,doc.workouts,doc.inGroup]);
+ if(!force&&sig===USAGE_SIG&&Date.now()-USAGE_LAST<15*60*1000)return;
+ const {db,uid,f}=await fb();await f.setDoc(f.doc(db,'users',uid),doc,{merge:true});USAGE_SIG=sig;USAGE_LAST=Date.now();}
+function scheduleUsage(){if(!usageOn())return;clearTimeout(USAGE_T);USAGE_T=setTimeout(()=>syncUsage().catch(()=>{}),4000);}
+async function usageOff(){try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'users',uid));}catch(e){}}
+function agoLabel(ts){if(!ts)return '—';const m=Math.round((Date.now()-ts)/60000);if(m<2)return 'agora há pouco';if(m<60)return 'há '+m+' min';const h=Math.round(m/60);if(h<24)return 'há '+h+'h';const d=Math.round(h/24);return d===1?'ontem':'há '+d+' dias';}
+function vAdmin(){
+ if(!FB||!ADMIN_UID||FB.uid!==ADMIN_UID)return `<button class="back" data-a="go" data-v="perfil">← Perfil</button><div class="card empty">Esse painel é só pra criadora do app.</div>`;
+ UI.adm=UI.adm||{list:null,loading:false,err:''};const S=UI.adm;
+ if(S.list===null&&!S.loading&&!S.err)setTimeout(admLoad,0);
+ const L=S.list||[];const wk=Date.now()-7*864e5;
+ return `<button class="back" data-a="go" data-v="perfil">← Perfil</button>
+ <span class="kicker">Só você vê isso</span><div style="display:flex;justify-content:space-between;align-items:center"><h2 class="disp h2" style="margin-bottom:10px">Quem usa o app 👀</h2><button class="ib" data-a="admLoad" aria-label="Atualizar">↻</button></div>
+ ${S.list?`<div class="stats"><div class="st"><b>${L.length}</b><span>pessoas</span></div><div class="st"><b>${L.filter(u=>u.lastSeen>=wk).length}</b><span>ativas em 7 dias</span></div><div class="st"><b>${L.filter(u=>u.installed).length}</b><span>com o app instalado</span></div></div>`:''}
+ ${S.loading&&!S.list?'<div class="card empty">Carregando…</div>':S.err?`<div class="card empty">${esc(S.err)}</div>`:
+  (L.length?'<div class="card" style="padding:4px 14px">'+L.map(u=>`<div class="hrow" style="align-items:flex-start"><div><b style="font-size:14.5px">${esc(u.name||'Sem nome')}${u.uid===FB.uid?' (você)':''}</b>
+   <div class="small mut">Entrou em ${u.since?fmt(u.since):'—'} · último acesso ${agoLabel(u.lastSeen)}</div>
+   <div class="small mut">🔥 ${u.streak||0} seguidos · ${u.days30||0} dias ativos no mês · ${u.acts||0} atividades · ${u.workouts||0} treinos montados</div></div>
+   <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${u.installed?'<span class="tag">📲 instalado</span>':'<span class="tag" style="background:var(--soft);color:var(--mut)">navegador</span>'}${u.inGroup?'<span class="tag">👯‍♀️ na Turma</span>':''}</div></div>`).join('')+'</div>'
+  :'<div class="card empty">Ninguém por aqui ainda.</div>')}
+ <p class="small mut" style="text-align:center">Aparece só nome e uso geral. Peso, medidas, comida e detalhes dos treinos não. Cada pessoa pode desligar isso no Perfil dela.</p>`;}
+async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='';render();
+ try{await syncUsage(true);const {db,f}=await fb();const q=await f.getDocs(f.collection(db,'users'));S.list=q.docs.map(d=>Object.assign({uid:d.id},d.data())).sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));}
+ catch(e){S.err='Não consegui carregar. Confira se as regras novas do Firebase foram publicadas e se você está com internet.';}
+ S.loading=false;if(UI.view==='admin')render();}
+
 function inviteUrl(){return location.href.split('#')[0].split('?')[0]+'?g='+soc().groupId;}
 
 /* ================== SHEET ================== */
@@ -2256,6 +2297,10 @@ const A={
   try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})));}
    if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}}catch(e){}
   setTimeout(()=>location.reload(),600);},
+ usageToggle:async()=>{D.usageShare=D.usageShare===false;persist();render();if(D.usageShare===false){await usageOff();toast('Pronto, você não aparece mais pra criadora');}else{syncUsage(true).catch(()=>{});toast('Ativado');}},
+ admOpen:()=>{UI.adm=null;go('admin');},
+ admLoad:()=>{if(UI.adm)UI.adm.list=null;admLoad();},
+ copyId:async()=>{const id=FB&&FB.uid;if(!id)return;try{await navigator.clipboard.writeText(id);toast('ID copiado!');}catch(e){prompt('Copie o ID:',id);}},
  install:async()=>{if(!DEFERRED)return;DEFERRED.prompt();try{await DEFERRED.userChoice;}catch(e){}DEFERRED=null;render();},
  installNo:()=>{D.installDismissed=true;persist();render();},
  ckOpen:()=>{CK=null;go('checkin');},
@@ -2302,6 +2347,7 @@ document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'
 
 try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
 if(D.profile&&socOn())setTimeout(()=>syncSocial().catch(()=>{}),1500);
+if(D.profile)setTimeout(()=>syncUsage(true).then(()=>{if(UI.view==='perfil')render();}).catch(()=>{}),2500);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{}));
 
 render();
