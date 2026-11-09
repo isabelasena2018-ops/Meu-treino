@@ -1,5 +1,5 @@
 /* Meu Treino — funciona offline e se atualiza sozinho quando há internet */
-const CACHE = 'meutreino-v14';
+const CACHE = 'meutreino-v15';
 const CORE = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -41,4 +41,28 @@ self.addEventListener('fetch', e => {
       })
     );
   }
+});
+
+// Notificações inteligentes: chegam do robô de lembretes
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Meu Treino', {
+    body: d.body || '',
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
+    tag: d.tag || 'meutreino',
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
+    for (const w of ws) {
+      if ('focus' in w) { if ('navigate' in w) w.navigate(url).catch(() => {}); return w.focus(); }
+    }
+    return clients.openWindow(url);
+  }));
 });

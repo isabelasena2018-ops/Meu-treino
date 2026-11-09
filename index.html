@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.5 · 09/11 13h';
+const APP_VERSION='2.6 · 09/11 14h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1235,7 +1235,7 @@ function runGen(g){g.result=plan(Object.assign({},g,{nivel:g.nivel||'intermediar
 const LS='meutreino:v2';
 function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[],measures:[]};}
 let D=(()=>{try{const v=localStorage.getItem(LS);if(v){const o=JSON.parse(v);return Object.assign(fresh(),o);}}catch(e){}return fresh();})();
-function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();scheduleUsage();}
+function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();scheduleUsage();schedulePush();}
 
 const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null,gen:null,mea:{}};
 let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',supps:{vacuo:false,creatina:false,pre:false,whey:false}};
@@ -1343,6 +1343,7 @@ function vHoje(){
  const meals=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanches','🍎 Lanches'],['jantar','🌙 Jantar']];
  return `
  ${installCard()}
+ ${isStandalone()&&pushSupported()&&FIREBASE_CONFIG&&!pushState().on&&!D.pushAskNo&&Notification.permission!=='denied'?`<div class="card" style="border:1.5px solid var(--a2)"><b style="color:var(--a2)">🔔 Quer que eu te lembre do que faltar?</b><p class="small mut" style="margin:4px 0 10px">Água, creatina, treino e check-in, só quando você ainda não registrou.</p><div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="pushOn">Ativar</button><button class="btn2" style="padding:10px" data-a="pushAskNo">Agora não</button></div></div>`:''}
  ${UI.pendingGroup&&!(D.social&&D.social.groupId)?`<button class="ckcard" data-a="go" data-v="turma" style="border-color:var(--a);background:var(--asoft)"><span class="em">👯‍♀️</span><span><b style="color:var(--a)">Você recebeu um convite!</b><span style="color:#244a45">Toque aqui pra entrar no grupo e treinar junto com a galera.</span></span></button>`:''}
  <div style="margin:4px 0 12px"><span class="kicker">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span><h2 class="disp h2" style="margin-bottom:0">${hi}, ${esc(p.nome)} 👋</h2></div>
  <div class="card dark">
@@ -1687,6 +1688,8 @@ function vPerfil(){
   ${SUPPS.map(s=>`<button class="toggle ${PROF.supps[s.k]?'on':''}" data-a="profSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
   <button class="btn" style="margin-top:12px" data-a="saveProf">Salvar</button>
  </div>
+ <h3 class="h3">🔔 Notificações inteligentes</h3>
+ <div class="card">${pushCardHtml()}</div>
  <h3 class="h3">Privacidade</h3>
  <div class="card"><button class="toggle ${D.usageShare!==false?'on':''}" data-a="usageToggle"><span>Mostrar pra criadora do app que eu uso<br><span class="small mut" style="font-weight:500">Só nome e quando usou. Treinos, peso e comida não.</span></span><span class="tg"></span></button></div>
  ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?`<button class="li" data-a="admOpen" style="border:1.5px solid var(--a)"><span><b>👀 Quem usa o app</b><span>Seu painel de criadora</span></span><span class="mut">›</span></button>`:''}
@@ -2122,6 +2125,32 @@ async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='
  catch(e){S.err='Não consegui carregar. Confira se as regras novas do Firebase foram publicadas e se você está com internet.';}
  S.loading=false;if(UI.view==='admin')render();}
 
+/* ===== notificações inteligentes: só avisa o que ainda não foi registrado ===== */
+const VAPID_PUBLIC='BBxIj2dVmCdc8ky50XrbQuqUX6oswFtc8zO6iRMQGFA-CeKrBZ0rRRz9Z9P19U3E-WkpngSbkgtQOZv6tP2EC3E';
+const PUSH_KINDS=[['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['creatina','💊 Creatina','De manhã e à noite, se não marcou'],['vacuo','🌬️ Vácuo','De manhã, se não marcou'],['treino','🏋️ Dia de treino','No seu horário de treino, se não registrou (com lembrete do pré-treino)'],['whey','🥤 Whey','Depois que você registrar um treino'],['checkin','📝 Check-in do dia','Às 21h, se você não fez']];
+const TREINO_H=[['manha','🌅 Manhã'],['almoco','☀️ Almoço'],['tarde','🌇 Tarde'],['noite','🌙 Noite']];
+function pushState(){if(!D.push)D.push={on:false,prefs:{agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},treinoHora:'manha'};D.push.prefs=Object.assign({agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},D.push.prefs||{});return D.push;}
+const pushSupported=()=>typeof window!=='undefined'&&'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;
+function b64u(str){const pad='='.repeat((4-str.length%4)%4);const b=atob((str+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)));}
+let PUSH_T=null,PUSH_SIG='';
+function pushStatus(){const t=today();const c=dayCheck(t);const sched={};DAYS.forEach(([k])=>{const w=D.workouts.filter(x=>x.day===k).map(x=>x.name);if(w.length)sched[k]=w;});
+ const en={};SUPPS.forEach(x=>en[x.k]=!!(D.profile.supps&&D.profile.supps[x.k]));
+ return {day:t,aguaMl:c.aguaMl||0,meta:aguaMeta(),supps:Object.assign({},c.supps||{}),en,checkin:!!c.checkin,trained:D.activities.some(a=>a.date===t),sched};}
+async function syncPush(force){const P=pushState();if(!P.on||!FIREBASE_CONFIG||!pushSupported())return;if(navigator.onLine===false)return;
+ const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(!sub){P.on=false;persist();return;}
+ const doc={name:D.profile.nome,sub:JSON.parse(JSON.stringify(sub)),tz:(Intl.DateTimeFormat().resolvedOptions().timeZone)||'America/Sao_Paulo',prefs:P.prefs,treinoHora:P.treinoHora,status:pushStatus(),updated:Date.now()};
+ const sig=JSON.stringify([doc.sub.endpoint,doc.prefs,doc.treinoHora,doc.status,doc.tz]);if(!force&&sig===PUSH_SIG)return;
+ const {db,uid,f}=await fb();await f.setDoc(f.doc(db,'push',uid),doc,{merge:true});PUSH_SIG=sig;}
+function schedulePush(){if(!D.push||!D.push.on)return;clearTimeout(PUSH_T);PUSH_T=setTimeout(()=>syncPush().catch(()=>{}),3000);}
+function pushCardHtml(){const P=pushState();
+ if(!pushSupported())return isIOS()&&!isStandalone()?'<p class="small mut" style="margin:0">Pra receber notificações no iPhone, primeiro instale o app na tela de início (Compartilhar → Adicionar à Tela de Início) e abra por lá.</p>':'<p class="small mut" style="margin:0">Este navegador não aceita notificações de apps web.</p>';
+ if(isIOS()&&!isStandalone())return '<p class="small mut" style="margin:0">Abra o app pelo ícone da tela de início pra ativar as notificações.</p>';
+ if(Notification.permission==='denied')return '<p class="small mut" style="margin:0">As notificações estão bloqueadas. Libere em <b>Ajustes → Notificações → Meu Treino</b> e volte aqui.</p>';
+ if(!P.on)return `<p class="small mut" style="margin:0 0 10px">Eu só te aviso do que você <b>ainda não registrou</b>. Se já marcou, fico quieta 😉</p><button class="btn alt sm" data-a="pushOn">🔔 Ativar notificações</button>`;
+ return `${PUSH_KINDS.filter(([k])=>!['creatina','vacuo','whey'].includes(k)||(D.profile.supps&&D.profile.supps[k])).map(([k,l,h])=>`<button class="toggle ${P.prefs[k]?'on':''}" data-a="pushPref" data-k="${k}"><span>${l}<br><span class="small mut" style="font-weight:500">${h}</span></span><span class="tg"></span></button>`).join('')}
+  <label class="lbl">Que horas você costuma treinar?</label><div class="chips">${TREINO_H.map(([k,l])=>`<button class="chip ${P.treinoHora===k?'on':''}" data-a="pushHora" data-k="${k}">${l}</button>`).join('')}</div>
+  <div class="btnrow"><button class="btn2" data-a="pushTest">Testar agora</button><button class="btn2 danger" data-a="pushOff">Desativar</button></div>`;}
+
 function inviteUrl(){return location.href.split('#')[0].split('?')[0]+'?g='+soc().groupId;}
 
 /* ================== SHEET ================== */
@@ -2301,6 +2330,20 @@ const A={
  admOpen:()=>{UI.adm=null;go('admin');},
  admLoad:()=>{if(UI.adm)UI.adm.list=null;admLoad();},
  copyId:async()=>{const id=FB&&FB.uid;if(!id)return;try{await navigator.clipboard.writeText(id);toast('ID copiado!');}catch(e){prompt('Copie o ID:',id);}},
+ pushOn:async()=>{if(!pushSupported()){toast('Este navegador não aceita notificações');return;}
+  let perm='default';try{perm=await Notification.requestPermission();}catch(e){}
+  if(perm!=='granted'){toast('Sem permissão pra notificar');render();return;}
+  try{const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUBLIC)});
+   pushState().on=true;persist();await syncPush(true);toast('Notificações ativadas! 🔔');}
+  catch(e){toast('Não consegui ativar agora. Confira a internet e tente de novo.');}
+  render();},
+ pushAskNo:()=>{D.pushAskNo=true;persist();render();},
+ pushPref:t=>{const P=pushState();P.prefs[t.dataset.k]=!P.prefs[t.dataset.k];persist();render();},
+ pushHora:t=>{pushState().treinoHora=t.dataset.k;persist();render();},
+ pushTest:async()=>{try{const reg=await navigator.serviceWorker.ready;await reg.showNotification('💧 Exemplo de lembrete',{body:'É assim que eu vou te avisar quando faltar algo 😉',icon:'icons/icon-192.png',tag:'teste'});}catch(e){toast('Não consegui mostrar o teste');}},
+ pushOff:async()=>{try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe();}catch(e){}
+  pushState().on=false;persist();try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'push',uid));}catch(e){}render();toast('Notificações desativadas');},
  install:async()=>{if(!DEFERRED)return;DEFERRED.prompt();try{await DEFERRED.userChoice;}catch(e){}DEFERRED=null;render();},
  installNo:()=>{D.installDismissed=true;persist();render();},
  ckOpen:()=>{CK=null;go('checkin');},
@@ -2345,9 +2388,11 @@ document.addEventListener('input',e=>{if(e.target.id==='ckin')grow(e.target);});
 document.addEventListener('focusin',e=>{if(e.target.id==='ckin')hush();});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
 
+try{const gv=new URLSearchParams(location.search).get('go');if(gv&&D.profile&&['hoje','checkin','treinos','progresso','atividades'].includes(gv)){UI.view=gv;history.replaceState(null,'',location.pathname);}}catch(e){}
 try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
 if(D.profile&&socOn())setTimeout(()=>syncSocial().catch(()=>{}),1500);
 if(D.profile)setTimeout(()=>syncUsage(true).then(()=>{if(UI.view==='perfil')render();}).catch(()=>{}),2500);
+if(D.profile&&D.push&&D.push.on)setTimeout(()=>syncPush(true).catch(()=>{}),3500);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{}));
 
 render();
