@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.4 · 09/11 19h';
+const APP_VERSION='4.5 · 09/11 19h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2612,7 +2612,39 @@ function drawRoute(ctx,route,x,y,w,h,color,width){if(route.length<2||h<60)return
 function fitFont(x,txt,max,min,weight,fam,w){let fs=max;do{x.font=weight+' '+fs+'px '+fam;fs-=2;}while(x.measureText(txt).width>w&&fs>min);}
 const CARD_THEMES={verde:{bg:['#0F4C45','#08302B'],ink:'#FFFFFF',acc:'#E8633A',blob:'#E8633A'},laranja:{bg:['#E8633A','#B84A26'],ink:'#FFFFFF',acc:'#FFE1CF',blob:'#FFFFFF'},creme:{bg:['#FAF6EF','#EFE5D3'],ink:'#0F4C45',acc:'#C24E28',blob:'#0F4C45'}};
 const CARD_INKS={branco:'#FFFFFF',verde:'#0F4C45',laranja:'#E8633A'};
+/* Sticker transparente: centralizado, leve e sem moldura, pra colar no story */
+async function makeSticker(d,sel,tinta){
+ try{await document.fonts.ready;}catch(e){}
+ const has=k=>sel.includes(k)&&d.f[k];
+ const bigK=(d.kind==='gym'?['tempo','exercicios']:['km','tempo']).find(k=>has(k)&&d.f[k].big);const big=bigK?d.f[bigK]:null;
+ const order=d.fields?d.fields.map(f=>f[0]):['tempo','km','ritmo','elevacao','exercicios','series','volume','recordes','intensidade','sequencia'];
+ const stats=order.filter(k=>has(k)&&k!==bigK&&d.f[k].v!=null&&!d.f[k].line).map(k=>d.f[k]).slice(0,6);
+ const lines=(d.kind==='act'?order.filter(k=>has(k)&&d.f[k].line).map(k=>d.f[k].v.replace(/^🎯 /,'')):has(d.kind==='run'?'parciais':'lista')?d.lines:[]).slice(0,4);
+ const route=has('percurso')&&d.route&&d.route.length>1?d.route:null;
+ const SANS='"DM Sans", system-ui, sans-serif',SERIF='"Fraunces", Georgia, serif';
+ const ink=CARD_INKS[tinta]||'#FFFFFF';const light=ink==='#FFFFFF';
+ const W=1080,cx=W/2;const rows=[];for(let i=0;i<stats.length;i+=3)rows.push(stats.slice(i,i+3));
+ const H=40+(route?420:0)+70+(big?230:0)+rows.length*118+(lines.length?30+lines.length*46:0)+110;
+ const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ x.textAlign='center';x.textBaseline='alphabetic';
+ const soft=on=>{x.shadowColor=on&&light?'rgba(0,0,0,.22)':'transparent';x.shadowBlur=on&&light?10:0;x.shadowOffsetY=on&&light?1:0;};
+ soft(true);let y=40;
+ if(route){drawRoute(x,route,cx-260,y,520,380,ink,9);y+=420;}
+ x.fillStyle=ink;fitFont(x,d.title,46,28,600,SERIF,W-200);x.globalAlpha=.95;x.fillText(d.title,cx,y+46);x.globalAlpha=1;y+=70;
+ if(big){x.font='600 210px '+SERIF;const bw=x.measureText(big.big).width;x.font='500 54px '+SANS;const uw=big.u?x.measureText(big.u).width+18:0;
+  const sx=cx-(bw+uw)/2;x.textAlign='left';x.font='600 210px '+SERIF;x.fillText(big.big,sx,y+190);if(big.u){x.font='500 54px '+SANS;x.globalAlpha=.85;x.fillText(big.u,sx+bw+18,y+190);x.globalAlpha=1;}x.textAlign='center';y+=230;}
+ rows.forEach(r=>{const cw=Math.min(300,(W-120)/r.length);const x0=cx-cw*r.length/2;
+  r.forEach((st,i)=>{const sx=x0+cw*i+cw/2;x.globalAlpha=.72;x.font='600 22px '+SANS;x.save();try{x.letterSpacing='3px';}catch(e){}x.fillText(st.l.toUpperCase(),sx,y+30);x.restore();x.globalAlpha=1;fitFont(x,st.v,46,26,600,SANS,cw-24);x.fillText(st.v,sx,y+84);
+   if(i>0){soft(false);x.globalAlpha=.35;x.fillRect(x0+cw*i-1,y+14,2,76);x.globalAlpha=1;soft(true);}});
+  y+=118;});
+ if(lines.length){y+=30;x.font='500 30px '+SANS;x.globalAlpha=.88;lines.forEach(l=>{let t=l;while(x.measureText(t).width>W-200&&t.length>8)t=t.slice(0,-2);if(t!==l)t=t.trim()+'…';x.fillText(t,cx,y+32);y+=46;});x.globalAlpha=1;}
+ y+=40;soft(false);x.globalAlpha=.4;x.fillRect(cx-40,y,80,2);x.globalAlpha=1;soft(true);
+ x.font='700 24px '+SANS;x.globalAlpha=.85;x.save();try{x.letterSpacing='5px';}catch(e){}
+ const dt=has('data')?'  ·  '+new Date(d.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','').toUpperCase():'';
+ x.fillText('🔥 MEU TREINO'+dt,cx,y+48);x.restore();x.globalAlpha=1;
+ x.shadowColor='transparent';return c;}
 async function makeCard(d,sel,style,photo,tema,tinta){
+ if(style==='sticker')return makeSticker(d,sel,tinta);
  try{await document.fonts.ready;}catch(e){}
  const has=k=>sel.includes(k)&&d.f[k];
  const bigK=(d.kind==='gym'?['tempo','exercicios']:['km','tempo']).find(k=>has(k)&&d.f[k].big);const big=bigK?d.f[bigK]:null;
