@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.6 · 09/11 19h';
+const APP_VERSION='4.7 · 09/11 23h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2313,7 +2313,7 @@ async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='
 
 /* ===== notificações inteligentes: só avisa o que ainda não foi registrado ===== */
 const VAPID_PUBLIC='BBxIj2dVmCdc8ky50XrbQuqUX6oswFtc8zO6iRMQGFA-CeKrBZ0rRRz9Z9P19U3E-WkpngSbkgtQOZv6tP2EC3E';
-const PUSH_KINDS=[['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['creatina','💊 Creatina','De manhã e à noite, se não marcou'],['vacuo','🌬️ Vácuo','De manhã, se não marcou'],['treino','🏋️ Dia de treino','No seu horário de treino, se não registrou (com lembrete do pré-treino)'],['whey','🥤 Whey','Depois que você registrar um treino'],['checkin','📝 Check-in do dia','Às 21h, se você não fez']];
+const PUSH_KINDS=[['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['creatina','💊 Creatina','De manhã e à noite, se não marcou'],['vacuo','🌬️ Vácuo','De manhã, se não marcou'],['treino','🏋️ Dia de treino','No seu horário de treino, se não registrou (com lembrete do pré-treino)'],['whey','🥤 Whey','Depois que você registrar um treino'],['checkin','📝 Check-in do dia','Às 20h30, se você não fez']];
 const TREINO_H=[['manha','🌅 Manhã'],['almoco','☀️ Almoço'],['tarde','🌇 Tarde'],['noite','🌙 Noite']];
 function pushState(){if(!D.push)D.push={on:false,prefs:{agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},treinoHora:'manha'};D.push.prefs=Object.assign({agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},D.push.prefs||{});return D.push;}
 const pushSupported=()=>typeof window!=='undefined'&&'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;

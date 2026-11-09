@@ -45,7 +45,7 @@ export function lembretesDevidos(doc, agora) {
       t: '💧 Ainda dá tempo', b: `Faltam ${fmtL(st.meta - st.aguaMl)} pra sua meta de água hoje.`, u: './?go=hoje' },
     { k: 'creatina2', de: 20 * 60, ate: 23 * 60, ok: prefs.creatina && st.en.creatina && !st.supps.creatina,
       t: '💊 Último lembrete da creatina', b: 'Ela funciona pela constância. Toma antes de dormir? 💪', u: './?go=hoje' },
-    { k: 'checkin', de: 21 * 60, ate: 23 * 60 + 30, ok: prefs.checkin && !st.checkin,
+    { k: 'checkin', de: 20 * 60 + 30, ate: 23 * 60 + 30, ok: prefs.checkin && !st.checkin,
       t: '📝 Como foi seu dia?', b: 'Faz o check-in em 1 minuto. Pode ser falando 🎙️', u: './?go=checkin' }
   ];
   return regras.filter(r => r.ok && L.min >= r.de && L.min < r.ate && enviados[r.k] !== L.dia)
