@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.4 · 09/11 13h';
+const APP_VERSION='2.5 · 09/11 13h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2088,7 +2088,7 @@ function vTurma(){
   <button class="btn2 danger" style="margin-top:12px" data-a="socLeave">Sair do grupo</button></details>
  <p class="small mut" style="text-align:center">Código do grupo: <b style="letter-spacing:2px">${esc(s.groupId)}</b></p>`;}
 /* ===== painel da criadora: quem usa o app (sem dados de saúde) ===== */
-const ADMIN_UID=''; /* preenchido com o ID do celular da Isabela */
+const ADMIN_UID='xs6gZ72v1rOeNYgAg69rDvF07UQ2'; /* celular da Isabela */
 let USAGE_T=null,USAGE_LAST=0,USAGE_SIG='';
 const usageOn=()=>!!(FIREBASE_CONFIG&&D.profile&&D.usageShare!==false);
 function usageDoc(){const t=today();const d30=new Date();d30.setDate(d30.getDate()-29);const from=keyOf(d30);
