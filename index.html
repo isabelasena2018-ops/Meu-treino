@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.2 · 09/11 12h';
+const APP_VERSION='2.3 · 09/11 12h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -872,7 +872,8 @@ function simWhy(a,b){const x=EX[a],y=EX[b];const t=[];
  else t.push('Trabalha '+(REG[(y.foco||[])[0]]||GROUPS[y.g]).toLowerCase());
  if(x.uni&&y.uni)t.push('também unilateral');
  return t.join(' · ');}
-function alternatives(id,reason,exclude){const x=EX[id];if(!x||id==='vacuo')return [];
+function alternatives(id,reason,exclude,target){const x=EX[id];if(!x||id==='vacuo')return [];
+ const vg=r=>typeof volGroup==='function'?volGroup(r):r;const tg=target||vg((x.foco||[x.g])[0]);
  const ex=new Set(exclude||[]);
  let list=Object.keys(EX).filter(o=>o!==id&&!ex.has(o)&&o!=='vacuo');
  if(reason==='joelho')list=list.filter(o=>EX[o].kf);
@@ -885,6 +886,10 @@ function alternatives(id,reason,exclude){const x=EX[id];if(!x||id==='vacuo')retu
  const sc=o=>simScore(id,o)+(reason==='aparelho'&&free.includes(EX[o].eq)?12:0);
  /* só o que é realmente parecido: mesmo movimento ou o mesmo músculo principal */
  list=list.filter(o=>simScore(id,o)>=28);
+ /* mesmo músculo-alvo: num treino de glúteo, só glúteo (nada de trocar por quadríceps) */
+ const pg=o=>vg((EX[o].foco||[EX[o].g])[0]);const px=pg(id);
+ const same=list.filter(o=>pg(o)===tg||(px!==tg&&pg(o)===px&&(EX[o].foco||[]).some(r=>vg(r)===tg)));
+ if(same.length)list=same;
  return list.sort((a,b)=>sc(b)-sc(a)).slice(0,6);}
 
 /* ================== PLANEJADOR (lógica de especialista) ================== */
@@ -1664,7 +1669,8 @@ function vAjuda(){
  <h3 class="h3">💾 Seus dados</h3>
  <div class="card"><p style="margin:0">Tudo fica salvo neste celular, neste navegador. Se trocar de celular ou limpar o navegador, os dados somem — por isso faça um <b>backup</b> de vez em quando no seu perfil (👤).</p></div>
  <p class="small mut" style="text-align:center">Este app é um apoio e não substitui um profissional de educação física ou nutricionista.</p>
- <p class="small mut" style="text-align:center">Versão ${APP_VERSION}</p>`;
+ <p class="small mut" style="text-align:center">Versão ${APP_VERSION}</p>
+ <button class="btn2" style="margin-top:4px" data-a="forceUpdate">🔄 Buscar atualização</button>`;
 }
 
 /* ---------- Perfil ---------- */
@@ -1687,7 +1693,8 @@ function vPerfil(){
  <div class="card"><p class="small mut" style="margin:0 0 10px">Salve um arquivo com todos os seus dados pra não perder nada se trocar de celular.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
  <button class="btn2 danger" data-a="reset">Apagar todos os dados</button>
- <p class="small mut" style="text-align:center;margin-top:14px">Versão ${APP_VERSION}</p>`;
+ <p class="small mut" style="text-align:center;margin-top:14px">Versão ${APP_VERSION}</p>
+ <button class="btn2" style="margin-top:4px" data-a="forceUpdate">🔄 Buscar atualização</button>`;
 }
 
 /* ================== CHECK-IN (conversa) ================== */
@@ -2085,7 +2092,9 @@ function pickerHtml(){const added=new Set(UI.edit.items.map(i=>i.exId));
 
 function swapHtml(){const sw=UI.swap;const x=EX[sw.exId];
  const inSheet=(sw.ctx==='builder'?(UI.edit?UI.edit.items:[]):((D.workouts.find(w=>w.id===UI.sessionId)||{}).items||[])).map(i=>i.exId);
- const alts=alternatives(sw.exId,sw.reason||'',inSheet);
+ const wf=sw.ctx==='builder'?(UI.edit||{}).focus:((D.workouts.find(w=>w.id===UI.sessionId)||{}).focus);
+ const tgt=wf==='gluteo'&&(x.foco||[]).some(r=>/^glu/.test(r))?'gluteo':null;
+ const alts=alternatives(sw.exId,sw.reason||'',inSheet,tgt);
  const lost=sw.reason==='joelho'&&!x.kf||sw.reason==='lombar'&&LB_HEAVY.includes(sw.exId)||sw.reason==='ombro'&&SH_HEAVY.includes(sw.exId);
  const R=[['joelho','🦵 Incomoda o joelho'],['lombar','🔙 Incomoda a lombar'],['ombro','💪 Incomoda o ombro'],['dor','🤕 Outra dor ou desconforto'],['aparelho','🏋️ Sem aparelho ou ocupado'],['gosto','🙅‍♀️ Não gosto / quero variar']];
  return `<span class="kicker">Trocar exercício</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">${esc(x.n)}</h2>
@@ -2243,6 +2252,10 @@ const A={
   if(sw.ctx==='builder'){if(!fix(UI.edit.items))return;}
   else{const w=D.workouts.find(x=>x.id===UI.sessionId);if(!w||!fix(w.items))return;persist();}
   closeSheet();const y=window.scrollY;render();window.scrollTo(0,y);toast('Trocado por '+EX[nid].n+' 🔄');},
+ forceUpdate:async()=>{toast('Buscando a versão mais nova…');
+  try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})));}
+   if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}}catch(e){}
+  setTimeout(()=>location.reload(),600);},
  install:async()=>{if(!DEFERRED)return;DEFERRED.prompt();try{await DEFERRED.userChoice;}catch(e){}DEFERRED=null;render();},
  installNo:()=>{D.installDismissed=true;persist();render();},
  ckOpen:()=>{CK=null;go('checkin');},
