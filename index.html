@@ -535,13 +535,85 @@ const SPLIT=[
  {day:'sex',name:'Glúteos + Posterior + Abdômen',focus:'gluteo',items:[['hip_thrust','4 × 10-12'],['bulgaro','3 × 10-12 (cada perna)'],['terra_romeno','3 × 10-12'],['abducao_maquina','4 × 15-20'],['prancha','3 × 30-45s'],['elev_pernas','3 × 15-20']]}
 ];
 
+/* ================== GERADOR DE TREINO ================== */
+const POOL={
+ gluteo:['hip_thrust','bulgaro','abducao_maquina','coice_polia','agach_sumo','elevacao_pelvica','caminhada_lateral','coice_4apoios'],
+ quadriceps:['agachamento','leg_press','extensora','afundo','hack','smith'],
+ posterior:['stiff','flexora_deitada','terra_romeno','flexora_sentada'],
+ panturrilha:['pant_pe','pant_sentada'],
+ costas:['puxada','remada_baixa','serrote','remada_maquina','remada_curvada','crucifixo_inverso','pullover','face_pull','barra_assistida'],
+ peito:['supino_reto','supino_incl','crossover','crucifixo','flexao'],
+ ombro:['desenvolvimento','elev_lateral','elev_frontal'],
+ biceps:['rosca_direta','rosca_martelo','rosca_alternada'],
+ triceps:['triceps_corda','triceps_frances','triceps_testa','mergulho_banco'],
+ abdomen:['prancha','dead_bug','elev_pernas','abdominal_supra','bicicleta','prancha_lateral']
+};
+const T5=[
+ {n:'Glúteos',f:'gluteo',s:[['gluteo',4],['posterior',1]]},
+ {n:'Costas + Bíceps',f:'costas',s:[['costas',5],['biceps',2]]},
+ {n:'Quadríceps + Posterior',f:'pernas',s:[['quadriceps',4],['posterior',1],['panturrilha',1]]},
+ {n:'Peito + Ombro + Tríceps',f:'superiores',s:[['peito',3],['ombro',2],['triceps',2]]},
+ {n:'Glúteo + Posterior + Abdômen',f:'gluteo',s:[['gluteo',3],['posterior',1],['abdomen',2]]}];
+const TPL={
+ 2:[{n:'Corpo todo A',f:'corpo',s:[['quadriceps',1],['gluteo',1],['costas',1],['peito',1],['posterior',1],['ombro',1],['abdomen',1]]},
+    {n:'Corpo todo B',f:'corpo',s:[['gluteo',1],['quadriceps',1],['costas',1],['ombro',1],['posterior',1],['peito',1],['abdomen',1]]}],
+ 3:[{n:'Inferiores',f:'pernas',s:[['quadriceps',2],['gluteo',2],['posterior',1],['panturrilha',1]]},
+    {n:'Superiores',f:'superiores',s:[['costas',2],['peito',1],['ombro',2],['biceps',1],['triceps',1]]},
+    {n:'Corpo todo',f:'corpo',s:[['gluteo',1],['quadriceps',1],['costas',1],['peito',1],['posterior',1],['abdomen',2]]}],
+ 4:[{n:'Inferiores · Quadríceps',f:'pernas',s:[['quadriceps',3],['gluteo',1],['posterior',1],['panturrilha',1]]},
+    {n:'Superiores · Costas',f:'costas',s:[['costas',4],['biceps',2],['ombro',1]]},
+    {n:'Inferiores · Glúteo',f:'gluteo',s:[['gluteo',4],['posterior',2]]},
+    {n:'Superiores · Peito e ombro',f:'superiores',s:[['peito',2],['ombro',2],['triceps',2],['abdomen',2]]}],
+ 5:T5,
+ 6:T5.concat([{n:'Costas + Ombro + Abdômen',f:'costas',s:[['costas',3],['ombro',2],['abdomen',3]]}])
+};
+const DEFDAYS={2:['seg','qui'],3:['seg','qua','sex'],4:['seg','ter','qui','sex'],5:['seg','ter','qua','qui','sex'],6:['seg','ter','qua','qui','sex','sab']};
+const FOCUS_GROUPS={gluteo:['gluteo'],pernas:['quadriceps','posterior'],costas:['costas'],braco:['biceps','triceps'],barriga:['abdomen'],superiores:['peito','ombro'],corpo:[]};
+const MEAS=[['cintura','Cintura'],['abdomen','Abdômen'],['quadril','Quadril'],['braco','Braço'],['coxa','Coxa'],['peito','Busto']];
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function generate(cfg){
+ const r=rng(cfg.seed||0);
+ const pools={};Object.entries(POOL).forEach(([g,p])=>{const a=[...p];if(cfg.seed){for(let i=a.length-1;i>1;i--){const j=1+Math.floor(r()*i);[a[i],a[j]]=[a[j],a[i]];}}pools[g]=a;});
+ const ptr={};Object.keys(pools).forEach(g=>ptr[g]=0);
+ const fg=new Set(cfg.foci.flatMap(f=>FOCUS_GROUPS[f]||[]));
+ const has=(sl,g)=>sl.find(x=>x[0]===g);
+ const add=(sl,g,n=1)=>{const s=has(sl,g);if(s)s[1]+=n;else sl.push([g,n]);};
+ const days=TPL[cfg.days.length].map(d=>({n:d.n,f:d.f,s:d.s.map(x=>[...x])}));
+ days.forEach(d=>{const s=d.s;
+  if(cfg.foci.includes('gluteo')&&has(s,'gluteo'))add(s,'gluteo');
+  if(cfg.foci.includes('pernas')&&has(s,'quadriceps'))add(s,'quadriceps');
+  if(cfg.foci.includes('costas')&&has(s,'costas'))add(s,'costas');
+  if(cfg.foci.includes('superiores')){if(has(s,'peito'))add(s,'peito');if(has(s,'ombro'))add(s,'ombro');}
+  if(cfg.foci.includes('braco')){if(has(s,'costas'))add(s,'biceps');if(has(s,'peito')||has(s,'ombro'))add(s,'triceps');}
+ });
+ if(cfg.foci.includes('barriga')){
+  const order=days.map((d,i)=>[i,d.s.reduce((a,x)=>a+x[1],0)]).sort((a,b)=>a[1]-b[1]).slice(0,Math.min(3,days.length));
+  order.forEach(([i])=>{const s=days[i].s;const ab=has(s,'abdomen');if(!ab)s.push(['abdomen',2]);else if(ab[1]<2)ab[1]=2;if(!/Abd/.test(days[i].n))days[i].n+=' + Abdômen';});
+ }
+ const cap=(cfg.nivel==='iniciante'?7:8)+(cfg.foci.includes('barriga')?1:0);
+ const key=g=>(g==='abdomen'||g==='panturrilha')?2:fg.has(g)?0:1;
+ return days.map((d,i)=>{
+  const flat=[];d.s.sort((a,b)=>key(a[0])-key(b[0])).forEach(([g,n])=>{for(let k=0;k<n;k++)flat.push(g);});
+  while(flat.length>cap){let j=-1;for(let k=flat.length-1;k>=0;k--){if(!fg.has(flat[k])&&flat[k]!=='abdomen'){j=k;break;}}if(j<0)j=flat.length-1;flat.splice(j,1);}
+  const used=new Set(),cnt={},items=[];
+  flat.forEach(g=>{const pool=pools[g];let id=null;
+   if(!cnt[g]&&flat.filter(x=>x===g).length>=3&&!used.has(pool[0]))id=pool[0];
+   else for(let k=0;k<pool.length;k++){const c=pool[(ptr[g]+k)%pool.length];if(!used.has(c)){id=c;ptr[g]=(ptr[g]+k+1)%pool.length;break;}}
+   cnt[g]=(cnt[g]||0)+1;if(id){used.add(id);items.push({exId:id,sets:rec(id)});}});
+  const ord=it=>{const x=EX[it.exId];if(x.g==='abdomen'||x.g==='panturrilha')return 4;return (x.c?0:2)+(fg.has(x.g)?0:1);};
+  items.sort((a,b)=>ord(a)-ord(b));
+  return {name:d.n,focus:d.f,day:cfg.days[i],items};});
+}
+function runGen(g){const keep={obj:D.profile.obj,nivel:D.profile.nivel};D.profile.obj=g.obj;D.profile.nivel=g.nivel||'intermediario';
+ g.result=generate(g);D.profile.obj=keep.obj;D.profile.nivel=keep.nivel;}
+
 /* ================== ESTADO ================== */
 const LS='meutreino:v2';
-function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[]};}
+function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[],measures:[]};}
 let D=(()=>{try{const v=localStorage.getItem(LS);if(v){const o=JSON.parse(v);return Object.assign(fresh(),o);}}catch(e){}return fresh();})();
 function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}}
 
-const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null};
+const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null,gen:null,mea:{}};
 let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',supps:{vacuo:false,creatina:false,pre:false,whey:false}};
 let PROF=null;
 
@@ -559,7 +631,8 @@ const periodNow=()=>{const h=new Date().getHours();return h<11?'manhã':h<14?'al
 const dayCheck=k=>{if(!D.checks[k])D.checks[k]={supps:{},agua:0,meals:{},onTrack:null};return D.checks[k];};
 function aguaMeta(){const p=lastWeight();if(!p)return 8;return Math.min(14,Math.max(6,Math.round(p*35/250)));}
 function lastWeight(){const s=[...D.weights].sort((a,b)=>a.date.localeCompare(b.date));return s.length?s[s.length-1].weight:(D.profile&&D.profile.pesoInicial)||null;}
-function rec(id){const x=EX[id];const o=(D.profile&&D.profile.obj)||'emagrecer';const u=x.uni?' (cada lado)':'';
+function rec(id){let r=rec0(id);if(D.profile&&D.profile.nivel==='iniciante')r=r.replace(/^4 ×/,'3 ×');return r;}
+function rec0(id){const x=EX[id];const o=(D.profile&&D.profile.obj)||'emagrecer';const u=x.uni?' (cada lado)':'';
  if(id==='vacuo')return '3-5 × 15-20s';
  if(x.iso)return '3 × 30-45s'+u;
  if(x.g==='abdomen')return '3 × 15-20';
@@ -588,13 +661,13 @@ const IC={
 function render(){
  const app=document.getElementById('app');
  if(!D.profile){app.innerHTML=vOnb();return;}
- const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin}[UI.view]||vHoje;
+ const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
  app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():nav());
  if(isCk)ckScroll();
 }
 function header(){return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
-function nav(){const map={sessao:'treinos',builder:'treinos'};const cur=map[UI.view]||UI.view;
+function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos'};const cur=map[UI.view]||UI.view;
  const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['progresso','Progresso',IC.chart]];
  return '<nav class="bottom">'+items.map(i=>`<button class="nbtn ${cur===i[0]?'on':''}" data-a="go" data-v="${i[0]}">${i[2]}${i[1]}</button>`).join('')+'</nav>';}
 
@@ -613,8 +686,8 @@ function vOnb(){
   ${SUPPS.map(s=>`<button class="toggle ${ONB.supps[s.k]?'on':''}" data-a="onbSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
  </div>
  <h3 class="h3">Como você quer começar?</h3>
- <button class="bigopt" data-a="onbStart" data-m="split"><b>📅 Usar uma divisão pronta</b><span>5 treinos de segunda a sexta: glúteo, costas, quadríceps, superiores e glúteo + abdômen. Dá pra editar tudo depois.</span></button>
- <button class="bigopt" data-a="onbStart" data-m="zero"><b>🛠️ Montar meus treinos</b><span>Você escolhe o foco (braço, barriga, glúteo…) e o app te ajuda com exercícios, séries e repetições.</span></button>
+ <button class="bigopt" data-a="onbStart" data-m="gen" style="border-color:var(--a2)"><b>✨ Monte meu treino pra mim</b><span>Me conta seu foco (glúteo, barriga, braço…), quantos dias você treina e sua experiência que eu monto a semana inteira. Medidas são opcionais.</span></button>
+ <button class="bigopt" data-a="onbStart" data-m="zero"><b>🛠️ Quero montar eu mesma</b><span>Você escolhe os exercícios e eu te ajudo com séries e repetições. Dá pra pedir o treino pronto depois, a qualquer momento.</span></button>
  <p class="small mut" style="text-align:center;margin-top:14px">Seus dados ficam salvos só neste celular.</p>
  </main>`;
 }
@@ -637,7 +710,7 @@ function vHoje(){
    ${done?`<button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button>`}</div>`;}).join('');
  }else{
   treinoHtml=`<div class="card"><span class="kicker">Hoje</span><p style="margin:6px 0 12px;font-weight:600">${weekend?'Fim de semana 🌿 Descanso ou uma atividade leve.':'Nenhum treino marcado pra hoje.'}</p>
-  <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="go" data-v="treinos">Escolher treino</button><button class="btn2" style="padding:11px" data-a="go" data-v="atividades">Outra atividade</button></div></div>`;
+  <div class="btnrow" style="margin-top:0">${D.workouts.length?'<button class="btn sm" data-a="go" data-v="treinos">Escolher treino</button>':'<button class="btn sm alt" data-a="genOpen">✨ Monte pra mim</button>'}<button class="btn2" style="padding:11px" data-a="go" data-v="atividades">Outra atividade</button></div></div>`;
  }
  let cups='';for(let i=0;i<Math.max(meta,c.agua);i++)cups+=`<div class="cup" style="background:${i<c.agua?'var(--a)':'transparent'};opacity:${i<c.agua?1:.25}"></div>`;
  const meals=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanches','🍎 Lanches'],['jantar','🌙 Jantar']];
@@ -694,6 +767,7 @@ function vTreinos(){
  const order=k=>{const i=DAYS.findIndex(d=>d[0]===k);return i<0?99:i;};
  const ws=[...D.workouts].sort((a,b)=>order(a.day)-order(b.day));
  return `<span class="kicker">Seus treinos</span><h2 class="disp h2">Treinos</h2>
+ <button class="ckcard" data-a="genOpen" style="border-color:var(--a);background:var(--asoft)"><span class="em">✨</span><span><b style="color:var(--a)">${D.workouts.length?'Gerar uma nova divisão pra mim':'Monte meu treino pra mim'}</b><span style="color:#244a45">Me diz seu foco e quantos dias você treina que eu monto a semana toda.</span></span></button>
  ${ws.length?ws.map(w=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
   <div><span class="kicker" style="color:var(--a)">${w.day?DAYM[w.day]:'Sem dia fixo'}</span><h3 style="margin:3px 0 2px;font-size:17px">${esc(w.name)}</h3><span class="mut small">${w.items.length} exercícios${w.focus&&FOCUS[w.focus]?' · '+FOCUS[w.focus].e+' '+FOCUS[w.focus].l:''}</span></div>
   <button class="ib" data-a="editW" data-id="${w.id}" aria-label="Editar">✎</button></div>
@@ -740,6 +814,10 @@ function vBuilder(){
   <div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="helpYes">Sim, me ajuda!</button><button class="btn sm" style="background:rgba(255,255,255,.15)" data-a="helpNo">Monto sozinha</button></div></div>`;
  }else if(f&&e.helped){
   help=`<div class="info"><b>${f.e} Dica pra ${f.l.toLowerCase()}:</b> ${f.t}<br><br>⏱️ ${OBJ[D.profile.obj||'emagrecer'].rest}</div>`;
+ }else if(f){
+  help=`<button class="btn2" style="margin-bottom:12px" data-a="helpYes">✨ Sugerir exercícios pra ${f.l.toLowerCase()}</button>`;
+ }else if(!e.items.length){
+  help=`<div class="info"><b>Quer ajuda? 🤝</b><br>Escolha o foco acima que eu sugiro os exercícios deste treino. Ou, se preferir, eu monto a <b>semana inteira</b> pra você:<button class="btn alt sm" style="margin-top:10px" data-a="genOpen">✨ Monte meu treino pra mim</button></div>`;
  }
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
  <span class="kicker">${e.id?'Editar':'Novo'} treino</span><h2 class="disp h2">Monte seu treino</h2>
@@ -760,6 +838,52 @@ function vBuilder(){
  <button class="btn" data-a="saveW">Salvar treino</button>
  ${e.id?'<button class="btn2 danger" style="margin-top:10px" data-a="delW">Excluir treino</button>':''}`;
 }
+
+/* ---------- Gerador ---------- */
+function vGerador(){
+ const g=UI.gen;if(!g){UI.view='treinos';return vTreinos();}
+ if(g.result)return genPreview();
+ const ready=g.foci.length>0&&g.days.length>=2;
+ return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
+ <span class="kicker">Treino sugerido</span><h2 class="disp h2">Monte meu treino pra mim ✨</h2>
+ <div class="card">
+  <label class="lbl" style="margin-top:0">1. Qual seu foco? <span class="mut" style="font-weight:500">(até 3)</span></label>
+  <div class="chips">${Object.entries(FOCUS).map(([k,f])=>`<button class="chip ${g.foci.includes(k)?'on':''}" data-a="genFocus" data-f="${k}">${f.e} ${f.l}</button>`).join('')}</div>
+  <label class="lbl">2. Quantos dias por semana você consegue treinar?</label>
+  <div class="chips">${[2,3,4,5,6].map(n=>`<button class="chip ${g.days.length===n?'on':''}" data-a="genCount" data-n="${n}">${n} dias</button>`).join('')}</div>
+  ${g.days.length?`<label class="lbl">Em quais dias? <span class="mut" style="font-weight:500">(toque pra trocar)</span></label><div class="chips">${DAYS.map(([k,l])=>`<button class="chip ${g.days.includes(k)?'on':''}" data-a="genDay" data-k="${k}">${l.slice(0,3)}</button>`).join('')}</div>`:''}
+  <label class="lbl">3. Há quanto tempo você treina?</label>
+  <div class="chips"><button class="chip ${g.nivel==='iniciante'?'on':''}" data-a="genLvl" data-v="iniciante">🌱 Estou começando</button><button class="chip ${g.nivel==='intermediario'?'on':''}" data-a="genLvl" data-v="intermediario">💪 Já treino há um tempo</button></div>
+  <label class="lbl">4. Seu objetivo</label>
+  <div class="chips">${Object.entries(OBJ).map(([k,o])=>`<button class="chip ${g.obj===k?'on':''}" data-a="genObj" data-k="${k}">${o.l}</button>`).join('')}</div>
+ </div>
+ <details class="card"><summary><span>📏 Minhas medidas <span class="mut" style="font-weight:500">(opcional)</span></span><span class="chev">▾</span></summary>
+  <p class="small mut" style="margin:8px 0 0">Ficam salvas no Progresso pra você ver a evolução além da balança. Pode pular sem problema!</p>
+  <div class="row2">${[['peso','Peso (kg)']].concat(MEAS.map(([k,l])=>[k,l+' (cm)'])).map(([k,l])=>`<div><label class="lbl">${l}</label><input class="inp" inputmode="decimal" data-i="gen.m.${k}" value="${esc(g.m[k]||'')}"></div>`).join('')}</div>
+ </details>
+ <button class="btn alt" data-a="genRun" style="${ready?'':'opacity:.55'}">✨ Gerar meu treino</button>
+ ${ready?'':'<p class="small mut" style="text-align:center">Escolha pelo menos um foco e quantos dias você treina.</p>'}`;
+}
+function genPreview(){const g=UI.gen;
+ const tips=g.foci.filter(f=>FOCUS[f]).slice(0,2).map(f=>`<p style="margin:0 0 8px"><b>${FOCUS[f].e} ${FOCUS[f].l}:</b> ${FOCUS[f].t}</p>`).join('');
+ return `<button class="back" data-a="genBack">← Ajustar respostas</button>
+ <span class="kicker">Sua semana</span><h2 class="disp h2">Seu treino está pronto 🎉</h2>
+ <div class="info">${tips}⏱️ ${OBJ[g.obj].rest}</div>
+ ${g.result.map(w=>`<div class="card"><span class="kicker" style="color:var(--a)">${DAYM[w.day]}</span><h3 style="margin:3px 0 6px;font-size:17px">${esc(w.name)}</h3>
+  ${w.items.map(it=>`<div class="hrow" style="padding:8px 2px"><button style="text-align:left;font-size:14px;flex:1" data-a="info" data-id="${it.exId}">${esc(EX[it.exId].n)} <span class="mut">ⓘ</span></button><span class="sch" style="white-space:nowrap">${esc(it.sets)}</span></div>`).join('')}</div>`).join('')}
+ <button class="btn2" style="margin-bottom:10px" data-a="genAgain">🔄 Gerar outra variação</button>
+ ${D.workouts.length?`<button class="btn alt" data-a="genUse" data-m="replace">Usar esses treinos (substituir os atuais)</button><button class="btn2" style="margin-top:10px" data-a="genUse" data-m="add">Adicionar sem apagar os atuais</button>`:`<button class="btn alt" data-a="genUse" data-m="replace">Usar esses treinos 💪</button>`}
+ <p class="small mut" style="text-align:center">Depois dá pra editar qualquer treino na aba Treinos: trocar, tirar ou adicionar exercícios.</p>`;}
+function measHtml(){
+ const ms=[...(D.measures||[])].sort((a,b)=>a.date.localeCompare(b.date));
+ const rows=MEAS.filter(([k])=>ms.some(m=>m[k]!=null)).map(([k,l])=>{const f=ms.find(m=>m[k]!=null),la=[...ms].reverse().find(m=>m[k]!=null);const d=la[k]-f[k];
+  return `<div class="hrow"><span>${l}</span><span style="display:flex;gap:8px;align-items:center">${f!==la&&d?`<span class="small" style="font-weight:700;color:${d<0?'var(--a)':'var(--a2)'}">${d<0?'▼':'▲'} ${Math.abs(d).toFixed(1)}</span>`:''}<b>${la[k]} cm</b></span></div>`;}).join('');
+ return `<h3 class="h3">📏 Medidas</h3>
+ ${ms.length?`<div class="card" style="padding:4px 14px">${rows}<p class="small mut" style="margin:8px 0">Última medição: ${fmt(ms[ms.length-1].date)}${ms.length>1?' · comparando com '+fmt(ms[0].date):''}</p></div>`:''}
+ <details class="card"><summary><span>${ms.length?'Registrar novas medidas':'Registrar medidas (opcional)'}</span><span class="chev">▾</span></summary>
+  <div class="row2">${MEAS.map(([k,l])=>`<div><label class="lbl">${l} (cm)</label><input class="inp" inputmode="decimal" data-i="mea.${k}" value="${esc(UI.mea[k]||'')}"></div>`).join('')}</div>
+  <button class="btn sm" style="margin-top:12px" data-a="saveMeas">Salvar medidas</button>
+  <p class="small mut" style="margin:10px 0 0">Meça a cada 2 a 4 semanas, no mesmo horário. Às vezes a balança para, mas a cintura diminui 😉</p></details>`;}
 
 /* ---------- Biblioteca ---------- */
 function vLib(){
@@ -842,6 +966,7 @@ function vProg(){
  ${s.length>=2?`<div class="card" style="padding:12px 6px 4px">${chart(s.map(e=>({l:fmt(e.date),v:e.weight})),goal)}</div>`:'<div class="card empty">Registre seu peso alguns dias pra ver o gráfico 📉</div>'}
  ${rev.length?'<div class="card" style="padding:4px 14px">'+rev.map((e,i)=>{const pr=rev[i+1];const d=pr?e.weight-pr.weight:null;return `<div class="hrow"><span class="mut">${fmt(e.date)}</span><span style="display:flex;gap:8px;align-items:center">${d?`<span class="small" style="font-weight:700;color:${d<0?'var(--a)':'var(--a2)'}">${d<0?'▼':'▲'} ${Math.abs(d).toFixed(1)}</span>`:''}<b>${e.weight} kg</b><button class="ib del" data-a="delWeight" data-d="${e.date}">×</button></span></div>`;}).join('')+'</div>':''}
  <p class="small mut" style="text-align:center">Pese-se no mesmo horário (de manhã, em jejum), 1-2x por semana. Olhe a tendência, não o dia a dia 🌿</p>
+ ${measHtml()}
  <h3 class="h3">Evolução de carga</h3>
  ${exWith.length?`<select class="inp" data-c="prog.ex" style="background:#fff;margin-bottom:10px">${exWith.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${esc(EX[k].n)}</option>`).join('')}</select>
   <div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="mut small">Melhor carga</span><b>${best} kg</b></div>
@@ -1112,6 +1237,7 @@ const A={
   D.profile={nome:ONB.nome.trim(),obj:ONB.obj,pesoInicial:peso,meta:meta,supps:{...ONB.supps},criado:today()};
   if(peso)D.weights.push({date:today(),weight:peso});
   if(t.dataset.m==='split'){D.workouts=SPLIT.map(makeWorkout);persist();UI.view='hoje';render();toast('Tudo pronto! Bora 🔥');}
+  else if(t.dataset.m==='gen'){persist();A.genOpen();}
   else{persist();UI.edit={name:'',focus:'',day:'',items:[],helped:null};UI.view='builder';render();}
   window.scrollTo(0,0);
  },
@@ -1132,7 +1258,7 @@ const A={
  suggest:t=>{const f=t.dataset.f;UI.edit={name:'Treino de '+FOCUS[f].l,focus:f,day:'',items:FOCUS[f].ex.map(id=>({exId:id,sets:rec(id)})),helped:true};go('builder');},
  editW:t=>{const w=D.workouts.find(x=>x.id===t.dataset.id);UI.edit=JSON.parse(JSON.stringify(w));UI.edit.helped=false;go('builder');},
  focus:t=>{const e=UI.edit;e.focus=t.dataset.f;if(!e.items.length)e.helped=null;else if(e.helped)e.helped=true;render();},
- helpYes:()=>{const e=UI.edit;e.items=FOCUS[e.focus].ex.map(id=>({exId:id,sets:rec(id)}));e.helped=true;if(!e.name.trim())e.name='Treino de '+FOCUS[e.focus].l;render();},
+ helpYes:()=>{const e=UI.edit;if(e.items.length&&!confirm('Trocar os exercícios atuais pelos sugeridos?'))return;e.items=FOCUS[e.focus].ex.map(id=>({exId:id,sets:rec(id)}));e.helped=true;if(!e.name.trim())e.name='Treino de '+FOCUS[e.focus].l;render();},
  helpNo:()=>{UI.edit.helped=false;render();},
  itUp:t=>{const i=+t.dataset.i2;const it=UI.edit.items;if(i>0){[it[i-1],it[i]]=[it[i],it[i-1]];render();}},
  itDel:t=>{UI.edit.items.splice(+t.dataset.i2,1);render();},
@@ -1162,6 +1288,29 @@ const A={
   try{if(navigator.share){await navigator.share({title:'Meu Treino',text:'Bora treinar! Abre esse link, cria seu perfil e monta seu treino 💪',url});return;}}catch(e){return;}
   try{await navigator.clipboard.writeText(url);toast('Link copiado!');}catch(e){prompt('Copie o link:',url);}},
  export:()=>{const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='meu-treino-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},800);toast('Backup gerado!');},
+ genOpen:()=>{const p=D.profile||{};UI.gen={foci:[...(p.foci||[])],days:[],nivel:p.nivel||'',obj:p.obj||'emagrecer',m:{},result:null,seed:0};PROF=null;go('gerador');},
+ genFocus:t=>{const g=UI.gen,k=t.dataset.f,i=g.foci.indexOf(k);if(i>=0)g.foci.splice(i,1);else{if(g.foci.length>=3){toast('Escolha até 3 focos');return;}g.foci.push(k);}render();},
+ genCount:t=>{UI.gen.days=[...DEFDAYS[t.dataset.n]];render();},
+ genDay:t=>{const g=UI.gen,k=t.dataset.k,i=g.days.indexOf(k);
+  if(i>=0){if(g.days.length<=2){toast('Mínimo de 2 dias');return;}g.days.splice(i,1);}
+  else{if(g.days.length>=6){toast('Máximo de 6 dias — descanso também é treino 😉');return;}g.days.push(k);}
+  const o=d=>DAYS.findIndex(x=>x[0]===d);g.days.sort((a,b)=>o(a)-o(b));render();},
+ genLvl:t=>{UI.gen.nivel=t.dataset.v;render();},
+ genObj:t=>{UI.gen.obj=t.dataset.k;render();},
+ genRun:()=>{const g=UI.gen;if(!g.foci.length){toast('Escolha pelo menos um foco');return;}if(g.days.length<2){toast('Escolha quantos dias você treina');return;}
+  runGen(g);render();window.scrollTo(0,0);},
+ genAgain:()=>{const g=UI.gen;g.seed++;runGen(g);render();window.scrollTo(0,0);toast('Nova variação! 🔄');},
+ genBack:()=>{UI.gen.result=null;render();window.scrollTo(0,0);},
+ genUse:t=>{const g=UI.gen;const ws=g.result.map(w=>({id:uid(),name:w.name,focus:w.focus,day:w.day,items:w.items}));
+  if(t.dataset.m==='replace'){if(D.workouts.length&&!confirm('Substituir seus treinos atuais? Seu histórico de cargas continua salvo.'))return;D.workouts=ws;}else D.workouts=D.workouts.concat(ws);
+  D.profile.obj=g.obj;D.profile.nivel=g.nivel||'intermediario';D.profile.foci=[...g.foci];
+  const m={};MEAS.forEach(([k])=>{const v=num(g.m[k]);if(v!=null)m[k]=v;});
+  if(Object.keys(m).length){D.measures=(D.measures||[]).filter(x=>x.date!==today());D.measures.push(Object.assign({date:today()},m));}
+  const pv=num(g.m.peso);if(pv!=null){D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:pv});if(!D.profile.pesoInicial)D.profile.pesoInicial=pv;}
+  persist();UI.gen=null;toast('Treinos salvos! 💪');go('treinos');},
+ saveMeas:()=>{const m={};MEAS.forEach(([k])=>{const v=num(UI.mea[k]);if(v!=null)m[k]=v;});
+  if(!Object.keys(m).length){toast('Preencha pelo menos uma medida');return;}
+  D.measures=(D.measures||[]).filter(x=>x.date!==today());D.measures.push(Object.assign({date:today()},m));UI.mea={};persist();render();toast('Medidas salvas! 📏');},
  install:async()=>{if(!DEFERRED)return;DEFERRED.prompt();try{await DEFERRED.userChoice;}catch(e){}DEFERRED=null;render();},
  installNo:()=>{D.installDismissed=true;persist();render();},
  ckOpen:()=>{CK=null;go('checkin');},
@@ -1184,6 +1333,8 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
  else if(k==='lib.q'){UI.libQuery=v;const l=document.getElementById('liblist');if(l)l.innerHTML=libList();}
  else if(k.startsWith('act.'))UI.actForm[k.slice(4)]=v;
  else if(k.startsWith('prof.'))PROF[k.slice(5)]=v;
+ else if(k.startsWith('gen.m.'))UI.gen.m[k.slice(6)]=v;
+ else if(k.startsWith('mea.'))UI.mea[k.slice(4)]=v;
 });
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)return;
  if(k==='edit.day')UI.edit.day=el.value;
