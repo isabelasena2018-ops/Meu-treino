@@ -181,7 +181,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='3.8 · 09/11 18h';
+const APP_VERSION='3.9 · 09/11 18h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2594,6 +2594,7 @@ async function makeCard(d,sel,style,photo){
  if(lines.length){y+=20;x.font='500 36px '+SANS;lines.forEach(l=>{let t=l;while(x.measureText('•  '+t).width>W-160&&t.length>8)t=t.slice(0,-2);if(t!==l)t=t.trim()+'…';x.globalAlpha=.92;x.fillText('•  '+t,80,y+38);x.globalAlpha=1;y+=52;});}
  x.shadowColor='transparent';return c;}
 let SHARE=null;
+const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function shareOpen(a,run){const d=run?shareInfoRun(run):shareInfo(a);D.shareSel=D.shareSel||{};const def=D.shareSel[d.kind]||SHARE_DEF[d.kind];
  SHARE={d,sel:def.slice(),style:'sticker',photo:null,url:''};shareRender();}
 async function shareRender(){const S=SHARE;if(!S)return;const c=await makeCard(S.d,S.sel,S.style,S.photo);S.canvas=c;S.url=c.toDataURL('image/png');
@@ -2604,6 +2605,7 @@ async function shareRender(){const S=SHARE;if(!S)return;const c=await makeCard(S
  <div style="border-radius:16px;overflow:hidden;background:${S.style==='sticker'?'repeating-conic-gradient(#56625e 0 25%,#4a5551 0 50%) 0 0/22px 22px':'var(--soft)'};margin-bottom:12px"><img src="${S.url}" alt="Prévia do card" style="width:100%;display:block;${S.style==='sticker'?'':'max-height:60vh;object-fit:contain'}"></div>
  <div class="btnrow" style="margin-top:0">${S.style==='sticker'?'<button class="btn alt sm" data-a="shareCopy">📋 Copiar</button>':''}<button class="btn ${S.style==='sticker'?'':'alt '}sm" data-a="shareGo">📤 Enviar</button><button class="btn2" style="padding:10px" data-a="shareSave">⬇️ Salvar</button></div>
  ${S.style==='sticker'?'<p class="small mut" style="margin:8px 0 0">Toque em <b>Copiar</b>, abra o story do Instagram com a sua foto e toque na tela pra <b>Colar</b>. O fundo é transparente, só os números aparecem.</p>':''}
+ ${IS_IOS?'<p class="small mut" style="margin:6px 0 0">No iPhone, <b>Salvar</b> abre o menu do celular: é só tocar em <b>Salvar imagem</b> que vai pra sua galeria. Ou toque e segure na imagem.</p>':''}
  <label class="lbl">O que aparece no card</label>
  <div class="chips">${avail.map(([k,l])=>`<button class="chip ${S.sel.includes(k)?'on':''}" data-a="shareField" data-k="${k}">${S.sel.includes(k)?'✓ ':''}${l}</button>`).join('')}</div>
  <label class="lbl">Título</label><input class="inp" data-c="shareTitle" value="${esc(S.d.title)}" maxlength="40">`);
@@ -2856,7 +2858,10 @@ const A={
  shareGo:async()=>{const b=await cardBlob();const f=new File([b],'meu-treino.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});}catch(e){}}else A.shareSave();},
  shareCopy:async()=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':cardBlob()})]);toast('Copiado! Agora cole no story 📋');}catch(e){toast('Seu celular não deixou copiar. Use Compartilhar 😉');}},
- shareSave:()=>{const a=document.createElement('a');a.href=SHARE.url;a.download='meu-treino-'+SHARE.d.date+'.png';document.body.appendChild(a);a.click();a.remove();},
+ shareSave:async()=>{const b=await cardBlob();const name='meu-treino-'+SHARE.d.date+'.png';
+  /* No iPhone, app da web não consegue gravar direto na galeria: o caminho mais curto é o menu do sistema, já com "Salvar imagem" */
+  if(IS_IOS){const f=new File([b],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){toast('Toque em "Salvar imagem" 📲');try{await navigator.share({files:[f]});}catch(e){}return;}}
+  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Imagem salva ✓');},
  reDiscard:()=>{if(!confirm('Descartar essa corrida?'))return;UI.runEnd=null;go('corrida');},
  runDel:t=>{if(!confirm('Apagar essa corrida do histórico?'))return;const r=(D.runs||[]).find(x=>x.id===t.dataset.id);D.runs=(D.runs||[]).filter(x=>x.id!==t.dataset.id);if(r)D.activities=D.activities.filter(a=>a.runId!==r.id);persist();render();},
  runLvl:t=>{D.run.lvl=Math.max(1,D.run.lvl+(+t.dataset.d));D.run.done={};persist();render();},
