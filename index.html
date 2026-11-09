@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-title" content="Meu Treino">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FAF6EF">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Meu Treino</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -638,6 +642,7 @@ function vHoje(){
  let cups='';for(let i=0;i<Math.max(meta,c.agua);i++)cups+=`<div class="cup" style="background:${i<c.agua?'var(--a)':'transparent'};opacity:${i<c.agua?1:.25}"></div>`;
  const meals=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanches','🍎 Lanches'],['jantar','🌙 Jantar']];
  return `
+ ${installCard()}
  <div style="margin:4px 0 12px"><span class="kicker">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span><h2 class="disp h2" style="margin-bottom:0">${hi}, ${esc(p.nome)} 👋</h2></div>
  <div class="card dark">
   <div style="display:flex;justify-content:space-between;align-items:center">
@@ -667,6 +672,22 @@ function vHoje(){
  </details>
  <button class="li" data-a="go" data-v="ajuda"><span><b>⏰ Alarme e lembretes no celular</b><span>Como configurar pra não esquecer nada</span></span><span class="mut">›</span></button>`;
 }
+
+/* ---------- Instalar como app ---------- */
+const isStandalone=()=>(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+let DEFERRED=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;if(UI.view==='hoje'&&D.profile)render();});
+window.addEventListener('appinstalled',()=>{DEFERRED=null;toast('App instalado! 🎉');});
+function installCard(){
+ if(isStandalone()||D.installDismissed)return '';
+ const how=DEFERRED?`<button class="btn alt sm" data-a="install">📲 Instalar o app</button>`
+  :isIOS()?`<p style="margin:0 0 4px;font-size:14px;line-height:1.5">No Safari, toque em <b>Compartilhar</b> (o quadrado com a seta ⬆️) e depois em <b>Adicionar à Tela de Início</b>.</p>`
+  :`<p style="margin:0 0 4px;font-size:14px;line-height:1.5">No navegador, toque nos <b>⋮</b> e depois em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</p>`;
+ return `<div class="card" style="border:1.5px solid var(--a)"><b style="font-size:15.5px;color:var(--a)">📲 Instale como app</b>
+  <p class="small mut" style="margin:4px 0 10px">Fica com ícone na sua tela, abre em tela cheia e funciona até sem internet.</p>${how}
+  <p class="small mut" style="margin:8px 0 0">⚠️ No iPhone, o app instalado guarda os dados separado do navegador. Se já anotou algo aqui, use <b>Perfil → Exportar</b> e depois <b>Importar</b> dentro do app.</p>
+  <button class="small" style="margin-top:10px;color:var(--mut);font-weight:700" data-a="installNo">Agora não</button></div>`;}
 
 /* ---------- Treinos ---------- */
 function vTreinos(){
@@ -1141,6 +1162,8 @@ const A={
   try{if(navigator.share){await navigator.share({title:'Meu Treino',text:'Bora treinar! Abre esse link, cria seu perfil e monta seu treino 💪',url});return;}}catch(e){return;}
   try{await navigator.clipboard.writeText(url);toast('Link copiado!');}catch(e){prompt('Copie o link:',url);}},
  export:()=>{const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='meu-treino-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},800);toast('Backup gerado!');},
+ install:async()=>{if(!DEFERRED)return;DEFERRED.prompt();try{await DEFERRED.userChoice;}catch(e){}DEFERRED=null;render();},
+ installNo:()=>{D.installDismissed=true;persist();render();},
  ckOpen:()=>{CK=null;go('checkin');},
  ckExit:()=>{if(REC){try{REC.stop();}catch(e){}}CK=null;go('hoje');},
  ckOpt:t=>{const o=CK.opts[+t.dataset.i];if(o)ckAnswer(String(o[1]),o[0],null);},
@@ -1173,6 +1196,8 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)re
 
 document.addEventListener('input',e=>{if(e.target.id==='ckin')grow(e.target);});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
+
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 render();
 </script>
