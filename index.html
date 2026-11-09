@@ -27,7 +27,7 @@ a{color:inherit}
 .ibtn svg{width:18px;height:18px}
 main{max-width:560px;margin:0 auto;padding:4px 16px calc(100px + env(safe-area-inset-bottom))}
 .bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:7px 4px calc(7px + env(safe-area-inset-bottom));border-top:1px solid var(--line);z-index:20}
-.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#a3ada9;padding:4px 0}
+.nbtn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#a3ada9;padding:4px 0}
 .nbtn.on{color:var(--a)}
 .nbtn svg{width:22px;height:22px}
 .card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
@@ -611,7 +611,7 @@ function runGen(g){const keep={obj:D.profile.obj,nivel:D.profile.nivel};D.profil
 const LS='meutreino:v2';
 function fresh(){return {profile:null,workouts:[],history:{},activities:[],checks:{},weights:[],measures:[]};}
 let D=(()=>{try{const v=localStorage.getItem(LS);if(v){const o=JSON.parse(v);return Object.assign(fresh(),o);}}catch(e){}return fresh();})();
-function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}}
+function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();}
 
 const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null,gen:null,mea:{}};
 let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',supps:{vacuo:false,creatina:false,pre:false,whey:false}};
@@ -654,6 +654,7 @@ const IC={
  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
  pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-6"/></svg>',
+ team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.8"/><path d="M16 14.2a5 5 0 0 1 5.5 5"/></svg>',
  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
 };
 
@@ -661,14 +662,14 @@ const IC={
 function render(){
  const app=document.getElementById('app');
  if(!D.profile){app.innerHTML=vOnb();return;}
- const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador}[UI.view]||vHoje;
+ const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
  app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():nav());
  if(isCk)ckScroll();
 }
 function header(){return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
 function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos'};const cur=map[UI.view]||UI.view;
- const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['progresso','Progresso',IC.chart]];
+ const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['turma','Turma',IC.team],['progresso','Progresso',IC.chart]];
  return '<nav class="bottom">'+items.map(i=>`<button class="nbtn ${cur===i[0]?'on':''}" data-a="go" data-v="${i[0]}">${i[2]}${i[1]}</button>`).join('')+'</nav>';}
 
 /* ---------- Onboarding ---------- */
@@ -716,6 +717,7 @@ function vHoje(){
  const meals=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanches','🍎 Lanches'],['jantar','🌙 Jantar']];
  return `
  ${installCard()}
+ ${UI.pendingGroup&&!(D.social&&D.social.groupId)?`<button class="ckcard" data-a="go" data-v="turma" style="border-color:var(--a);background:var(--asoft)"><span class="em">👯‍♀️</span><span><b style="color:var(--a)">Você recebeu um convite!</b><span style="color:#244a45">Toque aqui pra entrar no grupo e treinar junto com a galera.</span></span></button>`:''}
  <div style="margin:4px 0 12px"><span class="kicker">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span><h2 class="disp h2" style="margin-bottom:0">${hi}, ${esc(p.nome)} 👋</h2></div>
  <div class="card dark">
   <div style="display:flex;justify-content:space-between;align-items:center">
@@ -983,6 +985,7 @@ function vAjuda(){
   <li><b>Treinos:</b> seus treinos. Toque em <i>Começar</i>, anote o peso e as repetições de cada exercício e, no fim, <i>Finalizar treino</i>. Pra criar um novo, use <i>Montar novo treino</i> ou uma <i>Sugestão por foco</i>.</li>
   <li><b>Exercícios:</b> todos os exercícios com passo a passo, o que sentir, o que evitar e vídeo.</li>
   <li><b>Atividades:</b> registre corrida, caminhada, yoga, dança… Tudo conta pra sua sequência, mesmo nos dias sem academia.</li>
+  <li><b>Turma 👯‍♀️:</b> crie um grupo com seus amigos ou entre com um código. O feed mostra o resumo do dia de cada um (treinos, sequência, rotina). Peso, medidas e o que você comeu nunca aparecem.</li>
   <li><b>Progresso:</b> seu peso rumo à meta e a evolução de carga de cada exercício.</li>
  </ol></div>
  <h3 class="h3">📲 Deixar como app no celular</h3>
@@ -1217,6 +1220,103 @@ function ckMic(btn){
  try{REC.start();btn.classList.add('on');toast('Pode falar… toque no 🎙️ pra parar');}catch(e){REC=null;fallback();}}
 function ckSendText(){const ta=document.getElementById('ckin');if(!ta)return;if(REC){try{REC.stop();}catch(e){}}const v=ta.value.trim();if(!v)return;ta.value='';grow(ta);ckAnswer(null,null,v);}
 
+/* ================== TURMA (grupo + feed) ================== */
+const FIREBASE_CONFIG=null; /* preenchido com a configuração do projeto Firebase */
+const FBV='10.12.2';
+const AVATARS=['💪','🔥','🍑','🦋','⚡','🌱','🏃‍♀️','🧘‍♀️','🏋️‍♀️','🌸','🌻','🐯'];
+const REACTS=['👏','🔥','💪','❤️'];
+let FB=null,FBP=null,SYNC_T=null,LAST_SYNC='';
+const socOn=()=>!!(FIREBASE_CONFIG&&D.social&&D.social.groupId);
+function socDefaults(){return {groupId:'',groupName:'',isOwner:false,emoji:'💪',share:{treinos:true,streak:true,rotina:true,comida:true}};}
+function soc(){if(!D.social)D.social=socDefaults();D.social.share=Object.assign(socDefaults().share,D.social.share||{});return D.social;}
+async function fb(){
+ if(FB)return FB;if(!FIREBASE_CONFIG)throw new Error('noconfig');
+ if(!FBP)FBP=(async()=>{
+  const b='https://www.gstatic.com/firebasejs/'+FBV+'/';
+  const [app,auth,fs]=await Promise.all([import(b+'firebase-app.js'),import(b+'firebase-auth.js'),import(b+'firebase-firestore.js')]);
+  const a=app.initializeApp(FIREBASE_CONFIG);const au=auth.getAuth(a);
+  await new Promise(res=>{const un=auth.onAuthStateChanged(au,()=>{un();res();});});
+  if(!au.currentUser)await auth.signInAnonymously(au);
+  FB={db:fs.getFirestore(a),uid:au.currentUser.uid,f:fs};return FB;})().catch(e=>{FBP=null;throw e;});
+ return FBP;}
+function newCode(){const ch='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';const r=new Uint32Array(8);try{crypto.getRandomValues(r);}catch(e){for(let i=0;i<8;i++)r[i]=Math.floor(Math.random()*4e9);}for(let i=0;i<8;i++)s+=ch[r[i]%ch.length];return s;}
+function daySummary(date){
+ const s=soc(),sh=s.share,c=D.checks[date]||{},p={acts:null,streak:null,week:null,rotina:null,comida:null};let any=false;
+ if(sh.treinos){p.acts=D.activities.filter(a=>a.date===date).map(a=>({t:a.type,n:a.name||'',m:a.minutes||null}));if(p.acts.length)any=true;}
+ if(sh.streak){p.streak=streak();p.week=activeDaysIn(weekDates());}
+ if(sh.rotina){const r={};SUPPS.filter(x=>D.profile.supps&&D.profile.supps[x.k]).forEach(x=>{r[x.k]=!!(c.supps||{})[x.k];if(r[x.k])any=true;});r.agua=c.agua||0;r.meta=aguaMeta();if(r.agua)any=true;p.rotina=r;}
+ if(sh.comida&&c.onTrack!=null&&c.onTrack!==undefined){p.comida=c.onTrack===true?'bem':c.onTrack===false?'nao':'meio';any=true;}
+ return any?p:null;}
+function scheduleSync(){if(!socOn())return;clearTimeout(SYNC_T);SYNC_T=setTimeout(()=>syncSocial().catch(()=>{}),2500);}
+async function syncSocial(force){
+ if(!socOn()||!navigator.onLine&&navigator.onLine!==undefined)return;
+ const s=soc(),t=today(),p=daySummary(t);
+ const mem={name:D.profile.nome,emoji:s.emoji,streak:s.share.streak?streak():null,week:s.share.streak?activeDaysIn(weekDates()):null,lastActive:D.activities.length?[...D.activities].sort((a,b)=>b.date.localeCompare(a.date))[0].date:'',ts:Date.now()};
+ const sig=JSON.stringify([mem.name,mem.emoji,mem.streak,mem.week,mem.lastActive,p]);
+ if(!force&&sig===LAST_SYNC)return;
+ const {db,uid,f}=await fb();const g=s.groupId;
+ await f.setDoc(f.doc(db,'groups',g,'members',uid),mem,{merge:true});
+ if(p)await f.setDoc(f.doc(db,'groups',g,'posts',uid+'_'+t),Object.assign({uid,name:mem.name,emoji:s.emoji,date:t,ts:Date.now()},p),{merge:true});
+ LAST_SYNC=sig;}
+async function socLoad(){
+ const S=UI.soc;S.loading=true;S.err='';render();
+ try{
+  await syncSocial(true);
+  const {db,f}=await fb();const g=soc().groupId;
+  const [ps,ms]=await Promise.all([f.getDocs(f.query(f.collection(db,'groups',g,'posts'),f.orderBy('ts','desc'),f.limit(40))),f.getDocs(f.collection(db,'groups',g,'members'))]);
+  S.posts=ps.docs.map(d=>Object.assign({id:d.id},d.data()));
+  S.members=ms.docs.map(d=>Object.assign({uid:d.id},d.data())).sort((a,b)=>(b.streak||0)-(a.streak||0));
+ }catch(e){S.err=e&&e.message==='noconfig'?'O grupo ainda não foi configurado.':'Não consegui carregar agora. Confere sua internet e tenta de novo.';}
+ S.loading=false;if(UI.view==='turma')render();}
+function dayLabel(d){if(d===today())return 'Hoje';const y=new Date();y.setDate(y.getDate()-1);if(d===keyOf(y))return 'Ontem';return fmt(d);}
+function postHtml(p){
+ const me=FB&&FB.uid;const L=[];
+ (p.acts||[]).forEach(a=>{const t=ACTM[a.t]||ACTM.outro;L.push(`<div style="font-weight:700;font-size:15px">${t[2]} ${esc(a.n||t[1])}${a.m?' · '+a.m+' min':''}</div>`);});
+ if(p.acts&&!p.acts.length&&p.date!==today())L.push('<div class="mut small">Dia de descanso 🌿</div>');
+ const tags=[];
+ if(p.streak)tags.push(`🔥 ${p.streak} ${p.streak===1?'dia':'dias'} seguidos`);
+ if(p.week!=null)tags.push(`📅 ${p.week}/7 na semana`);
+ if(p.rotina){const r=p.rotina;SUPPS.forEach(s=>{if(s.k in r)tags.push(`${s.e} ${s.l.split(' ')[0]} ${r[s.k]?'✓':'—'}`);});if(r.agua)tags.push(`💧 ${r.agua}/${r.meta||8}${r.agua>=(r.meta||8)?' ✓':''}`);}
+ if(p.comida)tags.push(p.comida==='bem'?'🥗 Comeu bem ✓':p.comida==='meio'?'🥗 Comeu mais ou menos':'🥗 Dia livre na comida');
+ const rx=p.reactions||{};const cnt={};Object.values(rx).forEach(e=>cnt[e]=(cnt[e]||0)+1);
+ return `<div class="card"><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><span style="font-size:26px">${esc(p.emoji||'💪')}</span><div style="flex:1"><b>${esc(p.name)}</b><div class="small mut">${dayLabel(p.date)}</div></div></div>
+  ${L.join('')}
+  ${tags.length?`<div class="chips" style="margin-top:8px">${tags.map(t=>`<span class="tag" style="font-size:12px;padding:5px 9px">${esc(t)}</span>`).join('')}</div>`:''}
+  ${p.uid!==me?`<div style="display:flex;gap:6px;margin-top:10px">${REACTS.map(e=>`<button class="chip ${rx[me]===e?'on':''}" style="padding:6px 11px" data-a="socReact" data-id="${esc(p.id)}" data-e="${e}">${e}${cnt[e]?' '+cnt[e]:''}</button>`).join('')}</div>`
+   :(Object.keys(rx).length?`<div class="small mut" style="margin-top:8px">${Object.entries(cnt).map(([e,n])=>e+' '+n).join('  ')}</div>`:'')}
+ </div>`;}
+function vTurma(){
+ const s=soc();UI.soc=UI.soc||{tab:'feed',posts:null,members:null,loading:false,err:'',gname:'',code:UI.pendingGroup||''};const S=UI.soc;
+ if(!FIREBASE_CONFIG)return `<span class="kicker">Turma</span><h2 class="disp h2">Treinar junto 👯‍♀️</h2><div class="card empty">O feed do grupo está quase pronto — falta só ligar o banco de dados. Volta aqui daqui a pouquinho!</div>`;
+ if(!s.groupId){
+  return `<span class="kicker">Turma</span><h2 class="disp h2">Treinar junto 👯‍♀️</h2>
+  <div class="info">Crie um grupo com seus amigos e acompanhe a constância de todo mundo: quem treinou, a sequência 🔥 e o resumo do dia. <b>Peso, medidas e o que você comeu nunca aparecem.</b></div>
+  <div class="card"><b>Entrar num grupo</b><p class="small mut" style="margin:4px 0 0">Recebeu um convite? Coloque o código aqui.</p>
+   <input class="inp" data-i="soc.code" value="${esc(S.code)}" placeholder="Código do grupo" style="margin-top:10px;text-transform:uppercase;letter-spacing:2px;font-weight:700" autocapitalize="characters">
+   <button class="btn sm" style="margin-top:10px" data-a="socJoin">Entrar no grupo</button></div>
+  <div class="card"><b>Criar um grupo</b><p class="small mut" style="margin:4px 0 0">Depois é só mandar o convite pra galera.</p>
+   <input class="inp" data-i="soc.gname" value="${esc(S.gname)}" placeholder="Nome do grupo (ex: Rata de academia)" style="margin-top:10px">
+   <button class="btn alt sm" style="margin-top:10px" data-a="socCreate">Criar grupo</button></div>
+  ${S.loading?'<p class="small mut" style="text-align:center">Um segundinho…</p>':''}${S.err?`<p class="small" style="text-align:center;color:#c0453a">${esc(S.err)}</p>`:''}`;
+ }
+ if(S.posts===null&&!S.loading&&!S.err)setTimeout(socLoad,0);
+ const body=S.loading&&S.posts===null?'<div class="card empty">Carregando…</div>'
+  :S.err?`<div class="card empty">${esc(S.err)}<br><br><button class="btn2" data-a="socRefresh">Tentar de novo</button></div>`
+  :S.tab==='feed'?((S.posts||[]).length?S.posts.map(postHtml).join(''):'<div class="card empty">Ainda não tem nada no feed. Registre um treino ou faça o check-in do dia que o seu resumo aparece aqui 💪</div>')
+  :'<div class="card" style="padding:4px 14px">'+(S.members||[]).map(m=>`<div class="hrow"><span style="display:flex;gap:10px;align-items:center"><span style="font-size:24px">${esc(m.emoji||'💪')}</span><span><b style="font-size:14.5px">${esc(m.name)}${FB&&m.uid===FB.uid?' (você)':''}</b><span class="small mut" style="display:block">${m.lastActive?'Último treino: '+dayLabel(m.lastActive).toLowerCase():'Ainda sem treinos registrados'}</span></span></span><span style="display:flex;gap:6px;align-items:center">${m.streak!=null?`<span class="tag">🔥 ${m.streak}</span>`:''}${m.week!=null?`<span class="tag">${m.week}/7</span>`:''}${s.isOwner&&FB&&m.uid!==FB.uid?`<button class="ib del" data-a="socRemove" data-id="${esc(m.uid)}" aria-label="Remover">×</button>`:''}</span></div>`).join('')+'</div>';
+ return `<span class="kicker">Turma</span>
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="disp h2" style="margin-bottom:10px">${esc(s.groupName||'Meu grupo')}</h2><button class="ib" data-a="socRefresh" aria-label="Atualizar">↻</button></div>
+ <button class="btn alt sm" style="margin-bottom:12px" data-a="socInvite">📤 Convidar amigos</button>
+ <div class="chips" style="margin-bottom:12px"><button class="chip ${S.tab==='feed'?'on':''}" style="flex:1;text-align:center" data-a="socTab" data-t="feed">📰 Feed</button><button class="chip ${S.tab==='people'?'on':''}" style="flex:1;text-align:center" data-a="socTab" data-t="people">👥 Pessoas${S.members?' ('+S.members.length+')':''}</button></div>
+ ${body}
+ <details class="card"><summary><span>⚙️ O que eu compartilho</span><span class="chev">▾</span></summary>
+  ${[['treinos','🏋️ Treinos e atividades'],['streak','🔥 Sequência e dias na semana'],['rotina','💧 Rotina do dia (água, creatina…)'],['comida','🥗 Se comi bem (sem mostrar o quê)']].map(([k,l])=>`<button class="toggle ${s.share[k]?'on':''}" data-a="socShare" data-k="${k}"><span>${l}</span><span class="tg"></span></button>`).join('')}
+  <label class="lbl">Meu avatar</label><div class="chips">${AVATARS.map(e=>`<button class="chip ${s.emoji===e?'on':''}" style="font-size:18px;padding:6px 10px" data-a="socEmoji" data-e="${e}">${e}</button>`).join('')}</div>
+  <p class="small mut" style="margin:12px 0 0">Peso, medidas e o que você comeu nunca são compartilhados.</p>
+  <button class="btn2 danger" style="margin-top:12px" data-a="socLeave">Sair do grupo</button></details>
+ <p class="small mut" style="text-align:center">Código do grupo: <b style="letter-spacing:2px">${esc(s.groupId)}</b></p>`;}
+function inviteUrl(){return location.href.split('#')[0].split('?')[0]+'?g='+soc().groupId;}
+
 /* ================== SHEET ================== */
 function openSheet(html){const s=document.getElementById('sheet');s.innerHTML=`<div class="backdrop" data-a="close"></div><div class="panel"><div class="grab"></div><button class="x" data-a="close" aria-label="Fechar">×</button>${html}</div>`;s.classList.add('open');document.body.style.overflow='hidden';}
 function closeSheet(){const s=document.getElementById('sheet');s.classList.remove('open');s.innerHTML='';document.body.style.overflow='';}
@@ -1227,7 +1327,7 @@ function pickerHtml(){const added=new Set(UI.edit.items.map(i=>i.exId));
 /* ================== AÇÕES ================== */
 function makeWorkout(w){return {id:uid(),name:w.name,focus:w.focus||'',day:w.day||'',items:w.items.map(i=>Array.isArray(i)?{exId:i[0],sets:i[1]}:{exId:i.exId,sets:i.sets})};}
 const A={
- go:t=>{PROF=null;if(t.dataset.v!=='atividades')UI.actForm=null;go(t.dataset.v);},
+ go:t=>{PROF=null;if(t.dataset.v==='turma'&&UI.soc){UI.soc.posts=null;UI.soc.err='';}if(t.dataset.v!=='atividades')UI.actForm=null;go(t.dataset.v);},
  close:()=>closeSheet(),
  onbObj:t=>{ONB.obj=t.dataset.k;render();},
  onbSupp:t=>{ONB.supps[t.dataset.k]=!ONB.supps[t.dataset.k];render();},
@@ -1288,6 +1388,37 @@ const A={
   try{if(navigator.share){await navigator.share({title:'Meu Treino',text:'Bora treinar! Abre esse link, cria seu perfil e monta seu treino 💪',url});return;}}catch(e){return;}
   try{await navigator.clipboard.writeText(url);toast('Link copiado!');}catch(e){prompt('Copie o link:',url);}},
  export:()=>{const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='meu-treino-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},800);toast('Backup gerado!');},
+ socTab:t=>{UI.soc.tab=t.dataset.t;render();},
+ socRefresh:()=>{UI.soc.err='';socLoad();},
+ socCreate:async()=>{const S=UI.soc;const name=(S.gname||'').trim();if(!name){toast('Dá um nome pro grupo 😉');return;}
+  S.loading=true;S.err='';render();
+  try{const {db,uid,f}=await fb();const code=newCode();
+   await f.setDoc(f.doc(db,'groups',code),{name,createdBy:uid,createdAt:Date.now()});
+   Object.assign(soc(),{groupId:code,groupName:name,isOwner:true});persist();
+   S.posts=null;S.members=null;S.loading=false;LAST_SYNC='';toast('Grupo criado! Agora convida a galera 🎉');render();
+  }catch(e){S.loading=false;S.err='Não consegui criar o grupo. Confere sua internet e tenta de novo.';render();}},
+ socJoin:async()=>{const S=UI.soc;const code=(S.code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<6){toast('Confere o código do convite');return;}
+  S.loading=true;S.err='';render();
+  try{const {db,uid,f}=await fb();const g=await f.getDoc(f.doc(db,'groups',code));
+   if(!g.exists()){S.loading=false;S.err='Não achei esse grupo. Confere o código com quem te convidou.';render();return;}
+   Object.assign(soc(),{groupId:code,groupName:g.data().name,isOwner:g.data().createdBy===uid});persist();UI.pendingGroup='';
+   S.posts=null;S.members=null;S.loading=false;LAST_SYNC='';toast('Você entrou no '+g.data().name+'! 🎉');render();
+  }catch(e){S.loading=false;S.err='Não consegui entrar agora. Confere sua internet e tenta de novo.';render();}},
+ socInvite:async()=>{const url=inviteUrl();const txt=`Bora treinar junto? Entra no meu grupo "${soc().groupName}" no Meu Treino 💪\nCódigo: ${soc().groupId}`;
+  try{if(navigator.share){await navigator.share({title:'Meu Treino',text:txt,url});return;}}catch(e){return;}
+  try{await navigator.clipboard.writeText(txt+'\n'+url);toast('Convite copiado!');}catch(e){prompt('Copie o convite:',url);}},
+ socShare:t=>{const s=soc();s.share[t.dataset.k]=!s.share[t.dataset.k];persist();LAST_SYNC='';render();},
+ socEmoji:t=>{soc().emoji=t.dataset.e;persist();render();},
+ socReact:async t=>{const S=UI.soc;const p=(S.posts||[]).find(x=>x.id===t.dataset.id);if(!p)return;
+  try{const {db,uid,f}=await fb();p.reactions=p.reactions||{};const e=t.dataset.e;const off=p.reactions[uid]===e;
+   if(off)delete p.reactions[uid];else p.reactions[uid]=e;render();
+   await f.updateDoc(f.doc(db,'groups',soc().groupId,'posts',p.id),{['reactions.'+uid]:off?f.deleteField():e});
+  }catch(e){toast('Não consegui reagir agora');}},
+ socRemove:async t=>{if(!confirm('Remover essa pessoa do grupo?'))return;
+  try{const {db,f}=await fb();await f.deleteDoc(f.doc(db,'groups',soc().groupId,'members',t.dataset.id));socLoad();}catch(e){toast('Não consegui remover agora');}},
+ socLeave:async()=>{if(!confirm('Sair do grupo? Você pode entrar de novo com o código depois.'))return;
+  try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'groups',soc().groupId,'members',uid));}catch(e){}
+  D.social=Object.assign(socDefaults(),{emoji:soc().emoji,share:soc().share});persist();UI.soc=null;render();},
  genOpen:()=>{const p=D.profile||{};UI.gen={foci:[...(p.foci||[])],days:[],nivel:p.nivel||'',obj:p.obj||'emagrecer',m:{},result:null,seed:0};PROF=null;go('gerador');},
  genFocus:t=>{const g=UI.gen,k=t.dataset.f,i=g.foci.indexOf(k);if(i>=0)g.foci.splice(i,1);else{if(g.foci.length>=3){toast('Escolha até 3 focos');return;}g.foci.push(k);}render();},
  genCount:t=>{UI.gen.days=[...DEFDAYS[t.dataset.n]];render();},
@@ -1335,6 +1466,8 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
  else if(k.startsWith('prof.'))PROF[k.slice(5)]=v;
  else if(k.startsWith('gen.m.'))UI.gen.m[k.slice(6)]=v;
  else if(k.startsWith('mea.'))UI.mea[k.slice(4)]=v;
+ else if(k==='soc.code')UI.soc.code=v;
+ else if(k==='soc.gname')UI.soc.gname=v;
 });
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)return;
  if(k==='edit.day')UI.edit.day=el.value;
@@ -1348,6 +1481,8 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)re
 document.addEventListener('input',e=>{if(e.target.id==='ckin')grow(e.target);});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
 
+try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
+if(D.profile&&socOn())setTimeout(()=>syncSocial().catch(()=>{}),1500);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 render();
