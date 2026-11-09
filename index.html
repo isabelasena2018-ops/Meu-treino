@@ -178,7 +178,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='2.7 · 09/11 14h';
+const APP_VERSION='2.8 · 09/11 14h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1273,7 +1273,7 @@ function streak(){const set=new Set(D.activities.map(a=>a.date));const d=new Dat
 function activeDaysIn(dates){const set=new Set(D.activities.map(a=>a.date));return dates.filter(d=>set.has(d)).length;}
 function monthCount(){const m=today().slice(0,7);return new Set(D.activities.filter(a=>a.date.startsWith(m)).map(a=>a.date)).size;}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1800);}
-function go(v){UI.view=v;render();window.scrollTo(0,0);}
+function go(v){UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
 
 const IC={
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -1297,7 +1297,7 @@ function render(){
 }
 function header(){return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
 function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',corrida:'atividades',correndo:'atividades',corrida_fim:'atividades'};const cur=map[UI.view]||UI.view;
- const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['turma','Turma',IC.team],['progresso','Progresso',IC.chart]];
+ const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['turma','Grupos',IC.team],['progresso','Progresso',IC.chart]];
  return '<nav class="bottom">'+items.map(i=>`<button class="nbtn ${cur===i[0]?'on':''}" data-a="go" data-v="${i[0]}">${i[2]}${i[1]}</button>`).join('')+'</nav>';}
 
 /* ---------- Onboarding ---------- */
@@ -1345,7 +1345,7 @@ function vHoje(){
  return `
  ${installCard()}
  ${isStandalone()&&pushSupported()&&FIREBASE_CONFIG&&!pushState().on&&!D.pushAskNo&&Notification.permission!=='denied'?`<div class="card" style="border:1.5px solid var(--a2)"><b style="color:var(--a2)">🔔 Quer que eu te lembre do que faltar?</b><p class="small mut" style="margin:4px 0 10px">Água, creatina, treino e check-in, só quando você ainda não registrou.</p><div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="pushOn">Ativar</button><button class="btn2" style="padding:10px" data-a="pushAskNo">Agora não</button></div></div>`:''}
- ${UI.pendingGroup&&!(D.social&&D.social.groupId)?`<button class="ckcard" data-a="go" data-v="turma" style="border-color:var(--a);background:var(--asoft)"><span class="em">👯‍♀️</span><span><b style="color:var(--a)">Você recebeu um convite!</b><span style="color:#244a45">Toque aqui pra entrar no grupo e treinar junto com a galera.</span></span></button>`:''}
+ ${UI.pendingGroup&&!soc().groups.some(g=>g.id===UI.pendingGroup)?`<button class="ckcard" data-a="go" data-v="turma" style="border-color:var(--a);background:var(--asoft)"><span class="em">👯‍♀️</span><span><b style="color:var(--a)">Você recebeu um convite!</b><span style="color:#244a45">Toque aqui pra entrar no grupo e treinar junto com a galera.</span></span></button>`:''}
  <div style="margin:4px 0 12px"><span class="kicker">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span><h2 class="disp h2" style="margin-bottom:0">${hi}, ${esc(p.nome)} 👋</h2></div>
  <div class="card dark">
   <div style="display:flex;justify-content:space-between;align-items:center">
@@ -2015,9 +2015,12 @@ const FBV='10.12.2';
 const AVATARS=['💪','🔥','🍑','🦋','⚡','🌱','🏃‍♀️','🧘‍♀️','🏋️‍♀️','🌸','🌻','🐯'];
 const REACTS=['👏','🔥','💪','❤️'];
 let FB=null,FBP=null,SYNC_T=null,LAST_SYNC='';
-const socOn=()=>!!(FIREBASE_CONFIG&&D.social&&D.social.groupId);
-function socDefaults(){return {groupId:'',groupName:'',isOwner:false,emoji:'💪',share:{treinos:true,streak:true,rotina:true,comida:true}};}
-function soc(){if(!D.social)D.social=socDefaults();D.social.share=Object.assign(socDefaults().share,D.social.share||{});return D.social;}
+const socOn=()=>!!(FIREBASE_CONFIG&&D.social&&D.social.groups&&D.social.groups.length);
+function socDefaults(){return {groups:[],active:'',emoji:'💪',share:{treinos:true,streak:true,rotina:true,comida:true}};}
+function soc(){if(!D.social)D.social=socDefaults();const s=D.social;s.share=Object.assign(socDefaults().share,s.share||{});
+ if(!Array.isArray(s.groups)){s.groups=s.groupId?[{id:s.groupId,name:s.groupName||'Meu grupo',isOwner:!!s.isOwner,post:true}]:[];s.active=s.groupId||'';delete s.groupId;delete s.groupName;delete s.isOwner;}
+ if(!s.groups.some(g=>g.id===s.active))s.active=s.groups[0]?s.groups[0].id:'';return s;}
+const curG=()=>{const s=soc();return s.groups.find(g=>g.id===s.active)||null;};
 async function fb(){
  if(FB)return FB;if(!FIREBASE_CONFIG)throw new Error('noconfig');
  if(!FBP)FBP=(async()=>{
@@ -2041,17 +2044,19 @@ async function syncSocial(force){
  if(!socOn()||!navigator.onLine&&navigator.onLine!==undefined)return;
  const s=soc(),t=today(),p=daySummary(t);
  const mem={name:D.profile.nome,emoji:s.emoji,streak:s.share.streak?streak():null,week:s.share.streak?activeDaysIn(weekDates()):null,lastActive:D.activities.length?[...D.activities].sort((a,b)=>b.date.localeCompare(a.date))[0].date:'',ts:Date.now()};
- const sig=JSON.stringify([mem.name,mem.emoji,mem.streak,mem.week,mem.lastActive,p]);
+ const sig=JSON.stringify([mem.name,mem.emoji,mem.streak,mem.week,mem.lastActive,p,s.groups.map(g=>g.id+(g.post!==false?1:0))]);
  if(!force&&sig===LAST_SYNC)return;
- const {db,uid,f}=await fb();const g=s.groupId;
- await f.setDoc(f.doc(db,'groups',g,'members',uid),mem,{merge:true});
- if(p)await f.setDoc(f.doc(db,'groups',g,'posts',uid+'_'+t),Object.assign({uid,name:mem.name,emoji:s.emoji,date:t,ts:Date.now()},p),{merge:true});
+ const {db,uid,f}=await fb();
+ for(const g of s.groups){
+  await f.setDoc(f.doc(db,'groups',g.id,'members',uid),mem,{merge:true});
+  if(p&&g.post!==false)await f.setDoc(f.doc(db,'groups',g.id,'posts',uid+'_'+t),Object.assign({uid,name:mem.name,emoji:s.emoji,date:t,ts:Date.now()},p),{merge:true});
+  else if(g.post===false){try{await f.deleteDoc(f.doc(db,'groups',g.id,'posts',uid+'_'+t));}catch(e){}}}
  LAST_SYNC=sig;}
 async function socLoad(){
  const S=UI.soc;S.loading=true;S.err='';render();
  try{
   await syncSocial(true);
-  const {db,f}=await fb();const g=soc().groupId;
+  const {db,f}=await fb();const G=curG();if(!G)throw new Error('nogroup');const g=G.id;S.gid=g;
   const [ps,ms]=await Promise.all([f.getDocs(f.query(f.collection(db,'groups',g,'posts'),f.orderBy('ts','desc'),f.limit(40))),f.getDocs(f.collection(db,'groups',g,'members'))]);
   S.posts=ps.docs.map(d=>Object.assign({id:d.id},d.data()));
   S.members=ms.docs.map(d=>Object.assign({uid:d.id},d.data())).sort((a,b)=>(b.streak||0)-(a.streak||0));
@@ -2074,36 +2079,42 @@ function postHtml(p){
   ${p.uid!==me?`<div style="display:flex;gap:6px;margin-top:10px">${REACTS.map(e=>`<button class="chip ${rx[me]===e?'on':''}" style="padding:6px 11px" data-a="socReact" data-id="${esc(p.id)}" data-e="${e}">${e}${cnt[e]?' '+cnt[e]:''}</button>`).join('')}</div>`
    :(Object.keys(rx).length?`<div class="small mut" style="margin-top:8px">${Object.entries(cnt).map(([e,n])=>e+' '+n).join('  ')}</div>`:'')}
  </div>`;}
-function vTurma(){
- const s=soc();UI.soc=UI.soc||{tab:'feed',posts:null,members:null,loading:false,err:'',gname:'',code:UI.pendingGroup||''};const S=UI.soc;
- if(!FIREBASE_CONFIG)return `<span class="kicker">Turma</span><h2 class="disp h2">Treinar junto 👯‍♀️</h2><div class="card empty">O feed do grupo está quase pronto — falta só ligar o banco de dados. Volta aqui daqui a pouquinho!</div>`;
- if(!s.groupId){
-  return `<span class="kicker">Turma</span><h2 class="disp h2">Treinar junto 👯‍♀️</h2>
-  <div class="info">Crie um grupo com seus amigos e acompanhe a constância de todo mundo: quem treinou, a sequência 🔥 e o resumo do dia. <b>Peso, medidas e o que você comeu nunca aparecem.</b></div>
-  <div class="card"><b>Entrar num grupo</b><p class="small mut" style="margin:4px 0 0">Recebeu um convite? Coloque o código aqui.</p>
+function socAddHtml(S){return `<div class="card"><b>Entrar num grupo</b><p class="small mut" style="margin:4px 0 0">Recebeu um código? Coloque aqui.</p>
    <input class="inp" data-i="soc.code" value="${esc(S.code)}" placeholder="Código do grupo" style="margin-top:10px;text-transform:uppercase;letter-spacing:2px;font-weight:700" autocapitalize="characters">
    <button class="btn sm" style="margin-top:10px" data-a="socJoin">Entrar no grupo</button></div>
-  <div class="card"><b>Criar um grupo</b><p class="small mut" style="margin:4px 0 0">Depois é só mandar o convite pra galera.</p>
-   <input class="inp" data-i="soc.gname" value="${esc(S.gname)}" placeholder="Nome do grupo (ex: Rata de academia)" style="margin-top:10px">
+  <div class="card"><b>Criar um grupo</b><p class="small mut" style="margin:4px 0 0">Amigos, família, trabalho… pode criar quantos quiser.</p>
+   <input class="inp" data-i="soc.gname" value="${esc(S.gname)}" placeholder="Nome do grupo (ex: Família, Amigos)" style="margin-top:10px">
    <button class="btn alt sm" style="margin-top:10px" data-a="socCreate">Criar grupo</button></div>
-  ${S.loading?'<p class="small mut" style="text-align:center">Um segundinho…</p>':''}${S.err?`<p class="small" style="text-align:center;color:#c0453a">${esc(S.err)}</p>`:''}`;
- }
- if(S.posts===null&&!S.loading&&!S.err)setTimeout(socLoad,0);
+  ${S.loading?'<p class="small mut" style="text-align:center">Um segundinho…</p>':''}${S.err?`<p class="small" style="text-align:center;color:#c0453a">${esc(S.err)}</p>`:''}`;}
+function vTurma(){
+ const s=soc();UI.soc=UI.soc||{tab:'feed',posts:null,members:null,loading:false,err:'',gname:'',code:UI.pendingGroup||'',adding:false,gid:''};const S=UI.soc;
+ if(UI.pendingGroup&&!s.groups.some(g=>g.id===UI.pendingGroup)){S.code=UI.pendingGroup;S.adding=true;}
+ if(!FIREBASE_CONFIG)return `<span class="kicker">Grupos</span><h2 class="disp h2">Treinar junto 👯‍♀️</h2><div class="card empty">Os grupos estão quase prontos. Volta aqui daqui a pouquinho!</div>`;
+ if(!s.groups.length){
+  return `<span class="kicker">Grupos</span><h2 class="disp h2">Treinar junto 👯‍♀️</h2>
+  <div class="info">Crie grupos com quem você quiser (amigos, família…) e acompanhe a constância de todo mundo: quem treinou, a sequência 🔥 e o resumo do dia. <b>Peso, medidas e o que você comeu nunca aparecem.</b></div>
+  ${socAddHtml(S)}`;}
+ const G=curG();
+ if(S.gid!==G.id){S.posts=null;S.members=null;S.err='';}
+ if(!S.adding&&S.posts===null&&!S.loading&&!S.err)setTimeout(socLoad,0);
+ const tabs=`<div class="chips" style="margin-bottom:12px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px">${s.groups.map(g=>`<button class="chip ${!S.adding&&g.id===G.id?'on':''}" style="white-space:nowrap" data-a="socSelect" data-id="${esc(g.id)}">${esc(g.name)}</button>`).join('')}<button class="chip ${S.adding?'on':''}" style="white-space:nowrap" data-a="socAdd">＋ Novo / entrar</button></div>`;
+ if(S.adding)return `<span class="kicker">Grupos</span><h2 class="disp h2" style="margin-bottom:10px">Seus grupos</h2>${tabs}${socAddHtml(S)}`;
  const body=S.loading&&S.posts===null?'<div class="card empty">Carregando…</div>'
   :S.err?`<div class="card empty">${esc(S.err)}<br><br><button class="btn2" data-a="socRefresh">Tentar de novo</button></div>`
   :S.tab==='feed'?((S.posts||[]).length?S.posts.map(postHtml).join(''):'<div class="card empty">Ainda não tem nada no feed. Registre um treino ou faça o check-in do dia que o seu resumo aparece aqui 💪</div>')
-  :'<div class="card" style="padding:4px 14px">'+(S.members||[]).map(m=>`<div class="hrow"><span style="display:flex;gap:10px;align-items:center"><span style="font-size:24px">${esc(m.emoji||'💪')}</span><span><b style="font-size:14.5px">${esc(m.name)}${FB&&m.uid===FB.uid?' (você)':''}</b><span class="small mut" style="display:block">${m.lastActive?'Último treino: '+dayLabel(m.lastActive).toLowerCase():'Ainda sem treinos registrados'}</span></span></span><span style="display:flex;gap:6px;align-items:center">${m.streak!=null?`<span class="tag">🔥 ${m.streak}</span>`:''}${m.week!=null?`<span class="tag">${m.week}/7</span>`:''}${s.isOwner&&FB&&m.uid!==FB.uid?`<button class="ib del" data-a="socRemove" data-id="${esc(m.uid)}" aria-label="Remover">×</button>`:''}</span></div>`).join('')+'</div>';
- return `<span class="kicker">Turma</span>
- <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="disp h2" style="margin-bottom:10px">${esc(s.groupName||'Meu grupo')}</h2><button class="ib" data-a="socRefresh" aria-label="Atualizar">↻</button></div>
- <button class="btn alt sm" style="margin-bottom:12px" data-a="socInvite">📤 Convidar amigos</button>
+  :'<div class="card" style="padding:4px 14px">'+(S.members||[]).map(m=>`<div class="hrow"><span style="display:flex;gap:10px;align-items:center"><span style="font-size:24px">${esc(m.emoji||'💪')}</span><span><b style="font-size:14.5px">${esc(m.name)}${FB&&m.uid===FB.uid?' (você)':''}</b><span class="small mut" style="display:block">${m.lastActive?'Último treino: '+dayLabel(m.lastActive).toLowerCase():'Ainda sem treinos registrados'}</span></span></span><span style="display:flex;gap:6px;align-items:center">${m.streak!=null?`<span class="tag">🔥 ${m.streak}</span>`:''}${m.week!=null?`<span class="tag">${m.week}/7</span>`:''}${G.isOwner&&FB&&m.uid!==FB.uid?`<button class="ib del" data-a="socRemove" data-id="${esc(m.uid)}" aria-label="Remover">×</button>`:''}</span></div>`).join('')+'</div>';
+ return `<span class="kicker">Grupos</span>
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="disp h2" style="margin-bottom:10px">${esc(G.name)}</h2><button class="ib" data-a="socRefresh" aria-label="Atualizar">↻</button></div>
+ ${tabs}
+ <div class="card" style="display:flex;align-items:center;gap:10px;padding:12px 14px"><div style="flex:1"><span class="small mut">Código do grupo</span><div style="font-size:20px;font-weight:700;letter-spacing:3px;color:var(--a)">${esc(G.id)}</div></div><button class="mini g" data-a="socCopyCode">📋 Copiar</button><button class="mini o" data-a="socInvite">📤 Convidar</button></div>
+ <button class="toggle ${G.post!==false?'on':''}" style="background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:12px;border:none" data-a="socPostToggle"><span>Mostrar o meu dia neste grupo</span><span class="tg"></span></button>
  <div class="chips" style="margin-bottom:12px"><button class="chip ${S.tab==='feed'?'on':''}" style="flex:1;text-align:center" data-a="socTab" data-t="feed">📰 Feed</button><button class="chip ${S.tab==='people'?'on':''}" style="flex:1;text-align:center" data-a="socTab" data-t="people">👥 Pessoas${S.members?' ('+S.members.length+')':''}</button></div>
  ${body}
- <details class="card"><summary><span>⚙️ O que eu compartilho</span><span class="chev">▾</span></summary>
+ <details class="card"><summary><span>⚙️ O que eu compartilho (em todos os grupos)</span><span class="chev">▾</span></summary>
   ${[['treinos','🏋️ Treinos e atividades'],['streak','🔥 Sequência e dias na semana'],['rotina','💧 Rotina do dia (água, creatina…)'],['comida','🥗 Se comi bem (sem mostrar o quê)']].map(([k,l])=>`<button class="toggle ${s.share[k]?'on':''}" data-a="socShare" data-k="${k}"><span>${l}</span><span class="tg"></span></button>`).join('')}
   <label class="lbl">Meu avatar</label><div class="chips">${AVATARS.map(e=>`<button class="chip ${s.emoji===e?'on':''}" style="font-size:18px;padding:6px 10px" data-a="socEmoji" data-e="${e}">${e}</button>`).join('')}</div>
   <p class="small mut" style="margin:12px 0 0">Peso, medidas e o que você comeu nunca são compartilhados.</p>
-  <button class="btn2 danger" style="margin-top:12px" data-a="socLeave">Sair do grupo</button></details>
- <p class="small mut" style="text-align:center">Código do grupo: <b style="letter-spacing:2px">${esc(s.groupId)}</b></p>`;}
+  <button class="btn2 danger" style="margin-top:12px" data-a="socLeave">Sair do grupo "${esc(G.name)}"</button></details>`;}
 /* ===== painel da criadora: quem usa o app (sem dados de saúde) ===== */
 const ADMIN_UID='xs6gZ72v1rOeNYgAg69rDvF07UQ2'; /* celular da Isabela */
 let USAGE_T=null,USAGE_LAST=0,USAGE_SIG='';
@@ -2111,7 +2122,7 @@ const usageOn=()=>!!(FIREBASE_CONFIG&&D.profile&&D.usageShare!==false);
 function usageDoc(){const t=today();const d30=new Date();d30.setDate(d30.getDate()-29);const from=keyOf(d30);
  return {name:D.profile.nome,since:D.profile.criado||t,lastSeen:Date.now(),lastDay:t,version:APP_VERSION,
   installed:!!(typeof isStandalone==='function'&&isStandalone()),streak:streak(),days30:new Set(D.activities.filter(a=>a.date>=from).map(a=>a.date)).size,
-  acts:D.activities.length,workouts:D.workouts.length,inGroup:!!(D.social&&D.social.groupId)};}
+  acts:D.activities.length,workouts:D.workouts.length,inGroup:!!(D.social&&D.social.groups&&D.social.groups.length)};}
 async function syncUsage(force){if(!usageOn())return;if(navigator.onLine===false)return;
  const doc=usageDoc();const sig=JSON.stringify([doc.name,doc.lastDay,doc.version,doc.installed,doc.streak,doc.days30,doc.acts,doc.workouts,doc.inGroup]);
  if(!force&&sig===USAGE_SIG&&Date.now()-USAGE_LAST<15*60*1000)return;
@@ -2165,7 +2176,7 @@ function pushCardHtml(){const P=pushState();
   <label class="lbl">Que horas você costuma treinar?</label><div class="chips">${TREINO_H.map(([k,l])=>`<button class="chip ${P.treinoHora===k?'on':''}" data-a="pushHora" data-k="${k}">${l}</button>`).join('')}</div>
   <div class="btnrow"><button class="btn2" data-a="pushTest">Testar agora</button><button class="btn2 danger" data-a="pushOff">Desativar</button></div>`;}
 
-function inviteUrl(){return location.href.split('#')[0].split('?')[0]+'?g='+soc().groupId;}
+function inviteUrl(){const G=curG();return location.href.split('#')[0].split('?')[0]+'?g='+(G?G.id:'');}
 
 /* ================== CORRIDA ================== */
 /* etapas: w=aquecer c=desaquecer r=correr k=caminhar e=leve s=acelerar t=ritmo moderado/forte */
@@ -2471,17 +2482,22 @@ const A={
   S.loading=true;S.err='';render();
   try{const {db,uid,f}=await fb();const code=newCode();
    await f.setDoc(f.doc(db,'groups',code),{name,createdBy:uid,createdAt:Date.now()});
-   Object.assign(soc(),{groupId:code,groupName:name,isOwner:true});persist();
-   S.posts=null;S.members=null;S.loading=false;LAST_SYNC='';toast('Grupo criado! Agora convida a galera 🎉');render();
+   const s=soc();s.groups.push({id:code,name,isOwner:true,post:true});s.active=code;persist();
+   Object.assign(S,{posts:null,members:null,loading:false,adding:false,gname:''});LAST_SYNC='';await syncSocial(true).catch(()=>{});toast('Grupo criado! Agora manda o código pra galera 🎉');render();
   }catch(e){S.loading=false;S.err='Não consegui criar o grupo. Confere sua internet e tenta de novo.';render();}},
  socJoin:async()=>{const S=UI.soc;const code=(S.code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<6){toast('Confere o código do convite');return;}
+  const s=soc();if(s.groups.some(g=>g.id===code)){s.active=code;S.adding=false;UI.pendingGroup='';persist();render();toast('Você já está nesse grupo 😉');return;}
   S.loading=true;S.err='';render();
   try{const {db,uid,f}=await fb();const g=await f.getDoc(f.doc(db,'groups',code));
    if(!g.exists()){S.loading=false;S.err='Não achei esse grupo. Confere o código com quem te convidou.';render();return;}
-   Object.assign(soc(),{groupId:code,groupName:g.data().name,isOwner:g.data().createdBy===uid});persist();UI.pendingGroup='';
-   S.posts=null;S.members=null;S.loading=false;LAST_SYNC='';toast('Você entrou no '+g.data().name+'! 🎉');render();
+   s.groups.push({id:code,name:g.data().name,isOwner:g.data().createdBy===uid,post:true});s.active=code;persist();UI.pendingGroup='';
+   Object.assign(S,{posts:null,members:null,loading:false,adding:false,code:''});LAST_SYNC='';await syncSocial(true).catch(()=>{});toast('Você entrou no '+g.data().name+'! 🎉');render();
   }catch(e){S.loading=false;S.err='Não consegui entrar agora. Confere sua internet e tenta de novo.';render();}},
- socInvite:async()=>{const url=inviteUrl();const txt=`Bora treinar junto? Entra no meu grupo "${soc().groupName}" no Meu Treino 💪\nCódigo: ${soc().groupId}`;
+ socSelect:t=>{const s=soc();s.active=t.dataset.id;persist();Object.assign(UI.soc,{adding:false,posts:null,members:null,err:''});render();},
+ socAdd:()=>{UI.soc.adding=!UI.soc.adding;UI.soc.err='';render();},
+ socCopyCode:async()=>{const G=curG();if(!G)return;try{await navigator.clipboard.writeText(G.id);toast('Código copiado: '+G.id);}catch(e){prompt('Copie o código:',G.id);}},
+ socPostToggle:()=>{const G=curG();if(!G)return;G.post=G.post===false;persist();LAST_SYNC='';syncSocial(true).catch(()=>{});render();toast(G.post!==false?'Seu dia aparece neste grupo':'Seu dia não aparece mais neste grupo');},
+ socInvite:async()=>{const G=curG();if(!G)return;const url=inviteUrl();const txt=`Bora treinar junto? Entra no grupo "${G.name}" no Meu Treino 💪\nCódigo: ${G.id}`;
   try{if(navigator.share){await navigator.share({title:'Meu Treino',text:txt,url});return;}}catch(e){return;}
   try{await navigator.clipboard.writeText(txt+'\n'+url);toast('Convite copiado!');}catch(e){prompt('Copie o convite:',url);}},
  socShare:t=>{const s=soc();s.share[t.dataset.k]=!s.share[t.dataset.k];persist();LAST_SYNC='';render();},
@@ -2489,13 +2505,13 @@ const A={
  socReact:async t=>{const S=UI.soc;const p=(S.posts||[]).find(x=>x.id===t.dataset.id);if(!p)return;
   try{const {db,uid,f}=await fb();p.reactions=p.reactions||{};const e=t.dataset.e;const off=p.reactions[uid]===e;
    if(off)delete p.reactions[uid];else p.reactions[uid]=e;render();
-   await f.updateDoc(f.doc(db,'groups',soc().groupId,'posts',p.id),{['reactions.'+uid]:off?f.deleteField():e});
+   await f.updateDoc(f.doc(db,'groups',curG().id,'posts',p.id),{['reactions.'+uid]:off?f.deleteField():e});
   }catch(e){toast('Não consegui reagir agora');}},
  socRemove:async t=>{if(!confirm('Remover essa pessoa do grupo?'))return;
-  try{const {db,f}=await fb();await f.deleteDoc(f.doc(db,'groups',soc().groupId,'members',t.dataset.id));socLoad();}catch(e){toast('Não consegui remover agora');}},
- socLeave:async()=>{if(!confirm('Sair do grupo? Você pode entrar de novo com o código depois.'))return;
-  try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'groups',soc().groupId,'members',uid));}catch(e){}
-  D.social=Object.assign(socDefaults(),{emoji:soc().emoji,share:soc().share});persist();UI.soc=null;render();},
+  try{const {db,f}=await fb();await f.deleteDoc(f.doc(db,'groups',curG().id,'members',t.dataset.id));socLoad();}catch(e){toast('Não consegui remover agora');}},
+ socLeave:async()=>{const G=curG();if(!G||!confirm('Sair do grupo "'+G.name+'"? Você pode entrar de novo com o código depois.'))return;
+  try{const {db,uid,f}=await fb();await f.deleteDoc(f.doc(db,'groups',G.id,'members',uid));try{await f.deleteDoc(f.doc(db,'groups',G.id,'posts',uid+'_'+today()));}catch(e){}}catch(e){}
+  const s=soc();s.groups=s.groups.filter(g=>g.id!==G.id);s.active=s.groups[0]?s.groups[0].id:'';persist();UI.soc=null;render();toast('Você saiu do grupo');},
  genOpen:()=>{const c=profileCfg();UI.gen={foci:[...c.foci],sub:Object.assign({},c.sub),local:c.local,homeEq:[...c.homeEq],tempo:c.tempo,lim:[...c.lim],days:[],nivel:(D.profile||{}).nivel||'',obj:c.obj,m:{},result:null,seed:0};PROF=null;go('gerador');},
  genSub:t=>{UI.gen.sub[t.dataset.k]=t.dataset.v;render();},
  genLocal:t=>{UI.gen.local=t.dataset.v;render();},
@@ -2630,6 +2646,18 @@ try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGrou
 if(D.profile&&socOn())setTimeout(()=>syncSocial().catch(()=>{}),1500);
 if(D.profile)setTimeout(()=>syncUsage(true).then(()=>{if(UI.view==='perfil')render();}).catch(()=>{}),2500);
 if(D.profile&&D.push&&D.push.on)setTimeout(()=>syncPush(true).catch(()=>{}),3500);
+/* ===== atualização automática: confere se há versão nova e recarrega quando não atrapalha ===== */
+let UPDATE_PENDING=false;
+const updateSafe=()=>!RUN&&!['correndo','corrida_fim','checkin','builder','gerador','sessao'].includes(UI.view)&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName||''));
+async function doUpdate(){try{localStorage.setItem('meutreino:updated','1');}catch(e){}
+ try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})));}}catch(e){}
+ location.reload();}
+async function checkUpdate(){if(navigator.onLine===false)return;
+ try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const j=await r.json();
+  if(j&&j.v&&j.v!==APP_VERSION){UPDATE_PENDING=true;if(updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,900);}}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate();});
+setTimeout(checkUpdate,4000);setInterval(checkUpdate,20*60*1000);
+try{if(localStorage.getItem('meutreino:updated')){localStorage.removeItem('meutreino:updated');setTimeout(()=>toast('App atualizado ✨ versão '+APP_VERSION.split(' ')[0]),800);}}catch(e){}
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{}));
 
 render();

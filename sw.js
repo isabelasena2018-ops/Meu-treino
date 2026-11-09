@@ -1,5 +1,5 @@
 /* Meu Treino — funciona offline e se atualiza sozinho quando há internet */
-const CACHE = 'meutreino-v16';
+const CACHE = 'meutreino-v17';
 const CORE = ['./', './index.html', './manifest.json', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -18,6 +18,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (url.pathname.endsWith('/version.json')) return; // sempre direto da internet, pra saber se há versão nova
 
   // Página do app: tenta a internet primeiro (pega a versão nova), sem internet usa a salva
   if (req.mode === 'navigate') {
