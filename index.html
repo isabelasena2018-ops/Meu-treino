@@ -15,10 +15,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--a:#0F4C45;--a2:#E8633A;--bg:#FAF6EF;--ink:#1d2522;--mut:#87938e;--line:#ece6da;--soft:#fbfaf7;--card:#fff;--a2soft:#fff1ea;--asoft:#e6efed;}
+:root{--a:#0F4C45;--a2:#E8633A;--a2t:#C24E28;--bg:#FAF6EF;--ink:#1d2522;--mut:#5f6c67;--line:#ece6da;--soft:#fbfaf7;--card:#fff;--a2soft:#fff1ea;--asoft:#e6efed;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 .aviso{background:var(--asoft);border-left:4px solid var(--a2);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.5;margin:0 0 12px;color:var(--ink)}
-html.dark{--bg:#0b1311;--ink:#eaf1ed;--mut:#8ea29a;--line:#22312d;--soft:#131e1b;--card:#121c19;--a:#5cc2b0;--asoft:#17302b}
+html.dark{--a2t:#F07A52;--bg:#0b1311;--ink:#eaf1ed;--mut:#8ea29a;--line:#22312d;--soft:#131e1b;--card:#121c19;--a:#5cc2b0;--asoft:#17302b}
 html.dark .btn:not(.alt){background:#1d6b5f;color:#fff}html.dark .btn2{background:#16231f;color:var(--ink);border-color:#2a3a35}html.dark .ibtn{background:#16231f;color:var(--a);box-shadow:none}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px}
 button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;padding:0}
@@ -35,7 +35,7 @@ main{max-width:560px;margin:0 auto;padding:4px 16px calc(100px + env(safe-area-i
 .nbtn svg{width:22px;height:22px}
 .card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .card.dark{background:var(--a);color:#FAF6EF;box-shadow:0 8px 22px rgba(15,76,69,.22)}
-.kicker{font-size:11.5px;font-weight:700;letter-spacing:1.4px;color:var(--a2);text-transform:uppercase}
+.kicker{font-size:11.5px;font-weight:700;letter-spacing:1.4px;color:var(--a2t);text-transform:uppercase}
 .h2{font-size:26px;margin:2px 0 14px;font-weight:600;line-height:1.15}
 .h3{font-size:16.5px;margin:20px 0 10px;font-weight:700}
 .mut{color:var(--mut)}
@@ -59,7 +59,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .bigopt b{font-size:15.5px}
 .bigopt span{font-size:13.5px;color:var(--mut);line-height:1.45}
 .btn{width:100%;background:var(--a);color:#fff;border-radius:14px;padding:14px;font-weight:700;font-size:15px;display:block;text-align:center}
-.btn.alt{background:var(--a2)}
+.btn.alt{background:var(--a2t)}
 .btn.sm{padding:11px;font-size:14px}
 .btn2{width:100%;background:#fff;color:var(--a);border:1.5px solid var(--a);border-radius:14px;padding:12px;font-weight:700;font-size:14.5px}
 .btn2.danger{color:#c0453a;border-color:#e5b3ad}
@@ -118,7 +118,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .it .nm{flex:1;min-width:0}
 .it .nm b{display:block;font-size:14px;line-height:1.25}
 .it input{width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;font-size:16px;background:var(--soft);font-family:inherit}
-.ib{width:32px;height:32px;border-radius:9px;background:var(--soft);color:var(--mut);font-weight:700;display:grid;place-items:center;flex-shrink:0}
+.ib{width:40px;height:40px;border-radius:10px;background:var(--soft);color:var(--mut);font-weight:700;display:grid;place-items:center;flex-shrink:0}
 .ib.del{color:#c0453a}
 .li{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;background:#fff;border-radius:14px;margin-bottom:8px;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .li b{font-size:14.5px;display:block}
@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.0 · 09/11 18h';
+const APP_VERSION='4.1 · 09/11 19h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1246,7 +1246,8 @@ let D=(()=>{try{const v=localStorage.getItem(LS);if(v){const o=JSON.parse(v);ret
 function persist(){try{localStorage.setItem(LS,JSON.stringify(D));}catch(e){}scheduleSync();scheduleUsage();schedulePush();}
 
 const UI={view:'hoje',sessionId:null,edit:null,libGroup:'todos',libQuery:'',progEx:'',actForm:null,gen:null,mea:{}};
-let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',supps:{vacuo:false,creatina:false,pre:false,whey:false}};
+let ONB={nome:'',obj:'emagrecer',peso:'',meta:'',ok:false,supps:{vacuo:false,creatina:false,pre:false,whey:false}};
+const BACKUP_TXT='Seus treinos, cargas, peso, medidas e comida ficam salvos só neste celular. Se você trocar de celular, apagar o app ou limpar os dados do navegador, pode perder tudo. Pra não perder, faça um backup no Perfil uma vez por mês (leva 10 segundos).';
 let PROF=null;
 
 /* ================== HELPERS ================== */
@@ -1332,6 +1333,8 @@ function vOnb(){
   ${SUPPS.map(s=>`<button class="toggle ${ONB.supps[s.k]?'on':''}" data-a="onbSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
  </div>
  ${AVISO}
+ <div class="card" style="border:1.5px solid var(--line)"><b>💾 Importante: backup dos seus dados</b><p class="small" style="margin:6px 0 10px;line-height:1.5">${BACKUP_TXT}</p>
+  <button class="toggle ${ONB.ok?'on':''}" data-a="onbOk"><span style="font-weight:700">Entendi e concordo</span><span class="tg"></span></button></div>
  <h3 class="h3">Como você quer começar?</h3>
  <button class="bigopt" data-a="onbStart" data-m="gen" style="border-color:var(--a2)"><b>✨ Monte meu treino pra mim</b><span>Me conta seu foco (glúteo, barriga, braço…), quantos dias você treina e sua experiência que eu monto a semana inteira. Medidas são opcionais.</span></button>
  <button class="bigopt" data-a="onbStart" data-m="zero"><b>🛠️ Quero montar do meu jeito</b><span>Você escolhe os exercícios e eu te ajudo com séries e repetições. Dá pra pedir o treino pronto depois, a qualquer momento.</span></button>
@@ -1349,6 +1352,9 @@ function vHoje(){
  const todays=D.workouts.filter(w=>w.day===todayDay());
  const c=dayCheck(t);const meta=aguaMeta();
  const supps=SUPPS.filter(s=>p.supps&&p.supps[s.k]);
+ const usedDays=Math.floor((Date.now()-new Date((p.criado||t)+'T12:00:00'))/864e5);
+ const bkHtml=!D.backupAck?`<div class="card" style="border:1.5px solid var(--a2)"><b>💾 Aviso importante sobre seus dados</b><p class="small" style="margin:6px 0 10px;line-height:1.5">${BACKUP_TXT}</p><div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="export">Fazer backup agora</button><button class="btn2" style="padding:10px" data-a="backupAck">Entendi e concordo</button></div></div>`
+  :(usedDays>=7&&(!D.lastBackup||Date.now()-D.lastBackup>30*864e5)&&(D.activities.length||D.weights.length))?`<div class="card" style="border:1.5px solid var(--line)"><b>💾 ${D.lastBackup?'Faz mais de um mês desde seu último backup':'Você ainda não fez backup'}</b><p class="small mut" style="margin:4px 0 10px">Se trocar de celular ou apagar o app, seus dados vão junto. Leva 10 segundos.</p><button class="btn sm" data-a="export">Fazer backup agora</button></div>`:'';
  const weekend=['sab','dom'].includes(todayDay());
  let treinoHtml='';
  if(todays.length){
@@ -1365,6 +1371,7 @@ function vHoje(){
  ${isStandalone()&&pushSupported()&&FIREBASE_CONFIG&&!pushState().on&&!D.pushAskNo&&Notification.permission!=='denied'?`<div class="card" style="border:1.5px solid var(--a2)"><b style="color:var(--a2)">🔔 Quer que eu te lembre do que faltar?</b><p class="small mut" style="margin:4px 0 10px">Água, creatina, treino e check-in, só quando você ainda não registrou.</p><div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="pushOn">Ativar</button><button class="btn2" style="padding:10px" data-a="pushAskNo">Agora não</button></div></div>`:''}
  ${UI.pendingGroup&&!soc().groups.some(g=>g.id===UI.pendingGroup)?`<button class="ckcard" data-a="go" data-v="turma" style="border-color:var(--a);background:var(--asoft)"><span class="em">👯‍♀️</span><span><b style="color:var(--a)">Você recebeu um convite!</b><span style="color:#244a45">Toque aqui pra entrar no grupo e treinar junto com a galera.</span></span></button>`:''}
  <div style="margin:4px 0 12px"><span class="kicker">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span><h2 class="disp h2" style="margin-bottom:0">${hi}, ${esc(p.nome)} 👋</h2></div>
+ ${bkHtml}
  <div class="card dark">
   <div style="display:flex;justify-content:space-between;align-items:center">
    <div><div style="font-size:12.5px;opacity:.8;font-weight:600">Sequência</div><div class="disp" style="font-size:30px;font-weight:600;line-height:1.1">🔥 ${st} ${st===1?'dia':'dias'}</div></div>
@@ -1816,7 +1823,7 @@ function vPerfil(){
  <h3 class="h3">Compartilhar</h3>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Mande o link pra quem quiser treinar junto. Cada pessoa cria o próprio perfil e os dados ficam no celular dela.</p><button class="btn alt" data-a="share">📤 Compartilhar o app</button></div>
  <h3 class="h3">Backup</h3>
- <div class="card"><p class="small mut" style="margin:0 0 10px">Salve um arquivo com todos os seus dados pra não perder nada se trocar de celular.</p>
+ <div class="card"><p class="small" style="margin:0 0 6px;line-height:1.5">${BACKUP_TXT}</p><p class="small mut" style="margin:0 0 10px"><b>Último backup:</b> ${D.lastBackup?new Date(D.lastBackup).toLocaleDateString('pt-BR'):'nunca'}. No iPhone, escolha <i>Salvar em Arquivos</i> ou mande o arquivo pro seu próprio WhatsApp ou e-mail. Pra recuperar, use <b>Importar</b> no celular novo.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
  <details class="card"><summary><span>⚙️ Avançado</span><span class="chev">▾</span></summary>
   <p class="small mut" style="margin:10px 0 6px">ID deste celular no app (só a criadora precisa disso):</p>
@@ -2607,7 +2614,7 @@ async function shareRender(){const S=SHARE;if(!S)return;const c=await makeCard(S
  openSheet(`<span class="kicker">Pra colar na foto</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">Seu card 📸</h2>
  <div class="chips" style="margin-bottom:12px">${[['sticker','✨ Sticker transparente'],['cor','🎨 Card colorido']].map(([k,l])=>`<button class="chip ${S.style===k?'on':''}" data-a="shareStyle" data-s="${k}">${l}</button>`).join('')}<label class="chip ${S.style==='foto'?'on':''}" style="cursor:pointer">🖼️ Na minha foto<input type="file" accept="image/*" data-c="sharePhoto" style="display:none"></label></div>
  <div style="border-radius:16px;overflow:hidden;background:${S.style==='sticker'?'repeating-conic-gradient(#56625e 0 25%,#4a5551 0 50%) 0 0/22px 22px':'var(--soft)'};margin-bottom:12px"><img src="${S.url}" alt="Prévia do card" style="width:100%;display:block;${S.style==='sticker'?'':'max-height:60vh;object-fit:contain'}"></div>
- <div class="btnrow" style="margin-top:0">${S.style==='sticker'?'<button class="btn alt sm" data-a="shareCopy">📋 Copiar</button>':''}<button class="btn ${S.style==='sticker'?'':'alt '}sm" data-a="shareGo">📤 Enviar</button><button class="btn2" style="padding:10px" data-a="shareSave">⬇️ Salvar</button></div>
+ <div class="btnrow" style="margin-top:0">${S.style==='sticker'?'<button class="btn alt sm" data-a="shareCopy">📋 Copiar</button><button class="btn2" style="padding:10px" data-a="shareGo">📤 Enviar</button>':'<button class="btn alt sm" data-a="shareGo">📤 Enviar</button>'}<button class="btn2" style="padding:10px" data-a="shareSave">⬇️ Salvar</button></div>
  ${S.style==='sticker'?'<p class="small mut" style="margin:8px 0 0">Toque em <b>Copiar</b>, abra o story do Instagram com a sua foto e toque na tela pra <b>Colar</b>. O fundo é transparente, só os números aparecem.</p>':''}
  ${IS_IOS?'<p class="small mut" style="margin:6px 0 0">No iPhone, <b>Salvar</b> abre o menu do celular: é só tocar em <b>Salvar imagem</b> que vai pra sua galeria. Ou toque e segure na imagem.</p>':''}
  <label class="lbl">O que aparece no card</label>
@@ -2651,10 +2658,12 @@ const A={
  close:()=>closeSheet(),
  onbObj:t=>{ONB.obj=t.dataset.k;render();},
  onbSupp:t=>{ONB.supps[t.dataset.k]=!ONB.supps[t.dataset.k];render();},
+ onbOk:()=>{ONB.ok=!ONB.ok;render();},
  onbStart:t=>{
   if(!ONB.nome.trim()){toast('Coloca seu nome primeiro 😉');return;}
+  if(!ONB.ok){toast('Leia e marque o aviso sobre backup 😉');const b=document.querySelector('[data-a=onbOk]');if(b)b.scrollIntoView({behavior:'smooth',block:'center'});return;}
   const peso=num(ONB.peso),meta=num(ONB.meta);
-  D.profile={nome:ONB.nome.trim(),obj:ONB.obj,pesoInicial:peso,meta:meta,supps:{...ONB.supps},criado:today()};
+  D.profile={nome:ONB.nome.trim(),obj:ONB.obj,pesoInicial:peso,meta:meta,supps:{...ONB.supps},criado:today()};D.backupAck=today();
   if(peso)D.weights.push({date:today(),weight:peso});
   if(t.dataset.m==='split'){D.workouts=SPLIT.map(makeWorkout);persist();UI.view='hoje';render();toast('Tudo pronto! Bora 🔥');}
   else if(t.dataset.m==='gen'){persist();A.genOpen();}
@@ -2726,7 +2735,10 @@ const A={
  share:async()=>{const url=location.href.split('#')[0].split('?')[0];
   try{if(navigator.share){await navigator.share({title:'Meu Treino',text:'Bora treinar! Abre esse link, cria seu perfil e monta seu treino 💪',url});return;}}catch(e){return;}
   try{await navigator.clipboard.writeText(url);toast('Link copiado!');}catch(e){prompt('Copie o link:',url);}},
- export:()=>{const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='meu-treino-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},800);toast('Backup gerado!');},
+ export:async()=>{D.lastBackup=Date.now();persist();const name='meu-treino-backup-'+today()+'.json';const blob=new Blob([JSON.stringify(D)],{type:'application/json'});
+  if(IS_IOS){const f=new File([blob],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){toast('Escolha "Salvar em Arquivos" ou mande pro seu WhatsApp 📁');try{await navigator.share({files:[f]});}catch(e){}render();return;}}
+  const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},800);toast('Backup salvo ✓');render();},
+ backupAck:()=>{D.backupAck=today();persist();render();},
  socTab:t=>{UI.soc.tab=t.dataset.t;render();},
  socRefresh:()=>{UI.soc.err='';socLoad();},
  socCreate:async()=>{const S=UI.soc;const name=(S.gname||'').trim();if(!name){toast('Dá um nome pro grupo 😉');return;}
