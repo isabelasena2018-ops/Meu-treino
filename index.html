@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.7 · 09/11 23h';
+const APP_VERSION='4.8 · 10/11 13h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1380,11 +1380,16 @@ function vHoje(){
  const weekend=['sab','dom'].includes(todayDay());
  let treinoHtml='';
  if(todays.length){
+  const outroFeito=D.activities.find(a=>a.date===t&&a.type==='musculacao'&&a.workoutId&&!todays.some(w=>w.id===a.workoutId));
   treinoHtml=todays.map(w=>{const done=D.activities.some(a=>a.date===t&&a.workoutId===w.id);
+   if(!done&&outroFeito)return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">✓ Você fez ${esc(outroFeito.name||'outro treino')}</h3><p class="mut small" style="margin:0 0 12px">No lugar de ${esc(w.name)}, que continua te esperando no próximo dia.</p>
+   <div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${outroFeito.workoutId}">Ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${outroFeito.id}">📸 Card pra foto</button></div></div>`;
    return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">${esc(w.name)}</h3><p class="mut small" style="margin:0 0 12px">${w.items.length} exercícios</p>
-   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button>`}</div>`;}).join('');
+   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button><button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--a)" data-a="outroTreino">Fiz outro treino hoje</button>`}</div>`;}).join('');
  }else{
-  treinoHtml=`<div class="card"><span class="kicker">Hoje</span><p style="margin:6px 0 12px;font-weight:600">${weekend?'Fim de semana 🌿 Descanso ou uma atividade leve.':'Nenhum treino marcado pra hoje.'}</p>
+  const feito=D.activities.find(a=>a.date===t&&a.type==='musculacao'&&a.workoutId);
+  if(feito)treinoHtml=`<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 12px;font-weight:600">✓ ${esc(feito.name||'Treino feito')}</h3><div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${feito.workoutId}">Ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${feito.id}">📸 Card pra foto</button></div></div>`;
+  else treinoHtml=`<div class="card"><span class="kicker">Hoje</span><p style="margin:6px 0 12px;font-weight:600">${weekend?'Fim de semana 🌿 Descanso ou uma atividade leve.':'Nenhum treino marcado pra hoje.'}</p>
   <div class="btnrow" style="margin-top:0">${D.workouts.length?'<button class="btn sm" data-a="go" data-v="treinos">Escolher treino</button>':'<button class="btn sm alt" data-a="genOpen">✨ Monte pra mim</button>'}<button class="btn2" style="padding:11px" data-a="go" data-v="atividades">Outra atividade</button></div></div>`;
  }
  const meals=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanches','🍎 Lanches'],['jantar','🌙 Jantar']];
@@ -1494,7 +1499,8 @@ function vSessao(){
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
  <span class="kicker">${w.day?DAYM[w.day]:'Treino'}</span><h2 class="disp h2" style="margin-bottom:8px">${esc(w.name)}</h2>
  <div class="info">⏱️ ${OBJ[D.profile.obj||'emagrecer'].rest} Anote o peso e as repetições da sua melhor série.</div>
- ${cards||'<div class="card empty">Esse treino está vazio. Edite pra adicionar exercícios.</div>'}
+ ${cards||'<div class="card empty">Ainda sem exercícios. Adicione o que você fez 👇</div>'}
+ <button class="btn2" style="margin:0 0 12px" data-a="addExOpen">＋ Adicionar um exercício que fiz</button>
  <div class="card">${doneW?`<p style="margin:0 0 10px;font-weight:700;color:var(--a)">✓ Treino registrado hoje${doneW.minutes?' · '+doneW.minutes+' min':''}</p>`:''}
   <label class="lbl" style="margin-top:0">Quanto tempo durou? (min)</label>
   <input class="inp" id="fin-min" inputmode="numeric" placeholder="ex: 60" value="${doneW&&doneW.minutes?doneW.minutes:''}">
@@ -2313,9 +2319,14 @@ async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='
 
 /* ===== notificações inteligentes: só avisa o que ainda não foi registrado ===== */
 const VAPID_PUBLIC='BBxIj2dVmCdc8ky50XrbQuqUX6oswFtc8zO6iRMQGFA-CeKrBZ0rRRz9Z9P19U3E-WkpngSbkgtQOZv6tP2EC3E';
-const PUSH_KINDS=[['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['creatina','💊 Creatina','De manhã e à noite, se não marcou'],['vacuo','🌬️ Vácuo','De manhã, se não marcou'],['treino','🏋️ Dia de treino','No seu horário de treino, se não registrou (com lembrete do pré-treino)'],['whey','🥤 Whey','Depois que você registrar um treino'],['checkin','📝 Check-in do dia','Às 20h30, se você não fez']];
+const PUSH_KINDS=[['vacuo','🌬️ Vácuo','Se ainda não marcou'],['creatina','💊 Creatina','Se ainda não marcou (e um último aviso às 21h)'],['pre','⚡ Pré-treino','Nos dias de treino, se ainda não marcou'],['treino','🏋️ Hora do treino','Nos dias de treino, se ainda não registrou'],['whey','🥤 Whey','Nos dias de treino, se ainda não marcou'],['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['checkin','📝 Check-in do dia','Se você ainda não fez']];
+const PUSH_TIME_DEF={vacuo:'08:00',creatina:'10:00',pre:'06:00',treino:'06:30',whey:'08:30',checkin:'20:30'};
+const TREINO_H_MIN={manha:'06:30',almoco:'11:30',tarde:'16:00',noite:'18:30'};
 const TREINO_H=[['manha','🌅 Manhã'],['almoco','☀️ Almoço'],['tarde','🌇 Tarde'],['noite','🌙 Noite']];
-function pushState(){if(!D.push)D.push={on:false,prefs:{agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},treinoHora:'manha'};D.push.prefs=Object.assign({agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},D.push.prefs||{});return D.push;}
+function pushState(){if(!D.push)D.push={on:false,prefs:{agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},treinoHora:'manha'};D.push.prefs=Object.assign({agua:true,creatina:true,vacuo:true,pre:true,treino:true,whey:true,checkin:true},D.push.prefs||{});
+ if(!D.push.times){const tr=TREINO_H_MIN[D.push.treinoHora]||'06:30';const [h,m]=tr.split(':').map(Number);const add=(mm)=>{const t=(h*60+m+mm+1440)%1440;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
+  D.push.times=Object.assign({},PUSH_TIME_DEF,{treino:tr,pre:add(-30),whey:add(90)});}
+ D.push.times=Object.assign({},PUSH_TIME_DEF,D.push.times);return D.push;}
 const pushSupported=()=>typeof window!=='undefined'&&'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;
 function b64u(str){const pad='='.repeat((4-str.length%4)%4);const b=atob((str+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)));}
 let PUSH_T=null,PUSH_SIG='';
@@ -2324,8 +2335,8 @@ function pushStatus(){const t=today();const c=dayCheck(t);const sched={};DAYS.fo
  return {day:t,aguaMl:c.aguaMl||0,meta:aguaMeta(),supps:Object.assign({},c.supps||{}),en,checkin:!!c.checkin,trained:D.activities.some(a=>a.date===t),sched};}
 async function syncPush(force){const P=pushState();if(!P.on||!FIREBASE_CONFIG||!pushSupported())return;if(navigator.onLine===false)return;
  const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(!sub){P.on=false;persist();return;}
- const doc={name:D.profile.nome,sub:JSON.parse(JSON.stringify(sub)),tz:(Intl.DateTimeFormat().resolvedOptions().timeZone)||'America/Sao_Paulo',prefs:P.prefs,treinoHora:P.treinoHora,status:pushStatus(),updated:Date.now()};
- const sig=JSON.stringify([doc.sub.endpoint,doc.prefs,doc.treinoHora,doc.status,doc.tz]);if(!force&&sig===PUSH_SIG)return;
+ const doc={name:D.profile.nome,sub:JSON.parse(JSON.stringify(sub)),tz:(Intl.DateTimeFormat().resolvedOptions().timeZone)||'America/Sao_Paulo',prefs:P.prefs,treinoHora:P.treinoHora,times:P.times,status:pushStatus(),updated:Date.now()};
+ const sig=JSON.stringify([doc.sub.endpoint,doc.prefs,doc.treinoHora,doc.times,doc.status,doc.tz]);if(!force&&sig===PUSH_SIG)return;
  const {db,uid,f}=await fb();await f.setDoc(f.doc(db,'push',uid),doc,{merge:true});PUSH_SIG=sig;}
 function schedulePush(){if(!D.push||!D.push.on)return;clearTimeout(PUSH_T);PUSH_T=setTimeout(()=>syncPush().catch(()=>{}),3000);}
 function pushCardHtml(){const P=pushState();
@@ -2333,8 +2344,8 @@ function pushCardHtml(){const P=pushState();
  if(isIOS()&&!isStandalone())return '<p class="small mut" style="margin:0">Abra o app pelo ícone da tela de início pra ativar as notificações.</p>';
  if(Notification.permission==='denied')return '<p class="small mut" style="margin:0">As notificações estão bloqueadas. Libere em <b>Ajustes → Notificações → Meu Treino</b> e volte aqui.</p>';
  if(!P.on)return `<p class="small mut" style="margin:0 0 10px">Eu só te aviso do que você <b>ainda não registrou</b>. Se já marcou, fico quieta 😉</p><button class="btn alt sm" data-a="pushOn">🔔 Ativar notificações</button>`;
- return `${PUSH_KINDS.filter(([k])=>!['creatina','vacuo','whey'].includes(k)||(D.profile.supps&&D.profile.supps[k])).map(([k,l,h])=>`<button class="toggle ${P.prefs[k]?'on':''}" data-a="pushPref" data-k="${k}"><span>${l}<br><span class="small mut" style="font-weight:500">${h}</span></span><span class="tg"></span></button>`).join('')}
-  <label class="lbl">Que horas você costuma treinar?</label><div class="chips">${TREINO_H.map(([k,l])=>`<button class="chip ${P.treinoHora===k?'on':''}" data-a="pushHora" data-k="${k}">${l}</button>`).join('')}</div>
+ return `<p class="small mut" style="margin:0 0 8px">Escolha o horário de cada lembrete. Eu só aviso o que você <b>ainda não marcou</b>. Pode chegar alguns minutos depois do horário.</p>
+  ${PUSH_KINDS.filter(([k])=>!['creatina','vacuo','whey','pre'].includes(k)||(D.profile.supps&&D.profile.supps[k])).map(([k,l,h])=>`<div style="display:flex;align-items:center;gap:8px"><button class="toggle ${P.prefs[k]?'on':''}" style="flex:1" data-a="pushPref" data-k="${k}"><span>${l}<br><span class="small mut" style="font-weight:500">${h}</span></span><span class="tg"></span></button>${P.times[k]&&P.prefs[k]?`<input type="time" class="inp" style="width:112px;padding:9px 8px;flex-shrink:0" data-c="pushTime" data-k="${k}" value="${P.times[k]}" aria-label="Horário do lembrete">`:''}</div>`).join('')}
   <div class="btnrow"><button class="btn2" data-a="pushTest">Testar agora</button><button class="btn2 danger" data-a="pushOff">Desativar</button></div>`;}
 
 function inviteUrl(){const G=curG();return location.href.split('#')[0].split('?')[0]+'?g='+(G?G.id:'');}
@@ -2753,7 +2764,20 @@ function swapHtml(){const sw=UI.swap;const x=EX[sw.exId];
  ${lost&&alts.length&&!alts.some(o=>(EX[o].pats||[]).some(p=>(x.pats||[]).includes(p)))?`<p class="small mut" style="margin:-4px 0 10px">Os exercícios do mesmo tipo também ${sw.reason==='joelho'?'exigem do joelho':sw.reason==='lombar'?'carregam a lombar':'forçam o ombro'}, então estes são os mais próximos que trabalham ${esc((REG[x.foco[0]]||GROUPS[x.g]).toLowerCase())} sem esse incômodo.</p>`:''}
  ${alts.length?alts.map(o=>`<div class="it"><div class="nm"><b>${esc(EX[o].n)}</b><span class="small mut">${simWhy(sw.exId,o)} · ${EQL[EX[o].eq]}</span></div><button class="ib" data-a="info" data-id="${o}" aria-label="Como fazer">?</button><button class="mini o" data-a="swapDo" data-id="${o}">Trocar</button></div>`).join(''):(sw.reason==='joelho'&&EX[sw.exId].foco[0]==='quad'?'<div class="info">Pra quadríceps, todos os exercícios exigem do joelho. O melhor caminho é um fisioterapeuta ou profissional de educação física ajustar carga e amplitude pra você 💛 Por enquanto, tire esse exercício hoje e foque nos outros.</div>':'<div class="empty">Não achei um substituto parecido que ainda não esteja no seu treino. Se preferir, tire esse exercício hoje.</div>')}
  ${inSheet.length>1?'<p class="small mut" style="text-align:center;margin:10px 0 0">Não sugiro exercícios que já estão nesse treino.</p>':''}
+ <h3 class="h3" style="margin-top:16px">Fez outro exercício?</h3>
+ <p class="small mut" style="margin:-4px 0 8px">Procure pelo nome e troque pelo que você fez de verdade.</p>
+ <input class="inp" id="swap-q" data-i="swap.q" value="${esc(sw.q||'')}" placeholder="🔎 Ex: remada, leg press, stiff…" autocomplete="off">
+ <div id="swap-res" style="margin-top:8px">${exSearchHtml(sw.q,'swapDo',inSheet)}</div>
  <p class="small mut" style="text-align:center;margin:10px 0 0">A troca fica salva no treino. Dá pra destrocar quando quiser.</p>`;}
+function exSearchHtml(q,act,skip){q=norm(q||'').trim();if(q.length<2)return '';
+ const res=Object.keys(EX).filter(id=>!(skip||[]).includes(id)&&norm(EX[id].n).includes(q)).slice(0,12);
+ return res.length?res.map(o=>`<div class="it"><div class="nm"><b>${esc(EX[o].n)}</b><span class="small mut">${esc(GROUPS[EX[o].g]||'')} · ${EQL[EX[o].eq]||''}</span></div><button class="ib" data-a="info" data-id="${o}" aria-label="Como fazer">?</button><button class="mini o" data-a="${act}" data-id="${o}">${act==='swapDo'?'Trocar':'Adicionar'}</button></div>`).join('')
+  :'<div class="small mut" style="padding:6px 2px">Não achei esse exercício na biblioteca. Tente outro nome (ex: "remada" em vez de "remada cavalinho").</div>';}
+function addExHtml(){const w=D.workouts.find(x=>x.id===UI.sessionId)||{items:[]};const q=(UI.addEx||{}).q||'';
+ return `<span class="kicker">Adicionar exercício</span><h2 class="disp" style="font-size:22px;margin:2px 40px 6px 0;font-weight:600">O que você fez?</h2>
+ <p class="small mut" style="margin:0 0 10px">Procure pelo nome. Ele entra no fim deste treino e você anota a carga normalmente.</p>
+ <input class="inp" id="add-q" data-i="addex.q" value="${esc(q)}" placeholder="🔎 Ex: cadeira abdutora, supino, prancha…" autocomplete="off">
+ <div id="add-res" style="margin-top:8px">${exSearchHtml(q,'addExDo',w.items.map(i=>i.exId))}</div>`;}
 
 /* ================== AÇÕES ================== */
 function makeWorkout(w){return {id:uid(),name:w.name,focus:w.focus||'',day:w.day||'',items:w.items.map(i=>Array.isArray(i)?{exId:i[0],sets:i[1]}:{exId:i.exId,sets:i.sets})};}
@@ -2932,6 +2956,15 @@ const A={
   D.measures=(D.measures||[]).filter(x=>x.date!==today());D.measures.push(Object.assign({date:today()},m));UI.mea={};persist();render();toast('Medidas salvas! 📏');},
  swapOpen:t=>{UI.swap={exId:t.dataset.id,ctx:t.dataset.ctx,reason:null};openSheet(swapHtml());},
  swapReason:t=>{UI.swap.reason=t.dataset.r;openSheet(swapHtml());},
+ addExOpen:()=>{UI.addEx={q:''};openSheet(addExHtml());setTimeout(()=>{const i=document.getElementById('add-q');if(i)i.focus();},250);},
+ addExDo:t=>{const w=D.workouts.find(x=>x.id===UI.sessionId);if(!w)return;const id=t.dataset.id;if(w.items.some(i=>i.exId===id)){toast('Esse já está no treino 😉');return;}
+  w.items.push({exId:id,sets:setsFor(id,profileCfg(),false)});persist();closeSheet();render();setTimeout(()=>{const e=document.getElementById('w-'+id);if(e)e.scrollIntoView({behavior:'smooth',block:'center'});},100);toast(EX[id].n+' adicionado ✓');},
+ outroTreino:()=>{const t=today();const others=D.workouts.filter(w=>w.items.length);
+  openSheet(`<span class="kicker">Treino de hoje</span><h2 class="disp" style="font-size:22px;margin:2px 40px 6px 0;font-weight:600">Fiz outro treino 🔄</h2>
+   <p class="small mut" style="margin:0 0 12px">Aparelho ocupado, mudou o plano? Escolha o treino que você fez. O de hoje continua te esperando no próximo dia.</p>
+   ${others.map(w=>`<button class="li" data-a="start" data-id="${w.id}"><span><b>${esc(w.name)}</b><span>${w.day?DAYM[w.day]+' · ':''}${w.items.length} exercícios</span></span><span class="mut">›</span></button>`).join('')}
+   <button class="li" data-a="treinoLivre" style="border:1.5px dashed var(--line)"><span><b>✍️ Montar com os exercícios que fiz</b><span>Começa vazio e você adiciona o que fez</span></span><span class="mut">›</span></button>`);},
+ treinoLivre:()=>{const d=new Date();const w={id:uid(),name:'Treino livre · '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'),focus:'',day:'',items:[],livre:true};D.workouts.push(w);persist();closeSheet();UI.sessionId=w.id;go('sessao');setTimeout(()=>A.addExOpen(),300);},
  swapDo:t=>{const sw=UI.swap,nid=t.dataset.id;
   const fix=items=>{const it=items.find(i=>i.exId===sw.exId);if(!it)return false;if(items.some(i=>i.exId===nid)){toast('Esse já está no treino 😉');return false;}
    const old=EX[sw.exId],nx=EX[nid];if(!!old.iso!==!!nx.iso||old.g!==nx.g||!!old.uni!==!!nx.uni)it.sets=setsFor(nid,profileCfg(),false);it.exId=nid;return true;};
@@ -3053,6 +3086,8 @@ document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)ret
  else if(k.startsWith('rec.n.'))UI.recEdit[+k.slice(6)].n=v;
  else if(k.startsWith('rec.ml.'))UI.recEdit[+k.slice(7)].ml=v;
  else if(k==='soc.gname')UI.soc.gname=v;
+ else if(k==='swap.q'){UI.swap.q=v;const r=document.getElementById('swap-res');if(r){const inS=((D.workouts.find(w=>w.id===UI.sessionId)||{}).items||(UI.edit?UI.edit.items:[])).map(i=>i.exId);r.innerHTML=exSearchHtml(v,'swapDo',UI.swap.ctx==='builder'?(UI.edit?UI.edit.items.map(i=>i.exId):[]):inS);}}
+ else if(k==='addex.q'){UI.addEx=UI.addEx||{};UI.addEx.q=v;const r=document.getElementById('add-res');const w=D.workouts.find(x=>x.id===UI.sessionId)||{items:[]};if(r)r.innerHTML=exSearchHtml(v,'addExDo',w.items.map(i=>i.exId));}
 });
 document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)return;
  if(k==='edit.day')UI.edit.day=el.value;
@@ -3061,6 +3096,7 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)re
   ocrImage(file).then(txt=>{const f=parseBio(txt);UI.bio={t:tg,found:f};bioApply(tg,f);render();}).catch(()=>{UI.bio={t:tg,err:'Não consegui ler a foto agora. Confere a internet ou use "Falar os números".'};render();});}
  else if(k==='sharePhoto'){const file=el.files&&el.files[0];if(!file||!SHARE)return;const img=new Image();img.onload=()=>{SHARE.photo=img;SHARE.style='foto';shareRender();};img.src=URL.createObjectURL(file);}
  else if(k==='shareTitle'){if(SHARE){SHARE.d.title=el.value.trim()||SHARE.d.title;shareRender();}}
+ else if(k==='pushTime'){const P=pushState();if(/^\d{2}:\d{2}$/.test(el.value)){P.times[el.dataset.k]=el.value;persist();syncPush(true).catch(()=>{});toast('Lembrete às '+el.value+' ✓');}}
  else if(k==='voice'){D.voiceName=el.value;persist();speakAll(['Oi! Essa é a minha voz.'],true);}
  else if(k==='act.date')UI.actForm.date=el.value||today();
  else if(k==='import'){const file=el.files&&el.files[0];if(!file)return;const r=new FileReader();

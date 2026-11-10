@@ -13,10 +13,14 @@ export function horaLocal(agora, tz) {
 
 const fmtL = ml => { ml = Math.round(ml || 0); return ml >= 1000 ? String(Math.round(ml / 100) / 10).replace('.', ',') + ' L' : ml + ' ml'; };
 
+const PADRAO = { vacuo: '08:00', creatina: '10:00', pre: '06:00', treino: '06:30', whey: '08:30', checkin: '20:30' };
+const hm = v => { const m = /^(\d{1,2}):(\d{2})$/.exec(v || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+const JANELA = 150; // o lembrete pode sair até 2h30 depois do horário escolhido (se o agendador do GitHub atrasar)
+
 export function lembretesDevidos(doc, agora) {
   if (!doc || !doc.sub || !doc.sub.endpoint) return [];
   const L = horaLocal(agora, doc.tz);
-  const prefs = Object.assign({ agua: true, creatina: true, vacuo: true, treino: true, whey: true, checkin: true }, doc.prefs || {});
+  const prefs = Object.assign({ agua: true, creatina: true, vacuo: true, pre: true, treino: true, whey: true, checkin: true }, doc.prefs || {});
   const st0 = doc.status || {};
   const hoje = st0.day === L.dia;               // se o app não foi aberto hoje, nada foi registrado
   const st = {
@@ -24,29 +28,35 @@ export function lembretesDevidos(doc, agora) {
     supps: hoje ? (st0.supps || {}) : {}, en: st0.en || {},
     checkin: hoje ? !!st0.checkin : false, trained: hoje ? !!st0.trained : false
   };
-  const treinosHoje = (st0.sched || {})[L.semana] || [];
+  const sched = st0.sched || {};
+  const treinosHoje = sched[L.semana] || [];
+  // dia de treino: tem treino marcado pra hoje; se a pessoa não marcou dias, vale de segunda a sexta
+  const diaDeTreino = treinosHoje.length > 0 || (Object.keys(sched).length === 0 && !['sab', 'dom'].includes(L.semana));
   const enviados = doc.sent || {};
-  const tMin = TREINO_MIN[doc.treinoHora] || TREINO_MIN.manha;
+  const legado = TREINO_MIN[doc.treinoHora];
+  const T = k => {
+    const t = hm((doc.times || {})[k]);
+    if (t != null) return t;
+    if (legado != null && k === 'treino') return legado;
+    if (legado != null && k === 'pre') return legado - 30;
+    return hm(PADRAO[k]);
+  };
+  const em = (k, ok, t, b, u) => ({ k, de: T(k), ate: T(k) + JANELA, ok, t, b, u });
   const regras = [
-    { k: 'vacuo', de: 8 * 60, ate: 11 * 60, ok: prefs.vacuo && st.en.vacuo && !st.supps.vacuo,
-      t: '🌬️ Vácuo abdominal', b: 'Bom dia! Já fez o vácuo em jejum? Se já fez, marca no app ✓', u: './?go=hoje' },
-    { k: 'treino', de: tMin, ate: tMin + 180, ok: prefs.treino && treinosHoje.length > 0 && !st.trained,
-      t: '🏋️ Hoje é dia de ' + treinosHoje.join(' + '),
-      b: 'Bora? 💪' + (st.en.pre && !st.supps.pre ? ' Lembra do pré-treino uns 30 min antes.' : ''), u: './?go=treinos' },
-    { k: 'creatina', de: 10 * 60, ate: 14 * 60, ok: prefs.creatina && st.en.creatina && !st.supps.creatina,
-      t: '💊 Creatina', b: 'Você ainda não marcou a creatina hoje. Já tomou?', u: './?go=hoje' },
-    { k: 'whey', de: 7 * 60, ate: 22 * 60, ok: prefs.whey && st.en.whey && st.trained && !st.supps.whey,
-      t: '🥤 Whey pós-treino', b: 'Treino registrado! 🔥 Já tomou o whey?', u: './?go=hoje' },
+    em('vacuo', prefs.vacuo && st.en.vacuo && !st.supps.vacuo, '🌬️ Vácuo abdominal', 'Já fez o vácuo hoje? Se já fez, marca no app ✓', './?go=hoje'),
+    em('creatina', prefs.creatina && st.en.creatina && !st.supps.creatina, '💊 Creatina', 'Hora da creatina! Se já tomou, marca no app ✓', './?go=hoje'),
+    em('pre', prefs.pre && st.en.pre && !st.supps.pre && diaDeTreino && !st.trained, '⚡ Pré-treino', 'Hora do pré-treino pra chegar com energia no treino 💪', './?go=hoje'),
+    em('treino', prefs.treino && diaDeTreino && !st.trained, treinosHoje.length ? '🏋️ Hoje é dia de ' + treinosHoje.join(' + ') : '🏋️ Hora do treino', 'Bora? 💪', './?go=treinos'),
+    em('whey', prefs.whey && st.en.whey && !st.supps.whey && (diaDeTreino || st.trained), '🥤 Whey', 'Já tomou o whey hoje? Se já tomou, marca no app ✓', './?go=hoje'),
     { k: 'agua11', de: 11 * 60, ate: 14 * 60, ok: prefs.agua && st.aguaMl < st.meta * 0.25,
       t: '💧 Hora da água', b: `Até agora: ${fmtL(st.aguaMl)} de ${fmtL(st.meta)}. Bora um copo?`, u: './?go=hoje' },
     { k: 'agua15', de: 15 * 60, ate: 18 * 60, ok: prefs.agua && st.aguaMl < st.meta * 0.5,
       t: '💧 Água', b: `Você está com ${fmtL(st.aguaMl)} de ${fmtL(st.meta)} hoje. Que tal encher a garrafa?`, u: './?go=hoje' },
     { k: 'agua19', de: 19 * 60, ate: 21 * 60, ok: prefs.agua && st.aguaMl < st.meta * 0.75,
       t: '💧 Ainda dá tempo', b: `Faltam ${fmtL(st.meta - st.aguaMl)} pra sua meta de água hoje.`, u: './?go=hoje' },
-    { k: 'creatina2', de: 20 * 60, ate: 23 * 60, ok: prefs.creatina && st.en.creatina && !st.supps.creatina,
+    { k: 'creatina2', de: 21 * 60, ate: 23 * 60, ok: prefs.creatina && st.en.creatina && !st.supps.creatina && T('creatina') <= 19 * 60,
       t: '💊 Último lembrete da creatina', b: 'Ela funciona pela constância. Toma antes de dormir? 💪', u: './?go=hoje' },
-    { k: 'checkin', de: 20 * 60 + 30, ate: 23 * 60 + 30, ok: prefs.checkin && !st.checkin,
-      t: '📝 Como foi seu dia?', b: 'Faz o check-in em 1 minuto. Pode ser falando 🎙️', u: './?go=checkin' }
+    em('checkin', prefs.checkin && !st.checkin, '📝 Como foi seu dia?', 'Faz o check-in em 1 minuto. Pode ser falando 🎙️', './?go=checkin')
   ];
   return regras.filter(r => r.ok && L.min >= r.de && L.min < r.ate && enviados[r.k] !== L.dia)
     .map(r => ({ chave: r.k, title: r.t, body: r.b, url: r.u, dia: L.dia }));
