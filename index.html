@@ -193,7 +193,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='5.9 · 10/11 20h';
+const APP_VERSION='5.9 · 10/11 15h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1673,12 +1673,12 @@ function vSessao(){
    <div style="display:flex;gap:8px;align-items:flex-start">${fim?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
    <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
    ${prev?`<div class="last"><b>Última vez (${fmt(prev.date)}):</b> ${prev.sets&&prev.sets.length?prev.sets.map(z=>nf(z.w)+' kg × '+(z.r||'—')).join(' · '):nf(prev.weight)+' kg'+(prev.reps?' × '+prev.reps+' reps':'')}</div>`:''}
-   ${sug&&!fim?`<div class="hint" style="display:flex;gap:8px;align-items:flex-start"><span>💡</span><span><b>Hoje: ${sug.txt}</b><br><span style="font-weight:500">${sug.why}</span> <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como funciona?</button></span></div>`:''}
+   ${sug&&!sets.length?`<div class="hint" style="display:flex;gap:8px;align-items:flex-start"><span>💡</span><span><b>Hoje: ${sug.txt}</b><br><span style="font-weight:500">${sug.why}</span> <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como funciona?</button></span></div>`:''}
    <div class="setsrow"><span class="small mut" style="font-weight:700">Séries</span>${Array.from({length:Math.max(n,feitas)},(_,i)=>`<span class="sdot ${i<feitas?'ok':''} ${i===feitas&&!fim?'now':''}" title="Série ${i+1}${sets[i]?': '+nf(sets[i].w)+' kg × '+(sets[i].r||'—'):''}">${i<feitas?'✓':i+1}</span>`).join('')}<span class="small" style="margin-left:auto;font-weight:700;color:var(--a)">${feitas} de ${n}</span></div>
    ${sets.length?`<div class="small mut" style="margin:-2px 0 8px">${sets.map((z,i)=>`${i+1}ª: ${nf(z.w)} kg × ${z.r||'—'}`).join(' · ')} <button class="small" style="font-weight:700;color:var(--mut);text-decoration:underline" data-a="setUndo" data-id="${it.exId}">desfazer última</button></div>`:''}
    ${!fim&&UI.nextMsg&&UI.nextMsg[it.exId]?`<div class="hint" style="display:flex;gap:8px"><span>➡️</span><span>${UI.nextMsg[it.exId]}</span></div>`:''}
    ${fim?`<div class="info" style="margin:0 0 8px">✅ <b>Exercício concluído!</b> ${nx?'Bora pro próximo: <b>'+esc(EX[nx.exId].n)+'</b> 💪':'Último exercício feito. Finalize o treino lá embaixo 🎉'}</div>`:''}
-   <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" value="${vW!==''&&vW!=null?String(vW).replace('.',','):''}" placeholder="0"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" value="${vR}" placeholder="${sug&&sug.r?sug.r:repRange(it.sets)?repRange(it.sets).join('-'):'0'}"><span>${repRange(it.sets)||!/\d\s*(s|seg)\b/.test(it.sets)?'REPS':'SEG'}</span></div></div>
+   <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" value="${vW!==''&&vW!=null?String(vW).replace('.',','):''}" placeholder="0"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" value="${vR}" placeholder="${sug&&sug.r&&!sets.length?sug.r:repRange(it.sets)?repRange(it.sets).join('-'):'0'}"><span>${repRange(it.sets)||!/\d\s*(s|seg)\b/.test(it.sets)?'REPS':'SEG'}</span></div></div>
    ${fim?`<button class="small" style="display:block;margin:2px auto 0;font-weight:700;color:var(--a)" data-a="setDone" data-id="${it.exId}">+ Fiz mais uma série</button>`
     :`<button class="setbtn" data-a="setDone" data-id="${it.exId}"><span><b>✓ Terminei a série ${feitas+1} de ${n}</b><span>${feitas+1<n?'Salva o peso e as repetições e começa o descanso de '+restTxt(restFor(it.exId)):'Salva e conclui o exercício'}</span></span><span class="go">▶</span></button>`}
   </div>`;}).join('');
