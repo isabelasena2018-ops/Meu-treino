@@ -35,6 +35,7 @@ main{max-width:560px;margin:0 auto;padding:4px 16px calc(100px + env(safe-area-i
 .nbtn svg{width:22px;height:22px}
 .card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .card.dark{background:var(--a);color:#FAF6EF;box-shadow:0 8px 22px rgba(15,76,69,.22)}
+.seg{display:flex;background:var(--soft);border:1.5px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin:0 0 14px}.seg button{flex:1;padding:10px 6px;border-radius:10px;font-weight:700;font-size:14px;color:var(--mut)}.seg button.on{background:var(--card);color:var(--a);box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .kicker{font-size:11.5px;font-weight:700;letter-spacing:1.4px;color:var(--a2t);text-transform:uppercase}
 .h2{font-size:26px;margin:2px 0 14px;font-weight:600;line-height:1.15}
 .h3{font-size:16.5px;margin:20px 0 10px;font-weight:700}
@@ -182,7 +183,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='5.1 · 10/11 17h';
+const APP_VERSION='5.3 · 10/11 18h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1426,6 +1427,7 @@ const IC={
  pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-6"/></svg>',
  team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.8"/><path d="M16 14.2a5 5 0 0 1 5.5 5"/></svg>',
+ run:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="4.5" r="2"/><path d="M8.5 21l3-6 3 2.5V21"/><path d="M5 11.5l3.5-3.5 4.5 1.5 2.5 3.5H19"/><path d="M11.5 15l1.5-5.5"/></svg>',
  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
 };
 
@@ -1442,8 +1444,8 @@ function render(){
  if(isCk)ckScroll();
 }
 function header(){return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
-function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',corrida:'atividades',correndo:'atividades',corrida_fim:'atividades'};const cur=map[UI.view]||UI.view;
- const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['exercicios','Exercícios',IC.book],['atividades','Atividades',IC.pulse],['turma','Grupos',IC.team],['progresso','Progresso',IC.chart]];
+function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',exercicios:'treinos',correndo:'corrida',corrida_fim:'corrida'};const cur=map[UI.view]||UI.view;
+ const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['corrida','Corrida',IC.run],['atividades','Atividades',IC.pulse],['turma','Grupos',IC.team],['progresso','Progresso',IC.chart]];
  return '<nav class="bottom">'+items.map(i=>`<button class="nbtn ${cur===i[0]?'on':''}" data-a="go" data-v="${i[0]}">${i[2]}${i[1]}</button>`).join('')+'</nav>';}
 
 /* ---------- Onboarding ---------- */
@@ -1513,9 +1515,8 @@ function vHoje(){
   </div>
   <div class="week">${wk.map((d,i)=>`<div class="wd ${set.has(d)?'done':''} ${d===t?'today':''}"><i>${set.has(d)?'✓':''}</i>${lets[i]}</div>`).join('')}</div>
  </div>
- ${D.run&&!(D.runs||[]).some(r=>r.date===today())?`<button class="li" data-a="go" data-v="corrida" style="border:1.5px solid var(--a2)"><span><b>🏃‍♀️ Próxima corrida: treino ${nextRunKey()}</b><span>${esc(runSession(nextRunKey()).name)}</span></span><span class="mut">›</span></button>`:''}
- <button class="ckcard" data-a="ckOpen"><span class="em">📝</span><span><b>${c.checkin?'✓ Check-in feito · registrar de novo':'Registrar meu dia'}</b><span>Escreva como foi seu dia (treino, comida, água) que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>
  ${treinoHtml}
+ ${D.run&&!(D.runs||[]).some(r=>r.date===today())?`<button class="li" data-a="go" data-v="corrida" style="border:1.5px solid var(--a2)"><span><b>🏃‍♀️ Próxima corrida: treino ${nextRunKey()}</b><span>${esc(runSession(nextRunKey()).name)}</span></span><span class="mut">›</span></button>`:''}
  <div class="card">
   <span class="kicker">Rotina do dia</span>
   ${supps.map(s=>{const on=!!c.supps[s.k];return `<button class="chk ${on?'on':''}" data-a="supp" data-k="${s.k}"><span class="box">${on?'✓':''}</span><span><span class="t">${s.e} ${s.l}</span><span class="h">${s.h}</span></span></button>`;}).join('')}
@@ -1528,6 +1529,7 @@ function vHoje(){
   ${aguaAskHtml()}
   ${!supps.length?'<p class="small mut" style="margin:10px 0 0">Dica: ative creatina, whey, vácuo etc. no seu perfil (ícone 👤 lá em cima).</p>':''}
  </div>
+ <button class="ckcard" data-a="ckOpen"><span class="em">📝</span><span><b>${c.checkin?'✓ Check-in feito · registrar de novo':'Registrar meu dia'}</b><span>Escreva como foi seu dia (treino, comida, água) que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>
  <details class="card"${(c.meals&&Object.values(c.meals).some(v=>v))?' open':''}>
   <summary><span>🥗 Alimentação de hoje</span><span class="chev">▾</span></summary>
   ${meals.map(([k,l])=>`<label class="lbl">${l}</label><textarea class="inp" rows="2" data-i="meal.${k}" placeholder="O que você comeu?">${esc((c.meals||{})[k])}</textarea>`).join('')}
@@ -1535,7 +1537,7 @@ function vHoje(){
   <div class="btnrow" style="margin-top:0"><button class="chip ${c.onTrack===true?'on':''}" style="flex:1" data-a="track" data-v="1">Sim 🎯</button><button class="chip ${c.onTrack===false?'on':''}" style="flex:1" data-a="track" data-v="0">Hoje não 😅</button></div>
   <p class="small mut" style="margin:10px 0 0">Sem culpa: um dia fora não derruba a semana. O que conta é a média 🌱</p>
  </details>
- <button class="li" data-a="go" data-v="ajuda"><span><b>⏰ Alarme e lembretes no celular</b><span>Como configurar pra não esquecer nada</span></span><span class="mut">›</span></button>`;
+ <button class="li" data-a="go" data-v="perfil"><span><b>🔔 Lembretes no celular</b><span>Escolha os horários de creatina, treino, água e mais</span></span><span class="mut">›</span></button>`;
 }
 
 /* ---------- Instalar como app ---------- */
@@ -1573,11 +1575,12 @@ function aguaCfgHtml2(){const R=UI.recEdit;return `<h2 class="disp" style="font-
  ${D.aguaMetaMl>0?`<button class="small" style="margin-top:8px;font-weight:700;color:var(--a)" data-a="aguaMetaReset">Voltar pra meta calculada pelo peso (${fmtL(aguaMetaPeso())})</button>`:''}`;}
 
 /* ---------- Treinos ---------- */
+const segTE=v=>`<div class="seg" role="tablist"><button class="${v==='treinos'?'on':''}" data-a="go" data-v="treinos">🏋️ Meus treinos</button><button class="${v==='exercicios'?'on':''}" data-a="go" data-v="exercicios">📖 Exercícios</button></div>`;
 function vTreinos(){
  const order=k=>{const i=DAYS.findIndex(d=>d[0]===k);return i<0?99:i;};
  const ws=[...D.workouts].sort((a,b)=>order(a.day)-order(b.day));
- return `<span class="kicker">Seus treinos</span><h2 class="disp h2">Treinos</h2>
- <button class="ckcard" data-a="genOpen" style="border-color:var(--a);background:var(--asoft)"><span class="em">✨</span><span><b style="color:var(--a)">${D.workouts.length?'Gerar uma nova divisão pra mim':'Monte meu treino pra mim'}</b><span style="color:#244a45">Me diz seu foco e quantos dias você treina que eu monto a semana toda.</span></span></button>
+ return `${segTE('treinos')}<span class="kicker">Seus treinos</span><h2 class="disp h2">Treinos</h2>
+ <button class="ckcard" data-a="genOpen" style="border-color:var(--a);background:var(--asoft)"><span class="em">✨</span><span><b style="color:var(--a)">${D.workouts.length?'Montar um novo treino da semana pra mim':'Monte meu treino pra mim'}</b><span style="color:#244a45">Me diz seu foco e quantos dias você treina que eu monto a semana toda.</span></span></button>
  ${ws.length?ws.map(w=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
   <div><span class="kicker" style="color:var(--a)">${w.day?DAYM[w.day]:'Sem dia fixo'}</span><h3 style="margin:3px 0 2px;font-size:17px">${esc(w.name)}</h3><span class="mut small">${w.items.length} exercícios${w.focus&&FOCUS[w.focus]?' · '+FOCUS[w.focus].e+' '+FOCUS[w.focus].l:''}</span></div>
   <button class="ib" data-a="editW" data-id="${w.id}" aria-label="Editar">✎</button></div>
@@ -1812,7 +1815,7 @@ function measHtml(){
 
 /* ---------- Biblioteca ---------- */
 function vLib(){
- return `<span class="kicker">Biblioteca</span><h2 class="disp h2">Exercícios</h2>
+ return `${segTE('exercicios')}<span class="kicker">Biblioteca · ${Object.keys(EX).length} exercícios</span><h2 class="disp h2">Exercícios</h2>
  <input class="inp" data-i="lib.q" placeholder="🔎 Buscar exercício…" value="${esc(UI.libQuery)}" style="margin-bottom:10px">
  <div class="chips" style="margin-bottom:12px"><button class="chip ${UI.libGroup==='todos'?'on':''}" data-a="lg" data-g="todos">Todos</button>${Object.entries(GROUPS).map(([k,l])=>`<button class="chip ${UI.libGroup===k?'on':''}" data-a="lg" data-g="${k}">${l}</button>`).join('')}</div>
  <div id="liblist">${libList()}</div>`;
@@ -1846,7 +1849,7 @@ function vAtiv(){
  const f=UI.actForm;const wk=weekDates();
  const sorted=[...D.activities].sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||0)-(a.ts||0)).slice(0,40);
  return `<span class="kicker">Seu movimento</span><h2 class="disp h2">Atividades</h2>
- <button class="ckcard" data-a="go" data-v="corrida"><span class="em">🏃‍♀️</span><span><b>${D.run?'Plano de corrida · nível '+D.run.lvl:'Plano de corrida'}</b><span>${D.run?'Próximo: treino '+nextRunKey()+' · '+esc(runSession(nextRunKey()).name):'Do seu nível até onde você quiser ir, com corrida guiada por voz.'}</span></span></button>
+ <button class="ckcard" data-a="go" data-v="corrida" style="padding:11px 14px"><span class="em">🏃‍♀️</span><span><b>${D.run?'Corrida · nível '+D.run.lvl:'Plano de corrida'}</b><span>${D.run?'Próximo: treino '+nextRunKey()+' · '+esc(runSession(nextRunKey()).name):'Do seu nível até onde você quiser ir, com corrida guiada por voz.'}</span></span></button>
  <div class="stats"><div class="st"><b>🔥${streak()}</b><span>dias seguidos</span></div><div class="st"><b>${activeDaysIn(wk)}</b><span>dias na semana</span></div><div class="st"><b>${monthCount()}</b><span>dias no mês</span></div></div>
  <button class="btn2" style="margin:-2px 0 14px" data-a="weekShare">🗓️ Resumo da semana em imagem</button>
  <h3 class="h3" style="margin-top:6px">Registrar atividade</h3>
@@ -1920,7 +1923,8 @@ function vAjuda(){
   <li><b>Hoje:</b> mostra o treino do dia, sua sequência 🔥, o checklist (creatina, whey, vácuo, pré-treino), a água e a alimentação.</li>
   <li><b>Check-in do dia 📝:</b> na aba Hoje, toque em <i>Registrar meu dia</i>. Conte tudo de uma vez por escrito (ou falando pelo microfone 🎤 do teclado do celular) ou vá respondendo as perguntas — o app anota treino, rotina, água e comida e te dá dicas pra amanhã.</li>
   <li><b>Treinos:</b> seus treinos. Toque em <i>Começar</i>, anote o peso e as repetições de cada exercício e, no fim, <i>Finalizar treino</i>. Pra criar um novo, use <i>Montar novo treino</i> ou uma <i>Sugestão por foco</i>.</li>
-  <li><b>Exercícios:</b> todos os exercícios com passo a passo, o que sentir, o que evitar e vídeo.</li>
+  <li><b>Exercícios:</b> dentro de Treinos, na aba <i>Exercícios</i>: todos os exercícios com passo a passo, o que sentir, o que evitar e vídeo.</li>
+  <li><b>Corrida 🏃‍♀️:</b> aba própria, com a sua próxima corrida em destaque, corrida guiada por voz, plano que evolui com você e seus números.</li>
   <li><b>Atividades:</b> registre corrida, caminhada, yoga, dança… Tudo conta pra sua sequência, mesmo nos dias sem academia.</li>
   <li><b>Card pra foto 📸:</b> terminou o treino? Toque em <i>Card pra foto</i> na aba Hoje (ou no 📸 do histórico de Atividades), escolha o que aparece e cole no seu story.</li>
   <li><b>Grupos 👯‍♀️:</b> crie um grupo com seus amigos ou entre com um código. O feed mostra o resumo do dia de cada um (treinos, sequência, rotina). Peso, medidas e o que você comeu nunca aparecem.</li>
@@ -2606,8 +2610,7 @@ const PAIN=[['nenhuma','Nenhuma'],['leve','Leve'],['forte','Forte']];
 function vCorrida(){
  const p=runPlan();
  if(!p){UI.runSetup=UI.runSetup||{start:'pausas',days:2};const s=UI.runSetup;
-  return `<button class="back" data-a="go" data-v="atividades">← Atividades</button>
-  <span class="kicker">Corrida</span><h2 class="disp h2">Plano de corrida 🏃‍♀️</h2>
+  return `<span class="kicker">Corrida</span><h2 class="disp h2">Plano de corrida 🏃‍♀️</h2>
   <div class="info">Um plano que começa do seu nível e vai aumentando aos poucos, com corrida guiada por voz. Você avança quando o treino foi tranquilo e repete quando foi difícil. Sem pressa e sem lesão.</div>
   <div class="card"><label class="lbl" style="margin-top:0">Como está sua corrida hoje?</label>
    <div class="chips">${[['nunca','Nunca corri / parei faz tempo'],['pausas','Corro um pouco, com pausas'],['base','Já corro 20-30 min direto']].map(([k,l])=>`<button class="chip ${s.start===k?'on':''}" data-a="runSetStart" data-k="${k}">${l}</button>`).join('')}</div>
@@ -2625,14 +2628,22 @@ function vCorrida(){
   <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><span class="kicker" style="color:${done?'var(--a)':'var(--a2)'}">Treino ${k}${done?' · feito ✓':k===nk?' · próximo':''}</span><h3 style="margin:3px 0 2px;font-size:16px">${esc(S.name)}</h3><span class="small mut">~${stepsMin(fullSteps(S.steps))} min com aquecimento e desaquecimento</span></div></div>
   ${done?'':`<div class="btnrow"><button class="btn alt sm" data-a="runGo" data-k="${k}">▶ Corrida guiada</button><button class="btn2" style="padding:10px" data-a="runManual" data-k="${k}">Registrar</button></div>`}</div>`;};
  const wk=runWeekly(8);const pacePts=(D.runs||[]).filter(r=>r.km>=1).slice(-12).map(r=>({l:fmt(r.date),v:Math.round(r.sec/r.km/6)/10}));
- return `<button class="back" data-a="go" data-v="atividades">← Atividades</button>
- ${msgsH}
+ const NS=runSession(nk);const allDone=keys.every(k=>p.done[k]);
+ const hero=`<div class="card dark" style="margin-bottom:14px"><div style="font-size:12.5px;opacity:.85;font-weight:700;letter-spacing:.5px;text-transform:uppercase">${restToday?'Próxima corrida (amanhã ou depois)':'Sua próxima corrida'} · treino ${nk}</div>
+  <div class="disp" style="font-size:24px;font-weight:600;margin:6px 0 4px;line-height:1.2">${esc(NS.name)}</div>
+  <div style="font-size:13.5px;opacity:.85;margin-bottom:14px">~${stepsMin(fullSteps(NS.steps))} min no total, com 5 min de caminhada antes e depois. Eu te guio por voz 🔊</div>
+  <button class="btn alt" data-a="runGo" data-k="${nk}">▶ Começar corrida guiada</button>
+  <button style="display:block;width:100%;margin-top:10px;color:#fff;opacity:.9;font-weight:700;font-size:14px" data-a="runManual" data-k="${nk}">Já corri, quero só registrar</button></div>`;
+ return `${msgsH}
  <span class="kicker">Corrida · nível ${p.lvl}</span><h2 class="disp h2" style="margin-bottom:4px">${esc(L.phase)}</h2>
  <p class="small mut" style="margin:0 0 12px">${nextMs?'Próximo marco: <b>'+nextMs.l+'</b>':'Você já passou de uma meia maratona! 🏆'}${L.recovery?' · Esta é uma semana mais leve 🌿':''}</p>
  <div class="chips" style="margin-bottom:12px">${ms.map(m=>`<span class="tag" style="${m.ok?'':'background:var(--soft);color:var(--mut)'}">${m.ok?'🏅':'○'} ${m.l}</span>`).join('')}</div>
  ${restToday?'<div class="info">Você já correu hoje 💪 O próximo treino é amanhã ou depois, com o corpo descansado.</div>':ranYest?'<div class="info">Você correu ontem. No começo, o ideal é deixar 1 dia de descanso entre as corridas 🌿</div>':''}
- ${keys.map(sesCard).join('')}
- <div class="btnrow" style="margin-top:0;margin-bottom:12px"><button class="btn2" data-a="runGo" data-k="livre">Corrida livre</button><button class="btn2" data-a="runManual" data-k="livre">Registrar corrida livre</button></div>
+ ${hero}
+ <h3 class="h3">Treinos desta semana <span class="small mut" style="font-weight:600">(${keys.filter(k=>p.done[k]).length} de ${keys.length} feitos)</span></h3>
+ ${keys.filter(k=>k!==nk||allDone).map(sesCard).join('')}
+ <div class="card"><b>🏃‍♀️ Corrida livre</b><p class="small mut" style="margin:4px 0 10px">Sem plano: eu só marco o tempo, a distância e o ritmo.</p><div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="runGo" data-k="livre">▶ Começar</button><button class="btn2" style="padding:10px" data-a="runManual" data-k="livre">Registrar</button></div></div>
+ <h3 class="h3">Sua evolução</h3>
  <div class="stats"><div class="st"><b>${st.n}</b><span>corridas</span></div><div class="st"><b>${String(Math.round(st.totKm*10)/10).replace('.',',')}</b><span>km no total</span></div><div class="st"><b>${st.longest?String(Math.round(st.longest*10)/10).replace('.',','):'—'}</b><span>maior distância (km)</span></div></div>
  <div class="stats"><div class="st"><b style="font-size:19px">${st.best?fmtPace(st.best,1).replace('/km',''):'—'}</b><span>melhor ritmo (min/km)</span></div><div class="st"><b style="font-size:19px">${st.longestMin?fmtDur(st.longestMin):'—'}</b><span>corrida mais longa</span></div><div class="st"><b style="font-size:19px">${st.r5?fmtDur(st.r5):'—'}</b><span>melhor tempo nos 5 km</span></div></div>
  <div class="card" style="padding:12px 6px 4px"><b style="padding:0 10px;font-size:14px">Km por semana</b>${barsSVG(wk,'km')}</div>
@@ -3263,7 +3274,7 @@ document.addEventListener('input',e=>{if(e.target.id==='ckin')grow(e.target);});
 document.addEventListener('focusin',e=>{if(e.target.id==='ckin')hush();});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
 
-try{const gv=new URLSearchParams(location.search).get('go');if(gv&&D.profile&&['hoje','checkin','treinos','progresso','atividades'].includes(gv)){UI.view=gv;history.replaceState(null,'',location.pathname);}}catch(e){}
+try{const gv=new URLSearchParams(location.search).get('go');if(gv&&D.profile&&['hoje','checkin','treinos','progresso','atividades','corrida','exercicios','turma'].includes(gv)){UI.view=gv;history.replaceState(null,'',location.pathname);}}catch(e){}
 try{const rp=new URLSearchParams(location.search).get('recuperar');if(rp&&/^[A-Za-z0-9]{10,40}$/.test(rp)){UI.restoreId=rp;history.replaceState(null,'',location.pathname);}}catch(e){}
 if(D.profile)cloudAuto();
 try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
