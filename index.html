@@ -205,7 +205,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.3 · 10/11 16h';
+const APP_VERSION='6.4 · 10/11 16h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1607,8 +1607,9 @@ function vHoje(){
   </div>
   <div class="week">${wk.map((d,i)=>`<div class="wd ${set.has(d)?'done':''} ${d===t?'today':''}"><i>${set.has(d)?'✓':''}</i>${lets[i]}</div>`).join('')}</div>
  </div>
+ ${(()=>{const tw=alTodayW();return tw?`<button class="li" data-a="alGo" data-r="${alRegion(tw)}" data-w="${tw.id}" style="border:1.5px solid var(--a)"><span><b style="color:var(--a)">🧘 Comece pela mobilidade · ${alMin(alRegion(tw))} min</b><span>Solta o corpo pro treino de ${esc(tw.name)}. No fim, eu te levo pros exercícios.</span></span><span class="mut">▶</span></button>`
+  :`<button class="li" data-a="go" data-v="mobilidade" style="border:1.5px solid var(--a)"><span><b style="color:var(--a)">🧘 Mobilidade e alongamento</b><span>Soltar o corpo antes do treino ou só alongar</span></span><span class="mut">›</span></button>`;})()}
  ${treinoHtml}
- <button class="li" data-a="go" data-v="mobilidade" style="border:1.5px solid var(--a)"><span><b>🧘 Mobilidade e alongamento</b><span>Soltar o corpo antes do treino ou só alongar</span></span><span class="mut">›</span></button>
  <div class="card">
   <span class="kicker">Rotina do dia</span>
   ${supps.map(s=>{const on=!!c.supps[s.k];return `<button class="chk ${on?'on':''}" data-a="supp" data-k="${s.k}"><span class="box">${on?'✓':''}</span><span><span class="t">${s.e} ${s.l}</span><span class="h">${s.h}</span></span></button>`;}).join('')}
@@ -1805,13 +1806,14 @@ const AL_R={pernas:{n:'Pernas',k:'mob',l:['afundoJ','pombo','fig4','sapo','cacho
 const AL_UP=['costas','peito','ombro','biceps','triceps'];
 function alRegion(w){let lo=0,up=0;(w&&w.items||[]).forEach(it=>{const g=(EX[it.exId]||{}).g;if(LOWER.includes(g))lo++;else if(AL_UP.includes(g))up++;});
  if(lo&&lo>=up*2)return 'pernas';if(up&&up>=lo*2)return 'cima';return 'todo';}
+function alTodayW(){const t=today();const ws=D.workouts.filter(w=>w.day===todayDay());const done=D.activities.some(a=>a.date===t&&a.type==='musculacao');return done?null:ws[0]||null;}
 function alSteps(r){const out=[];AL_R[r].l.forEach(id=>{const m=MOVES[id];const d=m.d||(m.uni?30:m.tipo==='est'?30:40);
  if(m.uni){out.push({id,side:1,d});out.push({id,side:2,d});}else out.push({id,side:0,d});});return out;}
 const alMin=r=>Math.max(1,Math.round(alSteps(r).reduce((s,x)=>s+x.d,0)/60));
-function alBtn(r,ctx){const R=AL_R[r];const mob=R.k==='mob';
- return `<button class="alrow ${mob?'aq':'al'}" data-a="alGo" data-r="${r}"><span class="em">${mob?'🤸':'🧘'}</span><span><b>${mob?'Mobilidade':'Alongamento'} · ${alMin(r)} min</b><span>${ctx||R.l.map(id=>MOVES[id].n.split(':')[0]).join(', ')}</span></span><span class="go">▶</span></button>`;}
+function alBtn(r,ctx,wid){const R=AL_R[r];const mob=R.k==='mob';
+ return `<button class="alrow ${mob?'aq':'al'}" data-a="alGo" data-r="${r}"${wid?` data-w="${wid}"`:''}><span class="em">${mob?'🤸':'🧘'}</span><span><b>${mob?'Mobilidade':'Alongamento'} · ${alMin(r)} min</b><span>${ctx||R.l.map(id=>MOVES[id].n.split(':')[0]).join(', ')}</span></span><span class="go">▶</span></button>`;}
 let AL=null;
-function alOpen(r){alClose(true);try{closeSheet();}catch(e){}AL={r,tipo:AL_R[r].k==='mob'?'aq':'al',steps:alSteps(r),i:0,left:0,play:false,end:false,t0:performance.now()};AL.left=AL.steps[0].d;
+function alOpen(r,wid){alClose(true);try{closeSheet();}catch(e){}const tw=AL_R[r].k==='mob'?alTodayW():null;AL={r,wid:wid||(tw&&tw.id)||null,tipo:AL_R[r].k==='mob'?'aq':'al',steps:alSteps(r),i:0,left:0,play:false,end:false,t0:performance.now()};AL.left=AL.steps[0].d;
  let ov=document.getElementById('alov');if(!ov){ov=document.createElement('div');ov.id='alov';document.body.appendChild(ov);}
  document.body.style.overflow='hidden';alDraw();AL.raf=requestAnimationFrame(alAnim);AL.iv=setInterval(alTick,200);}
 function alClose(silent){if(!AL)return;cancelAnimationFrame(AL.raf);clearInterval(AL.iv);try{AL.wl&&AL.wl.release();}catch(e){}hush();AL=null;
@@ -1835,8 +1837,8 @@ function alGoStep(i,auto){if(!AL)return;if(i>=AL.steps.length){AL.end=true;AL.pl
 function alDraw(){const ov=document.getElementById('alov');if(!ov||!AL)return;const R=AL_R[AL.r];const tit=(AL.tipo==='aq'?'Mobilidade':'Alongamento')+' · '+R.n;
  if(AL.end){ov.innerHTML=`<div class="al-in"><div class="al-top"><span class="kicker">${tit}</span><button class="ib" data-a="alClose" aria-label="Fechar">✕</button></div>
   <div style="text-align:center;padding:40px 10px 10px"><div style="font-size:64px">${AL.tipo==='aq'?'🔥':'🌿'}</div><h2 class="disp" style="font-size:26px;margin:10px 0 6px;font-weight:600">${AL.tipo==='aq'?'Corpo solto e pronto!':'Alongamento feito!'}</h2>
-  <p class="mut" style="margin:0 0 24px">${AL.tipo==='aq'?'Agora é com você: bom treino 💪':'Mandou bem. Seu corpo agradece 💚'}</p>
-  <button class="btn alt" data-a="alClose">${AL.tipo==='aq'?'Bora treinar 💪':'Fechar'}</button>
+  <p class="mut" style="margin:0 0 24px">${AL.tipo==='aq'?(AL.wid?'Agora vamos pros seus exercícios 💪':'Agora é com você: bom treino 💪'):'Mandou bem. Seu corpo agradece 💚'}</p>
+  ${(()=>{const w=AL.tipo==='aq'&&AL.wid&&D.workouts.find(x=>x.id===AL.wid);return w?`<button class="btn alt" data-a="alToWorkout">Bora pro treino: ${esc(w.name)} 💪</button>`:`<button class="btn alt" data-a="alClose">${AL.tipo==='aq'?'Bora treinar 💪':'Fechar'}</button>`;})()}
   <button class="btn2" style="margin-top:8px" data-a="alAgain">Fazer de novo</button></div></div>`;return;}
  const st=AL.steps[AL.i];const m=MOVES[st.id];const tx=MOVE_TX[st.id];const n=AL.steps.length;
  const sideTx=st.side===1?'Primeiro lado':st.side===2?'Agora o outro lado':'';
@@ -1889,7 +1891,7 @@ function vSessao(){
   </div>`;}).join('');
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
  <span class="kicker">${w.day?DAYM[w.day]:'Treino'}</span><h2 class="disp h2" style="margin-bottom:8px">${esc(w.name)}</h2>
- ${doneW?'':alBtn(alRegion(w),'Antes de começar: solta o corpo pra treinar com amplitude completa')}
+ ${doneW?'':alBtn(alRegion(w),'Antes de começar: solta o corpo pra treinar com amplitude completa',w.id)}
  <div class="info">Em cada exercício: confira o peso e as repetições e toque em <b>Terminei a série</b>. Eu conto as séries e ligo o cronômetro do descanso. <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como subir a carga?</button></div>
  ${cards||'<div class="card empty">Ainda sem exercícios. Adicione o que você fez 👇</div>'}
  <button class="btn2" style="margin:0 0 12px" data-a="addExOpen">＋ Adicionar um exercício que fiz</button>
@@ -3367,7 +3369,8 @@ const A={
   ${it.length?it.map((x,i)=>`<button class="li" data-a="bellGo" data-i="${i}"><span><b>${x.e} ${esc(x.b)}</b><span>${esc(x.s)}</span></span><span class="mut">›</span></button>`).join(''):'<p class="small mut" style="margin:0">Quando tiver corrida, backup ou algo pra lembrar, aparece aqui.</p>'}`);
   const hd=document.querySelector('.ibtn.bell i');if(hd)hd.remove();},
  bellGo:t=>{const x=(UI.bellIt||[])[+t.dataset.i];closeSheet();if(!x)return;if(x.a==='go'){go(x.v);window.scrollTo(0,0);}else if(A[x.a])A[x.a](t);},
- alGo:t=>alOpen(t.dataset.r),
+ alGo:t=>alOpen(t.dataset.r,t.dataset.w),
+ alToWorkout:()=>{const id=AL&&AL.wid;alClose();if(id&&D.workouts.some(w=>w.id===id)){UI.sessionId=id;go('sessao');window.scrollTo(0,0);}},
  alClose:()=>alClose(),
  alPlay:()=>{if(!AL)return;if(!AL.ac){try{AL.ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}AL.play=!AL.play;AL.last=performance.now();if(AL.play){alWake();alAnnounce();}else hush();alDraw();},
  alNext:()=>{if(AL)alGoStep(AL.i+1);},alPrev:()=>{if(AL)alGoStep(AL.i-1);},
