@@ -118,6 +118,8 @@ select.inp{appearance:none;-webkit-appearance:none}
 .sec.care{border-left:4px solid var(--a)}
 #toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%)}
+.setsrow{display:flex;align-items:center;gap:6px;margin:10px 0 8px;flex-wrap:wrap}.sdot{width:30px;height:30px;border-radius:30px;border:2px solid var(--line);display:grid;place-items:center;font-size:12.5px;font-weight:800;color:var(--mut)}.sdot.ok{background:var(--a);border-color:var(--a);color:#fff}.sdot.now{border-color:var(--a2);color:var(--a2t)}html.dark .sdot.ok{background:var(--deep);border-color:var(--deep)}
+.setbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--a);color:#fff;border-radius:14px;padding:12px 14px;margin:10px 0 2px}.setbtn b{display:block;font-size:15px}.setbtn span span{font-size:12.5px;opacity:.85}.setbtn .go{margin-left:auto;width:32px;height:32px;border-radius:32px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:12px;flex-shrink:0}html.dark .setbtn{background:var(--deep)}
 .restbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--asoft);border:1.5px dashed var(--a);border-radius:14px;padding:10px 12px;margin:10px 0 8px;color:var(--ink)}.restbtn .ic{font-size:22px}.restbtn b{display:block;font-size:14px;color:var(--a)}.restbtn span span{font-size:12.5px;color:var(--mut)}.restbtn .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--a);color:#fff;display:grid;place-items:center;font-size:12px;flex-shrink:0}html.dark .restbtn .go{background:var(--deep)}
 #restbar{position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;background:var(--deep);color:#fff;border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 26px rgba(0,0,0,.25);max-width:560px;margin:0 auto}
 #restbar .t{font-family:'Fraunces',serif;font-size:30px;font-weight:600;min-width:84px;font-variant-numeric:tabular-nums}#restbar .l{flex:1;font-size:12.5px;line-height:1.3;opacity:.9}#restbar button{color:#fff;font-weight:800;font-size:14px;padding:8px 9px;border-radius:10px;background:rgba(255,255,255,.14)}
@@ -191,7 +193,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='5.8 · 10/11 19h';
+const APP_VERSION='5.9 · 10/11 20h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1170,6 +1172,39 @@ function restFor(id){const x=EX[id];if(!x)return [60,90];if(x.g==='abdomen')retu
  const comp=x.c||((x.pats||[]).some(p=>REST_COMP.includes(p))&&!x.iso);const ini=(D.profile&&D.profile.nivel)==='iniciante'||(D.profile&&D.profile.obj)==='saude';
  return comp?(ini?[90,120]:[120,180]):[60,90];}
 const restTxt=r=>{const f=v=>v>=60?(v%60?String(v/60).replace('.',','):v/60)+'':v+'';return r[1]<=60?`${r[0]}-${r[1]} s`:`${f(r[0])}-${f(r[1])} min`;};
+/* progressão dupla: quando faz o máximo de repetições em todas as séries, sobe um pouco a carga e volta pro mínimo */
+function repRange(sets){const m=String(sets).match(/×\s*(\d+)\s*(?:-\s*(\d+))?\s*(s\b|seg)?/);if(!m||m[3])return null;return [+m[1],+(m[2]||m[1])];}
+function stepKg(id,w){const x=EX[id]||{};if(x.eq==='corpo')return 0;const comp=x.c||((x.pats||[]).some(p=>REST_COMP.includes(p))&&!x.iso);if(x.eq==='halter'||x.eq==='kettlebell')return w>=12?2:1;return comp?2.5:(w>=30?2.5:1);}
+const LOWER=['gluteo','quadriceps','posterior','panturrilha','adutor'];
+function incKg(id,w,pct){const st=stepKg(id,w);if(!st)return 0;return Math.max(st,Math.round(w*pct/st)*st);}
+function upKg(id,w){return incKg(id,w,LOWER.includes((EX[id]||{}).g)?.075:.04);}
+/* dentro do treino: ajusta a carga da próxima série pelo que você aguentou nesta */
+function nextSetSug(id,it,w,r){const rr=repRange(it.sets);if(!rr||!(w>0))return null;const [lo,hi]=rr;
+ if(r>=hi+2){const up=upKg(id,w);if(!up)return {w,msg:`Passou do alvo (${r} reps). Sem peso extra, faça mais devagar na próxima série.`};const nw=Math.round((w+up)*2)/2;return {w:nw,msg:`Ficou leve: ${r} reps (alvo ${lo}-${hi}). Na próxima série sobe pra ${nf(nw)} kg (+${nf(up)}) e mira em ${lo}-${hi}.`};}
+ if(r<lo){const dn=incKg(id,w,.075);if(!dn)return {w,msg:`Abaixo do alvo (${r} reps). Descanse bem e foque na técnica.`};const nw=Math.max(0,Math.round((w-dn)*2)/2);return {w:nw,msg:`Ficou pesado: ${r} reps (alvo ${lo}-${hi}). Na próxima série tira um pouco: ${nf(nw)} kg.`};}
+ if(r>=hi)return {w,msg:`No máximo do alvo (${r} reps)! Mantém ${nf(w)} kg. Se sobrar fôlego de novo, sobe na próxima série.`};
+ return {w,msg:`Dentro do alvo (${r} reps). Mantém ${nf(w)} kg na próxima série.`};}
+function progSug(it,prev){const rr=repRange(it.sets);if(!prev||!rr||!(prev.weight>0))return null;const [lo,hi]=rr;const n=nSets(it.sets);
+ const S=prev.sets&&prev.sets.length?prev.sets:[{w:prev.weight,r:prev.reps}];const L=S[S.length-1];const wv=L.w||prev.weight;
+ if(!L.r)return {w:wv,r:lo+'-'+hi,txt:nf(wv)+' kg × '+lo+'-'+hi,why:'Anote as repetições pra eu sugerir quando subir a carga.'};
+ const allTop=S.length>=Math.min(n,2)&&S.every(z=>z.w>=wv&&(z.r||0)>=hi);
+ if(allTop||L.r>=hi+2){const st=upKg(it.exId,wv);if(!st)return {w:wv,r:hi+1,txt:'tente '+(hi+1)+'+ repetições',why:'Você passou do alvo. Sem peso extra, aumente as repetições ou faça o movimento mais devagar.'};
+  const nw=Math.round((wv+st)*2)/2;return {w:nw,r:lo,txt:nf(nw)+' kg × '+lo+'-'+hi,why:allTop?`Na última você fez ${hi} ou mais em todas as séries com ${nf(wv)} kg. Hora de subir só um pouquinho (+${nf(st)} kg) e voltar pro mínimo de repetições.`:`Na última série você passou do alvo com ${nf(wv)} kg. Sobe só um pouquinho (+${nf(st)} kg).`};}
+ if(L.r<lo)return {w:wv,r:lo,txt:nf(wv)+' kg × '+lo+'-'+hi,why:'Na última ficou abaixo do mínimo de repetições. Mantenha a carga (ou tire um pouco) até conseguir '+lo+' com boa técnica.'};
+ const alvo=Math.min(hi,L.r+1);return {w:wv,r:alvo,txt:nf(wv)+' kg × '+alvo+' reps',why:'Mantenha a carga e tente 1 repetição a mais que da última vez. Quando chegar a '+hi+' em todas as séries, eu aviso pra subir.'};}
+function progInfoHtml(){return `<span class="kicker">Progressão de carga</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">Como subir a carga com segurança 📈</h2>
+ <p class="small" style="margin:0 0 10px;line-height:1.55">O jeito mais seguro e usado é a <b>progressão dupla</b>: primeiro você aumenta as repetições, depois a carga.</p>
+ <p class="small" style="margin:0 0 6px"><b>Dentro do treino (de uma série pra outra)</b></p>
+ <ol class="steps"><li><b>Escolha uma carga</b> em que você faça o alvo da ficha (ex: 8 a 12 em "3 × 8-12") com boa técnica, sentindo que sobrariam 1 ou 2 repetições.</li>
+ <li><b>Passou 2 ou mais do alvo?</b> (ex: fez 15 quando o máximo era 12) A carga está leve: na próxima série sobe um pouco, uns 2,5 a 5% nos braços, peito, costas e ombro e uns 5 a 10% nas pernas e glúteo. Aí você mira de novo em 8 a 12.</li>
+ <li><b>Ficou dentro do alvo?</b> Mantém a carga.</li>
+ <li><b>Não chegou no mínimo?</b> Tira um pouquinho (uns 5 a 10%) pra fazer com boa técnica.</li></ol>
+ <p class="small" style="margin:10px 0 6px"><b>De um treino pro outro</b></p>
+ <ol class="steps"><li>Com a mesma carga, tente <b>1 repetição a mais</b> que da última vez.</li>
+ <li>Quando fizer o <b>máximo em todas as séries</b> (ex: 12, 12 e 12), comece o próximo treino um pouco mais pesado e volte pro mínimo de repetições.</li>
+ <li><b>Nunca dobre o peso.</b> Os aumentos são pequenos e arredondados pro peso que existe (anilha de 1,25 kg de cada lado, halter de 1 ou 2 kg, um pino do aparelho). Se a técnica piorar ou doer, volte.</li>
+ <li>Dias fracos acontecem: repetir a carga também é progresso.</li></ol>
+ <p class="small mut" style="margin:10px 0 0">O app faz essa conta por você: mostra a sugestão do dia (pelo seu último treino) e, a cada série, já deixa preenchido o peso da próxima. Você pode mudar quando quiser. O seu professor pode ajustar quando quiser.</p>`;}
 function setsFor(id,cfg,main){const x=EX[id],o=cfg.obj||'emagrecer',ini=cfg.nivel==='iniciante',u=x.uni?' (cada lado)':'';
  if(id==='vacuo')return '3-5 × 15-20s';
  if(x.iso)return '3 × '+(ini?'20-30s':'30-45s')+u;
@@ -1449,7 +1484,7 @@ function restStop(){if(REST){clearInterval(REST.tick);try{REST.ac&&REST.ac.close
 let UNDO=null;
 function withUndo(msg,fn){const snap=JSON.stringify(D);fn();persist();const y=window.scrollY;render();window.scrollTo(0,y);UNDO=snap;
  const t=document.getElementById('toast');t.innerHTML=`<span>${esc(msg)}</span><button data-a="undo">Desfazer</button>`;t.classList.add('show','undo');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show','undo');UNDO=null;},6000);}
-function go(v){if(v!=='sessao')restStop();UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
+function go(v){if(v!=='sessao'){restStop();UI.nextW={};UI.nextMsg={};}UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
 
 const IC={
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -1630,21 +1665,26 @@ function vTreinos(){
 function vSessao(){
  const w=D.workouts.find(x=>x.id===UI.sessionId);if(!w){UI.view='treinos';return vTreinos();}
  const t=today();const doneW=D.activities.find(a=>a.date===t&&a.workoutId===w.id);
- const cards=w.items.map(it=>{const x=EX[it.exId];if(!x)return '';const list=D.history[it.exId]||[];const last=list[list.length-1];const done=last&&last.date===t;
-  const prev=done?list[list.length-2]:last;const mr=maxReps(it.sets);
-  const hint=prev&&prev.reps&&mr&&prev.reps>=mr&&!done?`<div class="hint">🔼 Você bateu ${prev.reps} reps da última vez — tente subir um pouquinho a carga!</div>`:'';
-  return `<div class="ex ${done?'done':''}">
-   <div style="display:flex;gap:8px;align-items:flex-start">${done?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
+ const cards=w.items.map((it,ix)=>{const x=EX[it.exId];if(!x)return '';const list=D.history[it.exId]||[];const last=list[list.length-1];const today_=last&&last.date===t?last:null;
+  const prev=[...list].reverse().find(e=>e.date<t);const n=nSets(it.sets);const sets=(today_&&today_.sets)||[];const feitas=today_?(sets.length||n):0;const fim=feitas>=n;
+  const sug=progSug(it,prev);const nx=w.items.slice(ix+1).find(j=>EX[j.exId]);
+  const nxW=UI.nextW&&UI.nextW[it.exId];const vW=nxW!=null&&sets.length?nxW:sets.length?sets[sets.length-1].w:(sug&&sug.w!=null?sug.w:(prev?prev.weight:''));const vR='';
+  return `<div class="ex ${fim?'done':''}" id="ex-${it.exId}">
+   <div style="display:flex;gap:8px;align-items:flex-start">${fim?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
    <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
-   ${prev?`<div class="last"><b>Última vez:</b> ${prev.weight} kg${prev.reps?' × '+prev.reps+' reps':''} (${fmt(prev.date)})</div>`:''}
-   ${done?`<div class="last" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b style="color:var(--a)">Hoje:</b> ${last.weight} kg${last.reps?' × '+last.reps+' reps':''}</span><button class="small mut" style="font-weight:700" data-a="delSet" data-id="${it.exId}">Apagar</button></div>`:''}
-   ${hint}
-   <button class="restbtn" data-a="restGo" data-id="${it.exId}"><span class="ic">⏱️</span><span><b>Terminei a série: iniciar descanso</b><span>Toque aqui pro cronômetro de ${restTxt(restFor(it.exId))}</span></span><span class="go">▶</span></button>
-   <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" placeholder="${prev?prev.weight:'0'}"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" placeholder="${prev&&prev.reps?prev.reps:'reps'}"><span>REPS</span></div><button class="sv" data-a="saveSet" data-id="${it.exId}">${done?'Atualizar':'Salvar'}</button></div>
+   ${prev?`<div class="last"><b>Última vez (${fmt(prev.date)}):</b> ${prev.sets&&prev.sets.length?prev.sets.map(z=>nf(z.w)+' kg × '+(z.r||'—')).join(' · '):nf(prev.weight)+' kg'+(prev.reps?' × '+prev.reps+' reps':'')}</div>`:''}
+   ${sug&&!fim?`<div class="hint" style="display:flex;gap:8px;align-items:flex-start"><span>💡</span><span><b>Hoje: ${sug.txt}</b><br><span style="font-weight:500">${sug.why}</span> <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como funciona?</button></span></div>`:''}
+   <div class="setsrow"><span class="small mut" style="font-weight:700">Séries</span>${Array.from({length:Math.max(n,feitas)},(_,i)=>`<span class="sdot ${i<feitas?'ok':''} ${i===feitas&&!fim?'now':''}" title="Série ${i+1}${sets[i]?': '+nf(sets[i].w)+' kg × '+(sets[i].r||'—'):''}">${i<feitas?'✓':i+1}</span>`).join('')}<span class="small" style="margin-left:auto;font-weight:700;color:var(--a)">${feitas} de ${n}</span></div>
+   ${sets.length?`<div class="small mut" style="margin:-2px 0 8px">${sets.map((z,i)=>`${i+1}ª: ${nf(z.w)} kg × ${z.r||'—'}`).join(' · ')} <button class="small" style="font-weight:700;color:var(--mut);text-decoration:underline" data-a="setUndo" data-id="${it.exId}">desfazer última</button></div>`:''}
+   ${!fim&&UI.nextMsg&&UI.nextMsg[it.exId]?`<div class="hint" style="display:flex;gap:8px"><span>➡️</span><span>${UI.nextMsg[it.exId]}</span></div>`:''}
+   ${fim?`<div class="info" style="margin:0 0 8px">✅ <b>Exercício concluído!</b> ${nx?'Bora pro próximo: <b>'+esc(EX[nx.exId].n)+'</b> 💪':'Último exercício feito. Finalize o treino lá embaixo 🎉'}</div>`:''}
+   <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" value="${vW!==''&&vW!=null?String(vW).replace('.',','):''}" placeholder="0"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" value="${vR}" placeholder="${sug&&sug.r?sug.r:repRange(it.sets)?repRange(it.sets).join('-'):'0'}"><span>${repRange(it.sets)||!/\d\s*(s|seg)\b/.test(it.sets)?'REPS':'SEG'}</span></div></div>
+   ${fim?`<button class="small" style="display:block;margin:2px auto 0;font-weight:700;color:var(--a)" data-a="setDone" data-id="${it.exId}">+ Fiz mais uma série</button>`
+    :`<button class="setbtn" data-a="setDone" data-id="${it.exId}"><span><b>✓ Terminei a série ${feitas+1} de ${n}</b><span>${feitas+1<n?'Salva o peso e as repetições e começa o descanso de '+restTxt(restFor(it.exId)):'Salva e conclui o exercício'}</span></span><span class="go">▶</span></button>`}
   </div>`;}).join('');
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
  <span class="kicker">${w.day?DAYM[w.day]:'Treino'}</span><h2 class="disp h2" style="margin-bottom:8px">${esc(w.name)}</h2>
- <div class="info">⏱️ ${OBJ[D.profile.obj||'emagrecer'].rest} Anote o peso e as repetições da sua melhor série.</div>
+ <div class="info">Em cada exercício: confira o peso e as repetições e toque em <b>Terminei a série</b>. Eu conto as séries e ligo o cronômetro do descanso. <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como subir a carga?</button></div>
  ${cards||'<div class="card empty">Ainda sem exercícios. Adicione o que você fez 👇</div>'}
  <button class="btn2" style="margin:0 0 12px" data-a="addExOpen">＋ Adicionar um exercício que fiz</button>
  <div class="card">${doneW?`<p style="margin:0 0 10px;font-weight:700;color:var(--a)">✓ Treino registrado hoje${doneW.minutes?' · '+doneW.minutes+' min':''}</p>`:''}
@@ -3098,6 +3138,22 @@ const A={
  delSess:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;
   withUndo('Treino de hoje excluído',()=>delActivity(a));},
  delSet:t=>{const id=t.dataset.id;withUndo('Carga de hoje apagada',()=>{D.history[id]=(D.history[id]||[]).filter(e=>e.date!==today());if(!D.history[id].length)delete D.history[id];});},
+ setDone:t=>{const id=t.dataset.id;const w=D.workouts.find(x=>x.id===UI.sessionId);const it=w&&w.items.find(i=>i.exId===id);if(!it)return;
+  let kg=num(document.getElementById('w-'+id).value);const r=parseInt(document.getElementById('r-'+id).value,10);
+  if(kg==null){if(EX[id].eq==='corpo')kg=0;else{toast('Coloca o peso (kg) 😉');document.getElementById('w-'+id).focus();return;}}
+  if(isNaN(r)){toast(/\d\s*(s|seg)\b/.test(it.sets)?'Quantos segundos você fez?':'Quantas repetições você fez?');document.getElementById('r-'+id).focus();return;}
+  const t0=today();const arr=D.history[id]||[];let e=arr.find(x=>x.date===t0);if(!e){e={date:t0,weight:kg,reps:r,sets:[]};arr.push(e);}if(!e.sets)e.sets=[];
+  e.sets.push({w:kg,r});e.weight=Math.max(...e.sets.map(z=>z.w));e.reps=Math.max(...e.sets.filter(z=>z.w===e.weight).map(z=>z.r||0));D.history[id]=arr;persist();
+  const n=nSets(it.sets);const done=e.sets.length;const ns=done<n?nextSetSug(id,it,kg,r):null;
+  UI.nextW=UI.nextW||{};UI.nextMsg=UI.nextMsg||{};if(ns){UI.nextW[id]=ns.w;UI.nextMsg[id]=ns.msg;}else{delete UI.nextW[id];delete UI.nextMsg[id];}
+  const y=window.scrollY;render();window.scrollTo(0,y);
+  if(done<n)restStart(restFor(id)[0],'série '+done+' de '+n+' feita'+(ns&&ns.w!==kg?' · próxima: '+nf(ns.w)+' kg':''));
+  else{restStop();toast('Exercício concluído! 🎉');const ix=w.items.findIndex(i=>i.exId===id);const nx=w.items.slice(ix+1).find(j=>EX[j.exId]);if(nx)setTimeout(()=>{const el=document.getElementById('ex-'+nx.exId);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},400);}},
+ setUndo:t=>{const id=t.dataset.id;const e=(D.history[id]||[]).find(x=>x.date===today());if(!e||!e.sets||!e.sets.length)return;e.sets.pop();
+  if(UI.nextW)delete UI.nextW[id];if(UI.nextMsg)delete UI.nextMsg[id];
+  if(!e.sets.length)D.history[id]=D.history[id].filter(x=>x!==e);else{e.weight=Math.max(...e.sets.map(z=>z.w));e.reps=Math.max(...e.sets.filter(z=>z.w===e.weight).map(z=>z.r||0));}
+  if(D.history[id]&&!D.history[id].length)delete D.history[id];persist();restStop();const y=window.scrollY;render();window.scrollTo(0,y);toast('Última série desfeita');},
+ progInfo:()=>openSheet(progInfoHtml()),
  restGo:t=>{const id=t.dataset.id;const r=restFor(id);restStart(r[0],EX[id].n);},
  restAdd:t=>{if(!REST)return;REST.end+=(+t.dataset.v)*1000;if(REST.end<Date.now()+1000)REST.end=Date.now()+1000;REST.done=false;const b=document.getElementById('restbar');if(b)b.classList.remove('fim');restTick();},
  restStop:()=>restStop(),
