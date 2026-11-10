@@ -118,6 +118,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .sec.care{border-left:4px solid var(--a)}
 #toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%)}
+.restbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--asoft);border:1.5px dashed var(--a);border-radius:14px;padding:10px 12px;margin:10px 0 8px;color:var(--ink)}.restbtn .ic{font-size:22px}.restbtn b{display:block;font-size:14px;color:var(--a)}.restbtn span span{font-size:12.5px;color:var(--mut)}.restbtn .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--a);color:#fff;display:grid;place-items:center;font-size:12px;flex-shrink:0}html.dark .restbtn .go{background:var(--deep)}
 #restbar{position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;background:var(--deep);color:#fff;border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 26px rgba(0,0,0,.25);max-width:560px;margin:0 auto}
 #restbar .t{font-family:'Fraunces',serif;font-size:30px;font-weight:600;min-width:84px;font-variant-numeric:tabular-nums}#restbar .l{flex:1;font-size:12.5px;line-height:1.3;opacity:.9}#restbar button{color:#fff;font-weight:800;font-size:14px;padding:8px 9px;border-radius:10px;background:rgba(255,255,255,.14)}
 #restbar.fim{background:var(--a2t)}
@@ -190,7 +191,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='5.7 · 10/11 19h';
+const APP_VERSION='5.8 · 10/11 19h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1634,10 +1635,11 @@ function vSessao(){
   const hint=prev&&prev.reps&&mr&&prev.reps>=mr&&!done?`<div class="hint">🔼 Você bateu ${prev.reps} reps da última vez — tente subir um pouquinho a carga!</div>`:'';
   return `<div class="ex ${done?'done':''}">
    <div style="display:flex;gap:8px;align-items:flex-start">${done?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
-   <div class="exbtns"><button class="mini g" data-a="restGo" data-id="${it.exId}">⏱️ Descanso ${restTxt(restFor(it.exId))}</button><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
+   <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
    ${prev?`<div class="last"><b>Última vez:</b> ${prev.weight} kg${prev.reps?' × '+prev.reps+' reps':''} (${fmt(prev.date)})</div>`:''}
    ${done?`<div class="last" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b style="color:var(--a)">Hoje:</b> ${last.weight} kg${last.reps?' × '+last.reps+' reps':''}</span><button class="small mut" style="font-weight:700" data-a="delSet" data-id="${it.exId}">Apagar</button></div>`:''}
    ${hint}
+   <button class="restbtn" data-a="restGo" data-id="${it.exId}"><span class="ic">⏱️</span><span><b>Terminei a série: iniciar descanso</b><span>Toque aqui pro cronômetro de ${restTxt(restFor(it.exId))}</span></span><span class="go">▶</span></button>
    <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" placeholder="${prev?prev.weight:'0'}"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" placeholder="${prev&&prev.reps?prev.reps:'reps'}"><span>REPS</span></div><button class="sv" data-a="saveSet" data-id="${it.exId}">${done?'Atualizar':'Salvar'}</button></div>
   </div>`;}).join('');
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
