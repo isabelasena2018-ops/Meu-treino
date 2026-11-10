@@ -121,6 +121,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .setsrow{display:flex;align-items:center;gap:6px;margin:10px 0 8px;flex-wrap:wrap}.sdot{width:30px;height:30px;border-radius:30px;border:2px solid var(--line);display:grid;place-items:center;font-size:12.5px;font-weight:800;color:var(--mut)}.sdot.ok{background:var(--a);border-color:var(--a);color:#fff}.sdot.now{border-color:var(--a2);color:var(--a2t)}html.dark .sdot.ok{background:var(--deep);border-color:var(--deep)}
 .setbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--a);color:#fff;border-radius:14px;padding:12px 14px;margin:10px 0 2px}.setbtn b{display:block;font-size:15px}.setbtn span span{font-size:12.5px;opacity:.85}.setbtn .go{margin-left:auto;width:32px;height:32px;border-radius:32px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:12px;flex-shrink:0}html.dark .setbtn{background:var(--deep)}
 .mobc{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border-radius:16px;padding:13px 14px;margin:0 0 10px;box-shadow:0 1px 0 var(--line)}.mobc .em{font-size:26px}.mobc b{display:block;font-size:15.5px;color:var(--ink)}.mobc span span{font-size:12.5px;color:var(--mut);line-height:1.35}.mobc .min{margin-left:auto;flex-shrink:0;font-weight:800;font-size:13px;color:var(--a2t);white-space:nowrap}
+.ibtn.bell{position:relative}.ibtn.bell i{position:absolute;top:-2px;right:-2px;min-width:17px;height:17px;padding:0 4px;border-radius:17px;background:var(--a2);color:#fff;font-size:10.5px;font-weight:800;font-style:normal;display:grid;place-items:center;line-height:1}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
 .al-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.al-prog{display:flex;gap:4px;margin-bottom:10px}.al-prog i{flex:1;height:5px;border-radius:5px;background:var(--line)}.al-prog i.ok{background:var(--a)}.al-prog i.now{background:var(--a2)}
@@ -204,7 +205,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.1 · 10/11 16h';
+const APP_VERSION='6.2 · 10/11 16h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1520,7 +1521,17 @@ function render(){
  app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():noNav?'':nav());
  if(isCk)ckScroll();
 }
-function header(){return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
+/* sininho: avisos do app (corrida, backup, lembretes), sem poluir o Hoje */
+function bellItems(){if(!D.profile)return [];const t=today(),h=new Date().getHours(),it=[];
+ if(D.run&&!(D.runs||[]).some(r=>r.date===t)){const k=nextRunKey();it.push({k:'run'+t+k,e:'🏃‍♀️',b:'Próxima corrida: treino '+k,s:runSession(k).name,a:'go',v:'corrida'});}
+ try{if(pushSupported()&&FIREBASE_CONFIG&&!pushState().on&&Notification.permission!=='denied')it.push({k:'push',e:'🔔',b:'Ativar lembretes no celular',s:'Água, creatina, treino e check-in, só quando faltar',a:'go',v:'perfil'});}catch(e){}
+ const used=Math.floor((Date.now()-new Date((D.profile.criado||t)+'T12:00:00'))/864e5);
+ if(D.backupAck&&used>=7&&(!D.lastBackup||Date.now()-D.lastBackup>30*864e5)&&(D.activities.length||D.weights.length))it.push({k:'bk'+t.slice(0,7),e:'💾',b:D.lastBackup?'Faz mais de um mês desde seu último backup':'Você ainda não fez backup',s:'Se trocar de celular ou apagar o app, seus dados vão junto. Leva 10 segundos.',a:'export'});
+ const c=dayCheck(t),meta=aguaMeta();if(h>=15&&c.aguaMl<meta*.5)it.push({k:'agua'+t,e:'💧',b:'Água: '+fmtL(c.aguaMl)+' de '+fmtL(meta),s:'Que tal um copo agora?',a:'go',v:'hoje'});
+ if(h>=20&&!c.checkin)it.push({k:'ck'+t,e:'📝',b:'Registrar meu dia',s:'Leva 1 minutinho',a:'ckOpen'});
+ return it;}
+const bellNew=()=>bellItems().filter(i=>!(D.bellSeen||[]).includes(i.k)).length;
+function header(){const nb=bellNew();return `<header class="top"><div class="brand"><span style="font-size:17px">🔥</span>MEU TREINO</div><div><button class="ibtn bell" data-a="bell" aria-label="Avisos${nb?': '+nb+' novos':''}"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>${nb?`<i>${nb}</i>`:''}</button><button class="ibtn" data-a="go" data-v="ajuda" aria-label="Como usar">?</button><button class="ibtn" data-a="go" data-v="perfil" aria-label="Perfil">${IC.user}</button></div></header>`;}
 const DARK_MQ=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
 function isDark(){const t=D.theme||'auto';return UI.view==='correndo'||t==='escuro'||(t==='auto'&&!!(DARK_MQ&&DARK_MQ.matches));}
 function applyTheme(){const dk=isDark();document.documentElement.classList.toggle('dark',dk);try{document.querySelector('meta[name=theme-color]').content=dk?'#0b1311':'#FAF6EF';}catch(e){}}
@@ -1566,7 +1577,7 @@ function vHoje(){
  const supps=SUPPS.filter(s=>p.supps&&p.supps[s.k]);
  const usedDays=Math.floor((Date.now()-new Date((p.criado||t)+'T12:00:00'))/864e5);
  const bkHtml=!D.backupAck?`<div class="card" style="border:1.5px solid var(--a2)"><b>💾 Aviso importante sobre seus dados</b><p class="small" style="margin:6px 0 10px;line-height:1.5">${BACKUP_TXT}</p><div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="export">Fazer backup agora</button><button class="btn2" style="padding:10px" data-a="backupAck">Entendi e concordo</button></div></div>`
-  :(usedDays>=7&&(!D.lastBackup||Date.now()-D.lastBackup>30*864e5)&&(D.activities.length||D.weights.length))?`<div class="card" style="border:1.5px solid var(--line)"><b>💾 ${D.lastBackup?'Faz mais de um mês desde seu último backup':'Você ainda não fez backup'}</b><p class="small mut" style="margin:4px 0 10px">Se trocar de celular ou apagar o app, seus dados vão junto. Leva 10 segundos.</p><button class="btn sm" data-a="export">Fazer backup agora</button></div>`:'';
+  :'';
  const weekend=['sab','dom'].includes(todayDay());
  let treinoHtml='';
  if(todays.length){
@@ -1575,7 +1586,7 @@ function vHoje(){
    if(!done&&outroFeito)return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">✓ Você fez ${esc(outroFeito.name||'outro treino')}</h3><p class="mut small" style="margin:0 0 12px">No lugar de ${esc(w.name)}, que continua te esperando no próximo dia.</p>
    <div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${outroFeito.workoutId}">Ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${outroFeito.id}">📸 Card pra foto</button></div></div>`;
    return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">${esc(w.name)}</h3><p class="mut small" style="margin:0 0 12px">${w.items.length} exercícios</p>
-   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button><button class="btn2" style="margin-top:8px" data-a="alGo" data-r="${alRegion(w)}">🤸 Mobilidade antes · ${alMin(alRegion(w))} min</button><button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--a)" data-a="outroTreino">Fiz outro treino hoje</button>`}</div>`;}).join('');
+   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button><button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--a)" data-a="outroTreino">Fiz outro treino hoje</button>`}</div>`;}).join('');
  }else{
   const feito=D.activities.find(a=>a.date===t&&a.type==='musculacao'&&a.workoutId);
   if(feito)treinoHtml=`<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 12px;font-weight:600">✓ ${esc(feito.name||'Treino feito')}</h3><div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${feito.workoutId}">Ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${feito.id}">📸 Card pra foto</button></div></div>`;
@@ -1597,8 +1608,7 @@ function vHoje(){
   <div class="week">${wk.map((d,i)=>`<div class="wd ${set.has(d)?'done':''} ${d===t?'today':''}"><i>${set.has(d)?'✓':''}</i>${lets[i]}</div>`).join('')}</div>
  </div>
  ${treinoHtml}
- <button class="ckcard" data-a="go" data-v="mobilidade" style="border-color:var(--a);background:var(--asoft)"><span class="em">🧘</span><span><b style="color:var(--a)">Mobilidade e alongamento</b><span style="color:var(--infotx)">Solte o corpo antes do treino ou só alongue, com um bonequinho mostrando como fazer.</span></span><span style="margin-left:auto;color:var(--a);font-weight:800">›</span></button>
- ${D.run&&!(D.runs||[]).some(r=>r.date===today())?`<button class="li" data-a="go" data-v="corrida" style="border:1.5px solid var(--a2)"><span><b>🏃‍♀️ Próxima corrida: treino ${nextRunKey()}</b><span>${esc(runSession(nextRunKey()).name)}</span></span><span class="mut">›</span></button>`:''}
+ <button class="li" data-a="go" data-v="mobilidade" style="border:1.5px solid var(--a)"><span><b>🧘 Mobilidade e alongamento</b><span>Soltar o corpo antes do treino ou só alongar</span></span><span class="mut">›</span></button>
  <div class="card">
   <span class="kicker">Rotina do dia</span>
   ${supps.map(s=>{const on=!!c.supps[s.k];return `<button class="chk ${on?'on':''}" data-a="supp" data-k="${s.k}"><span class="box">${on?'✓':''}</span><span><span class="t">${s.e} ${s.l}</span><span class="h">${s.h}</span></span></button>`;}).join('')}
@@ -1619,7 +1629,7 @@ function vHoje(){
   <div class="btnrow" style="margin-top:0"><button class="chip ${c.onTrack===true?'on':''}" style="flex:1" data-a="track" data-v="1">Sim 🎯</button><button class="chip ${c.onTrack===false?'on':''}" style="flex:1" data-a="track" data-v="0">Hoje não 😅</button></div>
   <p class="small mut" style="margin:10px 0 0">Sem culpa: um dia fora não derruba a semana. O que conta é a média 🌱</p>
  </details>
- <button class="li" data-a="go" data-v="perfil"><span><b>🔔 Lembretes no celular</b><span>Escolha os horários de creatina, treino, água e mais</span></span><span class="mut">›</span></button>`;
+`;
 }
 
 /* ---------- Instalar como app ---------- */
@@ -3353,6 +3363,11 @@ const A={
   if(!e.sets.length)D.history[id]=D.history[id].filter(x=>x!==e);else{e.weight=Math.max(...e.sets.map(z=>z.w));e.reps=Math.max(...e.sets.filter(z=>z.w===e.weight).map(z=>z.r||0));}
   if(D.history[id]&&!D.history[id].length)delete D.history[id];persist();restStop();const y=window.scrollY;render();window.scrollTo(0,y);toast('Última série desfeita');},
  progInfo:()=>openSheet(progInfoHtml()),
+ bell:()=>{const it=bellItems();UI.bellIt=it;D.bellSeen=it.map(i=>i.k);persist();
+  openSheet(`<span class="kicker">Avisos</span><h2 class="disp" style="font-size:22px;margin:2px 40px 12px 0;font-weight:600">${it.length?'Pra você hoje 🔔':'Tudo em dia ✨'}</h2>
+  ${it.length?it.map((x,i)=>`<button class="li" data-a="bellGo" data-i="${i}"><span><b>${x.e} ${esc(x.b)}</b><span>${esc(x.s)}</span></span><span class="mut">›</span></button>`).join(''):'<p class="small mut" style="margin:0">Quando tiver corrida, backup ou algo pra lembrar, aparece aqui.</p>'}`);
+  const hd=document.querySelector('.ibtn.bell i');if(hd)hd.remove();},
+ bellGo:t=>{const x=(UI.bellIt||[])[+t.dataset.i];closeSheet();if(!x)return;if(x.a==='go'){go(x.v);window.scrollTo(0,0);}else if(A[x.a])A[x.a](t);},
  alGo:t=>alOpen(t.dataset.r),
  alClose:()=>alClose(),
  alPlay:()=>{if(!AL)return;if(!AL.ac){try{AL.ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}AL.play=!AL.play;AL.last=performance.now();if(AL.play){alWake();alAnnounce();}else hush();alDraw();},
