@@ -182,7 +182,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='4.9 · 10/11 13h';
+const APP_VERSION='5.0 · 10/11 17h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1848,6 +1848,7 @@ function vAtiv(){
  return `<span class="kicker">Seu movimento</span><h2 class="disp h2">Atividades</h2>
  <button class="ckcard" data-a="go" data-v="corrida"><span class="em">🏃‍♀️</span><span><b>${D.run?'Plano de corrida · nível '+D.run.lvl:'Plano de corrida'}</b><span>${D.run?'Próximo: treino '+nextRunKey()+' · '+esc(runSession(nextRunKey()).name):'Do seu nível até onde você quiser ir, com corrida guiada por voz.'}</span></span></button>
  <div class="stats"><div class="st"><b>🔥${streak()}</b><span>dias seguidos</span></div><div class="st"><b>${activeDaysIn(wk)}</b><span>dias na semana</span></div><div class="st"><b>${monthCount()}</b><span>dias no mês</span></div></div>
+ <button class="btn2" style="margin:-2px 0 14px" data-a="weekShare">🗓️ Resumo da semana em imagem</button>
  <h3 class="h3" style="margin-top:6px">Registrar atividade</h3>
  <div class="agrid">${ACT.map(a=>`<button class="at ${f&&f.type===a[0]?'on':''}" data-a="actType" data-t="${a[0]}"><span class="em">${a[2]}</span>${a[1]}</button>`).join('')}</div>
  ${f?`<div class="card" style="margin-top:12px"><b>${ACTM[f.type][2]} ${ACTM[f.type][1]}</b>
@@ -1890,6 +1891,7 @@ function vProg(){
  const best=eh.length?Math.max(...eh.map(e=>e.weight)):null;
  const rev=[...s].reverse().slice(0,8);
  return `<span class="kicker">Evolução</span><h2 class="disp h2">Progresso</h2>
+ <button class="ckcard" data-a="weekShare" style="border-color:var(--a);background:var(--asoft)"><span class="em">🗓️</span><span><b style="color:var(--a)">Resumo da semana</b><span>Uma imagem com tudo o que você fez na semana. Você escolhe o que aparece.</span></span></button>
  <div class="card dark">
   <div style="display:flex;justify-content:space-between;align-items:flex-end">
    <div><div style="font-size:12.5px;opacity:.8;font-weight:600">Peso atual</div><div class="disp" style="font-size:42px;font-weight:600;line-height:1">${nf(cur)}<span style="font-size:17px"> kg</span></div></div>
@@ -2733,13 +2735,15 @@ const CARD_INKS={branco:'#FFFFFF',verde:'#0F4C45',laranja:'#E8633A'};
 async function makeCard(d,sel,style,photo,tema,tinta){
  try{await document.fonts.ready;}catch(e){}
  const has=k=>sel.includes(k)&&d.f[k];
- const bigK=(d.kind==='gym'?['tempo','exercicios']:['km','tempo']).find(k=>has(k)&&d.f[k].big);const big=bigK?d.f[bigK]:null;
+ const bigK=(d.kind==='gym'?['tempo','exercicios']:d.kind==='week'?['dias']:['km','tempo']).find(k=>has(k)&&d.f[k].big);const big=bigK?d.f[bigK]:null;
  const order=d.fields?d.fields.map(f=>f[0]):['tempo','km','ritmo','elevacao','exercicios','series','volume','recordes','intensidade','sequencia'];
  const stats=order.filter(k=>has(k)&&k!==bigK&&d.f[k].v!=null&&!d.f[k].line).map(k=>d.f[k]);
- const lines=d.kind==='act'?order.filter(k=>has(k)&&d.f[k].line).map(k=>d.f[k].v):has(d.kind==='run'?'parciais':'lista')?d.lines.slice(0,style==='sticker'?5:6):[];const rows=Math.ceil(stats.length/3);
+ const listKey=d.kind==='run'?'parciais':(d.kind==='gym'||d.kind==='week')?'lista':null;
+ const lines=order.filter(k=>has(k)&&d.f[k].line).map(k=>d.f[k].v).concat(listKey&&has(listKey)?d.lines:[]).slice(0,d.kind==='week'?8:(style==='sticker'?5:6));const rows=Math.ceil(stats.length/3);
+ const dotsH=d.dots&&has('semana')?120:0;
  const route=has('percurso')&&d.route&&d.route.length>1?d.route:null;const rH=route&&style!=='cor'?(style==='sticker'?440:380):0;
  const SANS='"DM Sans", system-ui, sans-serif',SERIF='"Fraunces", Georgia, serif';
- const contentH=rH+80+(big?250:0)+rows*130+(lines.length?20+lines.length*52:0);
+ const contentH=rH+80+(big?250:0)+dotsH+rows*130+(lines.length?20+lines.length*52:0);
  const W=1080,H=style==='sticker'?Math.max(420,60+110+contentH+30):1920;
  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const T=CARD_THEMES[tema]||CARD_THEMES.verde;
  const ink=style==='cor'?T.ink:(CARD_INKS[tinta]||'#FFFFFF');const acc=style==='cor'?T.acc:(ink==='#FFFFFF'?'#E8633A':ink);const routeC=style==='cor'&&tema==='laranja'?'#FFFFFF':'#E8633A';
@@ -2751,7 +2755,7 @@ async function makeCard(d,sel,style,photo,tema,tinta){
  if(style!=='cor'&&ink==='#FFFFFF'){x.shadowColor=style==='foto'?'rgba(0,0,0,.45)':'rgba(0,0,0,.25)';x.shadowBlur=style==='foto'?14:10;x.shadowOffsetY=1;}
  const top=style==='sticker'?60:110;
  x.fillStyle=ink;x.font='700 36px '+SANS;x.fillText('🔥  MEU TREINO',80,top+30);
- if(has('data')){x.font='500 32px '+SANS;x.globalAlpha=.85;x.textAlign='right';x.fillText(new Date(d.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),W-80,top+30);x.textAlign='left';x.globalAlpha=1;}
+ if(has('data')){x.font='500 32px '+SANS;x.globalAlpha=.85;x.textAlign='right';x.fillText(d.dateLabel||new Date(d.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),W-80,top+30);x.textAlign='left';x.globalAlpha=1;}
  let y=style==='sticker'?top+110:H-110-contentH;
  if(rH){drawRoute(x,route,160,y,W-320,rH-40,routeC,14);y+=rH;}
  if(style==='cor'&&route){drawRoute(x,route,140,top+120,W-280,y-top-220,routeC,16);}
@@ -2760,18 +2764,60 @@ async function makeCard(d,sel,style,photo,tema,tinta){
   else{x.stroke(new Path2D(d.kind==='gym'?'M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11':'M3 12h4l3-8 4 16 3-8h4'));x.restore();}}}
  x.fillStyle=ink;fitFont(x,d.title,58,30,600,SERIF,W-160);x.fillText(d.title,80,y+50);y+=80;
  if(big){x.font='600 250px '+SERIF;const bw=x.measureText(big.big).width;x.fillText(big.big,72,y+210);x.font='600 64px '+SANS;x.fillStyle=acc;if(acc===ink)x.globalAlpha=.8;x.fillText(big.u,72+bw+24,y+210);x.globalAlpha=1;x.fillStyle=ink;y+=250;}
- const cw=(W-160)/3;stats.forEach((s,i)=>{const sx=80+(i%3)*cw,sy=y+Math.floor(i/3)*130+40;x.globalAlpha=.7;x.font='700 27px '+SANS;x.save();try{x.letterSpacing='2px';}catch(e){}x.fillText(s.l.toUpperCase(),sx,sy);x.restore();x.globalAlpha=1;fitFont(x,s.v,54,30,700,SANS,cw-20);x.fillText(s.v,sx,sy+64);});
+ if(dotsH){const L=['S','T','Q','Q','S','S','D'];const r=36,gap=(W-160-14*r)/6;x.save();x.shadowColor='transparent';
+  d.dots.forEach((on,i)=>{const cx=80+r+i*(2*r+gap),cy=y+r+6;x.beginPath();x.arc(cx,cy,r,0,7);if(on){x.fillStyle=acc;x.globalAlpha=1;x.fill();}else{x.strokeStyle=ink;x.globalAlpha=.35;x.lineWidth=3;x.stroke();}
+   x.globalAlpha=on?1:.6;x.fillStyle=on?(acc==='#FFE1CF'||acc==='#FFFFFF'?'#C24E28':'#FFFFFF'):ink;if(on&&style==='cor'&&tema==='creme')x.fillStyle='#FFFFFF';x.font='700 28px '+SANS;x.textAlign='center';x.textBaseline='middle';x.fillText(on?'✓':L[i],cx,cy+1);x.textAlign='left';x.textBaseline='alphabetic';x.globalAlpha=1;});
+  x.restore();x.fillStyle=ink;y+=dotsH;}
+ const cw=(W-160)/3;stats.forEach((s,i)=>{const sx=80+(i%3)*cw,sy=y+Math.floor(i/3)*130+40;x.globalAlpha=.7;x.save();try{x.letterSpacing='2px';}catch(e){}let lf=27;do{x.font='700 '+lf+'px '+SANS;lf--;}while(x.measureText(s.l.toUpperCase()).width>cw-24&&lf>17);x.fillText(s.l.toUpperCase(),sx,sy);x.restore();x.globalAlpha=1;fitFont(x,s.v,54,30,700,SANS,cw-20);x.fillText(s.v,sx,sy+64);});
  y+=rows*130;
  if(lines.length){y+=20;x.font='500 36px '+SANS;const bul=d.kind==='act'?'':'•  ';lines.forEach(l=>{let t=l;while(x.measureText(bul+t).width>W-160&&t.length>8)t=t.slice(0,-2);if(t!==l)t=t.trim()+'…';x.globalAlpha=.92;x.fillText(bul+t,80,y+38);x.globalAlpha=1;y+=52;});}
  x.shadowColor='transparent';return c;}
 let SHARE=null;
 const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+/* ===== Resumo da semana (imagem) ===== */
+function weekRange(off){const d=new Date();const dow=(d.getDay()+6)%7;const out=[];for(let i=0;i<7;i++)out.push(keyOf(new Date(d.getFullYear(),d.getMonth(),d.getDate()-dow+i-7*off)));return out;}
+function weekInfo(off){const days=weekRange(off);const inW=x=>days.includes(x);const t=today();
+ const acts=D.activities.filter(a=>inW(a.date));const active=new Set(acts.map(a=>a.date));
+ const gym=acts.filter(a=>a.type==='musculacao');const min=acts.reduce((s,a)=>s+(a.minutes||0),0);
+ let km=acts.reduce((s,a)=>s+(a.km||0),0);const metros=acts.reduce((s,a)=>s+(a.metros||0),0);
+ let vol=0,pr=0;gym.forEach(a=>{const w=D.workouts.find(x=>x.id===a.workoutId);(w?w.items:[]).forEach(it=>{const list=D.history[it.exId]||[];const h=list.find(e=>e.date===a.date);if(!h)return;vol+=(h.weight||0)*(h.reps||0)*nSets(it.sets);const prev=list.filter(e=>e.date<a.date).map(e=>e.weight||0);if(prev.length&&h.weight>Math.max(...prev))pr++;});});
+ const aguaDias=days.filter(x=>x<=t).map(x=>(D.checks[x]||{}).aguaMl||0);const comAgua=aguaDias.filter(v=>v>0);const aguaMed=comAgua.length?comAgua.reduce((a,b)=>a+b,0)/comAgua.length:0;const metaOk=aguaDias.filter(v=>v>=aguaMeta()).length;
+ const supps=SUPPS.filter(x=>D.profile.supps&&D.profile.supps[x.k]).map(x=>x.l.split(' ')[0]+' '+days.filter(dd=>((D.checks[dd]||{}).supps||{})[x.k]).length+'/7');
+ const ws=[...D.weights].filter(w=>inW(w.date)).sort((a,b)=>a.date.localeCompare(b.date));const wPrev=[...D.weights].filter(w=>w.date<days[0]).sort((a,b)=>a.date.localeCompare(b.date)).pop();
+ const p0=wPrev||ws[0],p1=ws[ws.length-1];const dPeso=p0&&p1&&p0!==p1?p1.weight-p0.weight:null;
+ const fmtD=x=>new Date(x+'T12:00:00');const d0=fmtD(days[0]),d6=fmtD(days[6]);
+ const mes=dt=>dt.toLocaleDateString('pt-BR',{month:'short'}).replace('.','');
+ const range=d0.getMonth()===d6.getMonth()?`${d0.getDate()} a ${d6.getDate()} de ${mes(d6)}`:`${d0.getDate()} ${mes(d0)} a ${d6.getDate()} ${mes(d6)}`;
+ const hm=m=>m>=60?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' min';
+ const WD=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+ const o={kind:'week',title:off?'Minha semana passada':'Minha semana',date:days[6],dateLabel:range,emoji:'🗓️',f:{},lines:[],dots:days.map(x=>active.has(x)),selKey:'week1',off};
+ o.f.dias={l:'Dias ativos',v:active.size+'/7',big:String(active.size),u:active.size===1?'dia ativo':'dias ativos'};
+ o.f.semana={};
+ if(gym.length)o.f.treinos={l:'Musculação',v:gym.length+(gym.length===1?' treino':' treinos')};
+ const outras=acts.filter(a=>a.type!=='musculacao');if(outras.length)o.f.atividades={l:'Outras atividades',v:String(outras.length)};
+ if(min)o.f.tempo={l:'Tempo total',v:hm(min)};
+ if(km||metros)o.f.distancia={l:'Distância',v:km?nf(km,1).replace(/,0$/,'')+' km'+(metros?' + '+metros.toLocaleString('pt-BR')+' m':''):metros.toLocaleString('pt-BR')+' m'};
+ if(vol)o.f.volume={l:'Volume levantado',v:Math.round(vol).toLocaleString('pt-BR')+' kg'};
+ if(pr)o.f.recordes={l:'Recordes',v:'🏆 '+pr};
+ if(aguaMed)o.f.agua={l:'Água (média)',v:fmtL(Math.round(aguaMed/100)*100)+'/dia'};
+ if(metaOk)o.f.metaagua={l:'Meta de água',v:metaOk+(metaOk===1?' dia':' dias')};
+ if(supps.length)o.f.supps={l:'Rotina',v:'💊 '+supps.join(' · '),line:true};
+ if(!off&&streak()>1)o.f.sequencia={l:'Sequência',v:'🔥 '+streak()+' dias'};
+ if(dPeso!=null)o.f.peso={l:'Peso na semana',v:(dPeso>0?'+':'')+nf(dPeso,1)+' kg'};
+ o.lines=days.map((x,i)=>{const a=acts.filter(y=>y.date===x);if(!a.length)return null;return WD[i]+' · '+a.map(y=>(y.name||(ACTM[y.type]||ACTM.outro)[1])+(y.minutes?' ('+y.minutes+' min)':'')).join(' + ');}).filter(Boolean);
+ if(o.lines.length)o.f.lista={};
+ o.f.data={};
+ o.fields=[['dias','Dias ativos'],['semana','Bolinhas da semana'],['treinos','Musculação'],['atividades','Outras atividades'],['tempo','Tempo total'],['distancia','Distância'],['volume','Volume levantado'],['recordes','Recordes'],['agua','Água (média)'],['metaagua','Meta de água'],['supps','Rotina'],['sequencia','Sequência'],['peso','Peso'],['lista','O que fiz em cada dia'],['data','Datas']];
+ return o;}
+function weekOpen(off){const d=weekInfo(off||0);D.shareSel=D.shareSel||{};const def=D.shareSel[d.selKey]||['dias','semana','treinos','atividades','tempo','distancia','volume','agua','sequencia','lista','data'];
+ const st=SHARE&&SHARE.d&&SHARE.d.kind==='week'?SHARE.style:'cor';SHARE={d,sel:def.slice(),style:st,photo:null,url:''};shareRender();}
 function shareOpen(a,run){const d=run?shareInfoRun(run):shareInfo(a);D.shareSel=D.shareSel||{};d.selKey=d.selKey||d.kind+'2';const def=D.shareSel[d.selKey]||(d.kind==='act'?d.fields.map(f=>f[0]).filter(k=>k!=='sequencia'):SHARE_DEF[d.kind]);
  SHARE={d,sel:def.slice(),style:'sticker',photo:null,url:''};shareRender();}
 async function shareRender(){const S=SHARE;if(!S)return;const CT=D.cardTheme||{cor:'verde',tinta:'branco'};const c=await makeCard(S.d,S.sel,S.style,S.photo,CT.cor,CT.tinta);S.canvas=c;S.url=c.toDataURL('image/png');
  const pnl=document.querySelector('#sheet .panel');const sc=pnl?pnl.scrollTop:0;
  const avail=(S.d.fields||SHARE_F[S.d.kind]).filter(([k])=>S.d.f[k]);
- openSheet(`<span class="kicker">Pra colar na foto</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">Seu card 📸</h2>
+ openSheet(`<span class="kicker">${S.d.kind==='week'?'Resumo da semana':'Pra colar na foto'}</span><h2 class="disp" style="font-size:22px;margin:2px 40px 10px 0;font-weight:600">${S.d.kind==='week'?'Sua semana 🗓️':'Seu card 📸'}</h2>
+ ${S.d.kind==='week'?`<div class="chips" style="margin-bottom:10px">${[[0,'Esta semana'],[1,'Semana passada']].map(([v,l])=>`<button class="chip ${S.d.off===v?'on':''}" data-a="weekOff" data-v="${v}">${l}</button>`).join('')}</div>`:''}
  <div class="chips" style="margin-bottom:12px">${[['sticker','✨ Sticker transparente'],['cor','🎨 Card colorido']].map(([k,l])=>`<button class="chip ${S.style===k?'on':''}" data-a="shareStyle" data-s="${k}">${l}</button>`).join('')}<label class="chip ${S.style==='foto'?'on':''}" style="cursor:pointer">🖼️ Na minha foto<input type="file" accept="image/*" data-c="sharePhoto" style="display:none"></label></div>
  ${(()=>{const CT=D.cardTheme||{cor:'verde',tinta:'branco'};const sw=(c1,c2,b)=>`<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,${c1},${c2});border:1px solid ${b||'rgba(0,0,0,.12)'};vertical-align:-3px;margin-right:6px"></span>`;
   return S.style==='cor'?`<div class="chips" style="margin:-2px 0 12px"><span class="small mut" style="align-self:center;font-weight:700;margin-right:2px">Cor:</span>${[['verde','Verde','#0F4C45','#08302B'],['laranja','Laranja','#E8633A','#B84A26'],['creme','Creme','#FAF6EF','#EFE5D3']].map(([k,l,a,b])=>`<button class="chip ${CT.cor===k?'on':''}" data-a="cardTema" data-t="cor" data-v="${k}">${sw(a,b)}${l}</button>`).join('')}</div>`
@@ -3144,6 +3190,8 @@ const A={
  shareAct:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;const r=a.runId&&(D.runs||[]).find(x=>x.id===a.runId);shareOpen(a,r);},
  shareRun:t=>{const r=(D.runs||[]).find(x=>x.id===t.dataset.id);if(r)shareOpen(null,r);},
  shareStyle:t=>{SHARE.style=t.dataset.s;shareRender();},
+ weekShare:()=>weekOpen(0),
+ weekOff:t=>weekOpen(+t.dataset.v),
  cardTema:t=>{D.cardTheme=Object.assign({cor:'verde',tinta:'branco'},D.cardTheme||{},{[t.dataset.t]:t.dataset.v});persist();shareRender();},
  shareField:t=>{const k=t.dataset.k,S=SHARE;S.sel=S.sel.includes(k)?S.sel.filter(x=>x!==k):S.sel.concat(k);D.shareSel=D.shareSel||{};D.shareSel[S.d.selKey]=S.sel.slice();persist();shareRender();},
  shareGo:async()=>{const b=await cardBlob();const f=new File([b],'meu-treino.png',{type:'image/png'});
