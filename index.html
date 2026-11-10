@@ -118,6 +118,9 @@ select.inp{appearance:none;-webkit-appearance:none}
 .sec.care{border-left:4px solid var(--a)}
 #toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%)}
+#restbar{position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;background:var(--deep);color:#fff;border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 26px rgba(0,0,0,.25);max-width:560px;margin:0 auto}
+#restbar .t{font-family:'Fraunces',serif;font-size:30px;font-weight:600;min-width:84px;font-variant-numeric:tabular-nums}#restbar .l{flex:1;font-size:12.5px;line-height:1.3;opacity:.9}#restbar button{color:#fff;font-weight:800;font-size:14px;padding:8px 9px;border-radius:10px;background:rgba(255,255,255,.14)}
+#restbar.fim{background:var(--a2t)}
 #toast.undo{pointer-events:auto;display:flex;align-items:center;gap:14px}#toast.undo button{color:inherit;font-weight:800;text-decoration:underline;font-size:14px}
 .it{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:14px;padding:10px 8px 10px 12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .it .nm{flex:1;min-width:0}
@@ -187,7 +190,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='5.6 · 10/11 19h';
+const APP_VERSION='5.7 · 10/11 19h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1160,6 +1163,12 @@ function scoreEx(id,slot,hint,cfg,usedWeek){const x=EX[id];let sc=x.tier*10;
  if(usedWeek.has(id))sc+=(x.tier===1?7:9);
  if(cfg.seed){sc+=((cfg.seed*9301+id.length*49297+id.charCodeAt(0)*233)%11)/2;}
  return sc;}
+/* descanso recomendado: multiarticulares 2-3 min, isolados 1-1,5 min, abdômen 45-60 s (iniciantes um pouco menos nos principais) */
+const REST_COMP=['agacha','dobradica','ponte','unilat','supino','remar','puxvert','desenv'];
+function restFor(id){const x=EX[id];if(!x)return [60,90];if(x.g==='abdomen')return [45,60];
+ const comp=x.c||((x.pats||[]).some(p=>REST_COMP.includes(p))&&!x.iso);const ini=(D.profile&&D.profile.nivel)==='iniciante'||(D.profile&&D.profile.obj)==='saude';
+ return comp?(ini?[90,120]:[120,180]):[60,90];}
+const restTxt=r=>{const f=v=>v>=60?(v%60?String(v/60).replace('.',','):v/60)+'':v+'';return r[1]<=60?`${r[0]}-${r[1]} s`:`${f(r[0])}-${f(r[1])} min`;};
 function setsFor(id,cfg,main){const x=EX[id],o=cfg.obj||'emagrecer',ini=cfg.nivel==='iniciante',u=x.uni?' (cada lado)':'';
  if(id==='vacuo')return '3-5 × 15-20s';
  if(x.iso)return '3 × '+(ini?'20-30s':'30-45s')+u;
@@ -1253,9 +1262,9 @@ const FOCUS={
 };
 
 const OBJ={
- emagrecer:{l:'Emagrecer / definir',rest:'Descanse 45-60s entre séries pra manter o ritmo.'},
- musculo:{l:'Ganhar músculo',rest:'Descanse 60-90s entre séries (até 2 min nos exercícios pesados).'},
- saude:{l:'Saúde / começar agora',rest:'Descanse uns 60s e priorize aprender bem a execução.'}
+ emagrecer:{l:'Emagrecer / definir',rest:'Descanso: 2 a 3 min nos exercícios principais e 1 a 1,5 min nos isolados. Descansar o suficiente mantém a carga e as repetições, e é isso que traz resultado, inclusive pra emagrecer.'},
+ musculo:{l:'Ganhar músculo',rest:'Descanso: 2 a 3 min nos exercícios principais e 1 a 1,5 min nos isolados. Descansar o suficiente mantém a carga e as repetições, o que dá mais músculo.'},
+ saude:{l:'Saúde / começar agora',rest:'Descanso: 1,5 a 2 min nos exercícios principais e 1 min nos isolados. Priorize aprender bem a execução.'}
 };
 
 const SUPPS=[
@@ -1423,10 +1432,23 @@ function activeDaysIn(dates){const set=new Set(D.activities.map(a=>a.date));retu
 function monthCount(){const m=today().slice(0,7);return new Set(D.activities.filter(a=>a.date.startsWith(m)).map(a=>a.date)).size;}
 function toast(msg){const t=document.getElementById('toast');t.classList.remove('undo');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1800);}
 /* apagar sem caixa de confirmação: apaga na hora e oferece "Desfazer" por alguns segundos */
+/* cronômetro de descanso entre as séries */
+let REST=null;
+function restBeep(){try{const a=REST&&REST.ac;if(!a)return;[0,0.25,0.5].forEach(d=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;g.gain.value=.2;o.connect(g);g.connect(a.destination);o.start(a.currentTime+d);o.stop(a.currentTime+d+.15);});}catch(e){}}
+function restStart(sec,label){restStop();REST={end:Date.now()+sec*1000,label,done:false};
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){REST.ac=new AC();REST.ac.resume&&REST.ac.resume();}}catch(e){}
+ let b=document.getElementById('restbar');if(!b){b=document.createElement('div');b.id='restbar';document.body.appendChild(b);}
+ b.innerHTML=`<span class="t" id="rest-t"></span><span class="l" id="rest-l"></span><button data-a="restAdd" data-v="-15" aria-label="Menos 15 segundos">−15</button><button data-a="restAdd" data-v="15" aria-label="Mais 15 segundos">+15</button><button data-a="restStop" aria-label="Fechar">✕</button>`;
+ REST.tick=setInterval(restTick,250);restTick();}
+function restTick(){if(!REST)return;const b=document.getElementById('restbar');if(!b){restStop();return;}const left=Math.ceil((REST.end-Date.now())/1000);
+ if(left<=0&&!REST.done){REST.done=true;restBeep();try{navigator.vibrate&&navigator.vibrate([250,120,250]);}catch(e){}b.classList.add('fim');setTimeout(()=>{if(REST&&REST.done)restStop();},6000);}
+ const v=Math.max(0,left);document.getElementById('rest-t').textContent=REST.done?'0:00':Math.floor(v/60)+':'+String(v%60).padStart(2,'0');
+ document.getElementById('rest-l').textContent=REST.done?'Bora pra próxima série! 💪':'Descansando · '+REST.label;}
+function restStop(){if(REST){clearInterval(REST.tick);try{REST.ac&&REST.ac.close();}catch(e){}}REST=null;const b=document.getElementById('restbar');if(b)b.remove();}
 let UNDO=null;
 function withUndo(msg,fn){const snap=JSON.stringify(D);fn();persist();const y=window.scrollY;render();window.scrollTo(0,y);UNDO=snap;
  const t=document.getElementById('toast');t.innerHTML=`<span>${esc(msg)}</span><button data-a="undo">Desfazer</button>`;t.classList.add('show','undo');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show','undo');UNDO=null;},6000);}
-function go(v){UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
+function go(v){if(v!=='sessao')restStop();UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
 
 const IC={
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -1612,7 +1634,7 @@ function vSessao(){
   const hint=prev&&prev.reps&&mr&&prev.reps>=mr&&!done?`<div class="hint">🔼 Você bateu ${prev.reps} reps da última vez — tente subir um pouquinho a carga!</div>`:'';
   return `<div class="ex ${done?'done':''}">
    <div style="display:flex;gap:8px;align-items:flex-start">${done?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
-   <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
+   <div class="exbtns"><button class="mini g" data-a="restGo" data-id="${it.exId}">⏱️ Descanso ${restTxt(restFor(it.exId))}</button><button class="mini g" data-a="info" data-id="${it.exId}">📋 Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener">▶ Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao">🔄 Trocar</button></div>
    ${prev?`<div class="last"><b>Última vez:</b> ${prev.weight} kg${prev.reps?' × '+prev.reps+' reps':''} (${fmt(prev.date)})</div>`:''}
    ${done?`<div class="last" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b style="color:var(--a)">Hoje:</b> ${last.weight} kg${last.reps?' × '+last.reps+' reps':''}</span><button class="small mut" style="font-weight:700" data-a="delSet" data-id="${it.exId}">Apagar</button></div>`:''}
    ${hint}
@@ -3074,6 +3096,9 @@ const A={
  delSess:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;
   withUndo('Treino de hoje excluído',()=>delActivity(a));},
  delSet:t=>{const id=t.dataset.id;withUndo('Carga de hoje apagada',()=>{D.history[id]=(D.history[id]||[]).filter(e=>e.date!==today());if(!D.history[id].length)delete D.history[id];});},
+ restGo:t=>{const id=t.dataset.id;const r=restFor(id);restStart(r[0],EX[id].n);},
+ restAdd:t=>{if(!REST)return;REST.end+=(+t.dataset.v)*1000;if(REST.end<Date.now()+1000)REST.end=Date.now()+1000;REST.done=false;const b=document.getElementById('restbar');if(b)b.classList.remove('fim');restTick();},
+ restStop:()=>restStop(),
  undo:()=>{if(!UNDO)return;D=JSON.parse(UNDO);UNDO=null;persist();const y=window.scrollY;render();window.scrollTo(0,y);toast('Desfeito ✓');},
  saveWeight:()=>{const v=num(document.getElementById('wnew').value);if(v==null){toast('Digite seu peso');return;}
   D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:v});if(!D.profile.pesoInicial){D.profile.pesoInicial=v;}persist();render();toast('Peso salvo!');},
