@@ -120,6 +120,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 #toast.show{opacity:1;transform:translateX(-50%)}
 .setsrow{display:flex;align-items:center;gap:6px;margin:10px 0 8px;flex-wrap:wrap}.sdot{width:30px;height:30px;border-radius:30px;border:2px solid var(--line);display:grid;place-items:center;font-size:12.5px;font-weight:800;color:var(--mut)}.sdot.ok{background:var(--a);border-color:var(--a);color:#fff}.sdot.now{border-color:var(--a2);color:var(--a2t)}html.dark .sdot.ok{background:var(--deep);border-color:var(--deep)}
 .setbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--a);color:#fff;border-radius:14px;padding:12px 14px;margin:10px 0 2px}.setbtn b{display:block;font-size:15px}.setbtn span span{font-size:12.5px;opacity:.85}.setbtn .go{margin-left:auto;width:32px;height:32px;border-radius:32px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:12px;flex-shrink:0}html.dark .setbtn{background:var(--deep)}
+.mobc{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border-radius:16px;padding:13px 14px;margin:0 0 10px;box-shadow:0 1px 0 var(--line)}.mobc .em{font-size:26px}.mobc b{display:block;font-size:15.5px;color:var(--ink)}.mobc span span{font-size:12.5px;color:var(--mut);line-height:1.35}.mobc .min{margin-left:auto;flex-shrink:0;font-weight:800;font-size:13px;color:var(--a2t);white-space:nowrap}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
 .al-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.al-prog{display:flex;gap:4px;margin-bottom:10px}.al-prog i{flex:1;height:5px;border-radius:5px;background:var(--line)}.al-prog i.ok{background:var(--a)}.al-prog i.now{background:var(--a2)}
@@ -203,7 +204,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.0 · 10/11 15h';
+const APP_VERSION='6.1 · 10/11 16h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1512,7 +1513,7 @@ function render(){
  const app=document.getElementById('app');
  if(UI.restoreId){document.documentElement.classList.remove('dark');app.innerHTML=vRecuperar();return;}
  if(!D.profile){app.innerHTML=vOnb();return;}
- const v={hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
+ const v={mobilidade:vMob,hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
  const noNav=UI.view==='correndo'||UI.view==='corrida_fim';
  applyTheme();
@@ -1574,7 +1575,7 @@ function vHoje(){
    if(!done&&outroFeito)return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">✓ Você fez ${esc(outroFeito.name||'outro treino')}</h3><p class="mut small" style="margin:0 0 12px">No lugar de ${esc(w.name)}, que continua te esperando no próximo dia.</p>
    <div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${outroFeito.workoutId}">Ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${outroFeito.id}">📸 Card pra foto</button></div></div>`;
    return `<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 2px;font-weight:600">${esc(w.name)}</h3><p class="mut small" style="margin:0 0 12px">${w.items.length} exercícios</p>
-   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button><button class="btn2" style="margin-top:8px" data-a="alGo" data-r="${alRegion(w)}" data-t="aq">🤸 Mobilidade antes · ${alMin(alRegion(w),'aq')} min</button><button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--a)" data-a="outroTreino">Fiz outro treino hoje</button>`}</div>`;}).join('');
+   ${done?`<div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${w.id}">✓ Feito hoje · ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${(D.activities.find(a=>a.date===t&&a.workoutId===w.id)||{}).id}">📸 Card pra foto</button></div>`:`<button class="btn alt" data-a="start" data-id="${w.id}">Começar treino 💪</button><button class="btn2" style="margin-top:8px" data-a="alGo" data-r="${alRegion(w)}">🤸 Mobilidade antes · ${alMin(alRegion(w))} min</button><button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--a)" data-a="outroTreino">Fiz outro treino hoje</button>`}</div>`;}).join('');
  }else{
   const feito=D.activities.find(a=>a.date===t&&a.type==='musculacao'&&a.workoutId);
   if(feito)treinoHtml=`<div class="card"><span class="kicker">Treino de hoje</span><h3 class="disp" style="font-size:22px;margin:3px 0 12px;font-weight:600">✓ ${esc(feito.name||'Treino feito')}</h3><div class="btnrow" style="margin-top:0"><button class="btn2" data-a="start" data-id="${feito.workoutId}">Ver treino</button><button class="btn alt sm" style="flex:0 0 auto;width:auto;padding:12px 14px" data-a="shareAct" data-id="${feito.id}">📸 Card pra foto</button></div></div>`;
@@ -1596,6 +1597,7 @@ function vHoje(){
   <div class="week">${wk.map((d,i)=>`<div class="wd ${set.has(d)?'done':''} ${d===t?'today':''}"><i>${set.has(d)?'✓':''}</i>${lets[i]}</div>`).join('')}</div>
  </div>
  ${treinoHtml}
+ <button class="ckcard" data-a="go" data-v="mobilidade" style="border-color:var(--a);background:var(--asoft)"><span class="em">🧘</span><span><b style="color:var(--a)">Mobilidade e alongamento</b><span style="color:var(--infotx)">Solte o corpo antes do treino ou só alongue, com um bonequinho mostrando como fazer.</span></span><span style="margin-left:auto;color:var(--a);font-weight:800">›</span></button>
  ${D.run&&!(D.runs||[]).some(r=>r.date===today())?`<button class="li" data-a="go" data-v="corrida" style="border:1.5px solid var(--a2)"><span><b>🏃‍♀️ Próxima corrida: treino ${nextRunKey()}</b><span>${esc(runSession(nextRunKey()).name)}</span></span><span class="mut">›</span></button>`:''}
  <div class="card">
   <span class="kicker">Rotina do dia</span>
@@ -1666,7 +1668,7 @@ function vTreinos(){
   <button class="ib" data-a="editW" data-id="${w.id}" aria-label="Editar">✎</button></div>
   <button class="btn sm" style="margin-top:12px" data-a="start" data-id="${w.id}">Começar</button></div>`).join(''):`<div class="card empty">Você ainda não tem treinos. Monte o primeiro aqui embaixo 👇</div>`}
  <button class="btn alt" data-a="newW">+ Montar novo treino</button>
- <button class="ckcard" data-a="alMenu"><span class="em">🤸</span><span><b>Mobilidade e alongamento</b><span>Pernas, parte de cima, corpo todo ou corrida, com um bonequinho mostrando como fazer.</span></span></button>
+ <button class="ckcard" data-a="alMenu"><span class="em">🤸</span><span><b>Mobilidade e alongamento</b><span>Mobilidade antes do treino ou só alongar, com um bonequinho mostrando como fazer.</span></span></button>
  <h3 class="h3">Sugestões por foco</h3>
  <p class="small mut" style="margin:-4px 0 10px">Toque num foco e eu monto um treino pra você ajustar como quiser.</p>
  <div class="fgrid">${Object.entries(FOCUS).map(([k,f])=>`<button class="fc" data-a="suggest" data-f="${k}"><span class="em">${f.e}</span><b>${f.l}</b><span>${f.ex.length} exercícios</span></button>`).join('')}</div>`;
@@ -1683,9 +1685,9 @@ function bqPts(p){const L=BQ_L;const P={};P.hip=[0,0];
  const hd=p.hd==null?p.t:p.hd;const hx=Math.sin(bqRad(hd)),hy=-Math.cos(bqRad(hd));P.neck=[P.sho[0]+L.N*hx,P.sho[1]+L.N*hy];P.head=[P.sho[0]+(L.N+L.R)*hx,P.sho[1]+(L.N+L.R)*hy];P.hd=hd;
  const seg=(o,a,len)=>[o[0]+len*Math.sin(bqRad(a)),o[1]+len*Math.cos(bqRad(a))];
  for(const i of [1,2]){const a=p['a'+i],e=p['e'+i];P['elb'+i]=seg(P.sho,a,L.UA);P['hand'+i]=seg(P['elb'+i],a+e,L.FA);
-  const l=p['l'+i],k=p['k'+i];P['knee'+i]=seg(P.hip,l,L.TH);P['ank'+i]=seg(P['knee'+i],l+k,L.SH);const ff=p['f'+i]==null?-(l+k):p['f'+i];P['toe'+i]=seg(P['ank'+i],l+k+90+ff,L.FT);P['heel'+i]=seg(P['ank'+i],l+k-90+ff,3);}
+  const l=p['l'+i],k=p['k'+i];P['knee'+i]=seg(P.hip,l,L.TH);P['ank'+i]=seg(P['knee'+i],l+k,L.SH*(p['s'+i]||1));const ff=p['f'+i]==null?-(l+k):p['f'+i];P['toe'+i]=seg(P['ank'+i],l+k+90+ff,L.FT);P['heel'+i]=seg(P['ank'+i],l+k-90+ff,3);}
  return P;}
-function bqLow(P){let m=-1e9;for(const k of ['hip','sho','knee1','knee2','ank1','ank2','toe1','toe2','heel1','heel2','hand1','hand2','elb1','elb2'])m=Math.max(m,P[k][1]+(k.startsWith('hand')?3:k==='hip'||k==='sho'?9:5));return Math.max(m,P.head[1]+BQ_L.R);}
+function bqLow(P,g){let m=-1e9;for(const k of (g||['hip','sho','knee1','knee2','ank1','ank2','toe1','toe2','heel1','heel2','hand1','hand2','elb1','elb2']))m=Math.max(m,P[k][1]+(k.startsWith('hand')?3:k==='hip'||k==='sho'?9:5));return g?m:Math.max(m,P.head[1]+BQ_L.R);}
 const bqLerp=(a,b,u)=>{const o={};for(const k in a){o[k]=(typeof a[k]!=='number'||typeof b[k]!=='number')?(u<.5?a[k]:b[k]):a[k]+(b[k]-a[k])*u;}return o;};
 const bqEase=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
 function bqFull(p){const o=Object.assign({},BQ_BASE,p);return o;}
@@ -1695,14 +1697,19 @@ function bqFrame(mov,time){const K=mov.kf.map(([p,h])=>[bqFull(p),h]);const tr=m
  for(let i=0;i<K.length;i++){const [p,h]=K[i];const ti=mov.kf[i][2]!=null?mov.kf[i][2]:tr;const prev=K[(i-1+K.length)%K.length][0];if(t<ti)return bqLerp(prev,p,bqEase(t/ti));t-=ti;if(t<h)return p;t-=h;}
  return K[0][0];}
 const BQ_GROUND=178,BQ_W=220;
-function bqPlace(mov,p){const P=bqPts(p);const an=P[mov.anc||'ank1'];const dx=-an[0],dy=BQ_GROUND-bqLow(P);
+function bqPlace(mov,p){const P=bqPts(p);const an=P[mov.anc||'ank1'];const dx=-an[0],dy=BQ_GROUND-bqLow(P,mov.gnd);
  for(const k in P)if(Array.isArray(P[k]))P[k]=[P[k][0]+dx,P[k][1]+dy];P.dy=dy;
+ for(const i of [1,2]){const g=p['g'+i];if(!g)continue;let T=null;if(Array.isArray(g))T=g;else if(g==='w0'){bqH0(mov);T=mov._a0[i-1];}else if(P[g])T=P[g];if(!T)continue;bqLegIK(P,i,[T[0],T[1]+(p['gy'+i]||0)],p['kb'+i]||1,p);}
  for(const i of [1,2]){const h=p['h'+i];if(!h)continue;let T=null;if(Array.isArray(h))T=h;else if(h==='w0'){bqH0(mov);T=mov._h0[i-1];}else if(P[h])T=P[h];if(!T)continue;bqIK(P,i,T,p['eb'+i]||1);}
  return P;}
 function bqIK(P,i,T,sg){const L=BQ_L,S=P.sho;let dx=T[0]-S[0],dy=T[1]-S[1];let d=Math.hypot(dx,dy);const mx=L.UA+L.FA-.5;if(d>mx){dx*=mx/d;dy*=mx/d;d=mx;}
  const th=Math.atan2(dx,dy);const c=Math.max(-1,Math.min(1,(L.UA*L.UA+d*d-L.FA*L.FA)/(2*L.UA*d)));const a=th+sg*Math.acos(c);
  P['elb'+i]=[S[0]+L.UA*Math.sin(a),S[1]+L.UA*Math.cos(a)];P['hand'+i]=[S[0]+dx,S[1]+dy];}
-function bqH0(mov){if(mov._h0)return;const p0=bqFull(mov.kf[0][0]);const q=Object.assign({},p0,{h1:null,h2:null});const P=bqPlace(mov,q);mov._h0=[P.hand1,P.hand2];
+function bqLegIK(P,i,T,sg,p){const L1=BQ_L.TH,L2=BQ_L.SH*(p['s'+i]||1),H=P.hip;let dx=T[0]-H[0],dy=T[1]-H[1];let d=Math.hypot(dx,dy);const mx=L1+L2-.3;if(d>mx){dx*=mx/d;dy*=mx/d;d=mx;}
+ const th=Math.atan2(dx,dy);const c=Math.max(-1,Math.min(1,(L1*L1+d*d-L2*L2)/(2*L1*d)));const a=th+sg*Math.acos(c);const K=[H[0]+L1*Math.sin(a),H[1]+L1*Math.cos(a)];const A=[H[0]+dx,H[1]+dy];
+ const sd=Math.atan2(A[0]-K[0],A[1]-K[1])*180/Math.PI;const ff=p['f'+i]==null?-sd:p['f'+i];const sg2=(o,an,len)=>[o[0]+len*Math.sin(bqRad(an)),o[1]+len*Math.cos(bqRad(an))];
+ P['knee'+i]=K;P['ank'+i]=A;P['toe'+i]=sg2(A,sd+90+ff,BQ_L.FT);P['heel'+i]=sg2(A,sd-90+ff,3);}
+function bqH0(mov){if(mov._h0)return;const p0=bqFull(mov.kf[0][0]);const q=Object.assign({},p0,{h1:null,h2:null,g1:null,g2:null});const P=bqPlace(mov,q);mov._h0=[P.hand1,P.hand2];mov._a0=[P.ank1,P.ank2];
  if(mov.wall==='hand1'||mov.wall==='hand2'){const h=P[mov.wall];mov._wx=h[0]<P.hip[0]?h[0]-14:h[0]+3;}}
 function bqWall(mov){if(mov.wall==null)return null;if(typeof mov.wall==='number')return mov.wall;bqH0(mov);return mov._wx;}
 function bqCenter(mov){if(mov._cx!=null)return mov._cx;let lo=1e9,hi=-1e9;
@@ -1727,20 +1734,13 @@ function bqSVG(mov,time,flip){const p=bqFrame(mov,time);const P=bqPlace(mov,p);c
  const wx=bqWall(mov);const wall=wx!=null?`<rect x="${f(wx)}" y="40" width="10" height="${BQ_GROUND-40+6}" rx="3" fill="var(--bqwall,#d9cdb8)"/>`:'';
  return `<g transform="${flip?`translate(${BQ_W} 0) scale(-1 1) `:''}translate(${f(cx)} 0)">${wall}<rect x="${-200}" y="${BQ_GROUND}" width="600" height="6" rx="3" fill="var(--bqmat,#eadcc4)"/>
   <ellipse cx="${f(P.hip[0])}" cy="${BQ_GROUND+1}" rx="40" ry="3" fill="#000" opacity=".06"/>
-  ${arm(2)}${leg(2)}${tor}${leg(1)}${head}${arm(1)}${glow}</g>`;}
+  ${arm(2)}${leg(2)}${tor}${leg(1)}${head}${arm(1)}${mov.stick?`<path d="M${f(P.hand1[0]-5)} ${f(P.hand1[1]-13)}L${f(P.hand1[0]+5)} ${f(P.hand1[1]+13)}" stroke="#9A6A3A" stroke-width="6" stroke-linecap="round"/>`:''}${glow}</g>`;}
 
 const LIE={t:-90,hd:-90,a1:90,e1:0,a2:90,e2:0,l1:130,k1:-120,l2:128,k2:-118};
 const MOVES={
  braco:{n:'Círculos com os braços',tipo:'din',anc:'hip',tr:500,feel:['sho'],kf:[[{a1:0,a2:20,e1:0,e2:0},0,0],[{a1:90,a2:110,e1:0,e2:0},0],[{a1:180,a2:200,e1:0,e2:0},0],[{a1:270,a2:290,e1:0,e2:0},0],[{a1:360,a2:380,e1:0,e2:0},0]]},
- agach:{n:'Agachamento lento',tipo:'din',anc:'ank1',tr:900,feel:['th1','hip'],kf:[[{a1:10,a2:5},250],[{t:38,l1:88,k1:-110,l2:85,k2:-107,a1:95,e1:0,a2:90,e2:0},350]]},
- afundo:{n:'Afundo com braços pra cima',tipo:'din',anc:'ank1',tr:1000,feel:['th2','hip'],kf:[[{a1:10,a2:-5},250],[{t:-2,l1:82,k1:-86,l2:-25,k2:-75,f2:0,a1:172,e1:0,a2:168,e2:0},900]]},
- dobradica:{n:'Dobradiça de quadril',tipo:'din',anc:'ank1',tr:1000,feel:['th1','hip'],kf:[[{a1:15,e1:110,a2:15,e2:110},250],[{t:72,l1:22,k1:-25,l2:20,k2:-25,a1:85,e1:110,a2:85,e2:110},350]]},
- ponte:{n:'Ponte de glúteo',tipo:'din',anc:'ank1',tr:900,feel:['hip'],kf:[[LIE,300],[Object.assign({},LIE,{t:-112,l1:105,k1:-100,l2:103,k2:-98,a1:68,a2:68}),600]]},
- balanco:{n:'Balanço de perna',tipo:'din',uni:1,anc:'ank2',tr:650,feel:['th1'],kf:[[{l1:55,k1:-5,f1:10,a1:-20,a2:70,e2:10},80],[{l1:-30,k1:-10,f1:-10,a1:30,a2:70,e2:10},80]]},
-tornozelo:{n:'Tornozelo na parede',tipo:'din',uni:1,anc:'ank1',tr:900,wall:24,feel:['sh1'],kf:[[{t:8,l1:12,k1:-22,l2:-24,k2:-4,h1:[24,86],h2:[24,90],eb1:-1,eb2:-1},200],[{t:14,l1:32,k1:-72,l2:-24,k2:-22,h1:[24,86],h2:[24,90],eb1:-1,eb2:-1},300]]},
- abre:{n:'Abre e fecha os braços',tipo:'din',anc:'hip',tr:900,feel:['up'],kf:[[{a1:90,e1:0,a2:92,e2:0},150],[{a1:-62,e1:0,a2:-58,e2:0,t:-3},350]]},
+ balanco:{n:'Balanço de perna',tipo:'din',uni:1,d:20,anc:'ank2',tr:650,feel:['th1'],kf:[[{l1:55,k1:-5,f1:10,a1:-20,a2:70,e2:10},80],[{l1:-30,k1:-10,f1:-10,a1:30,a2:70,e2:10},80]]},
  gatovaca:{n:'Gato e vaca',tipo:'din',anc:'knee1',tr:1300,feel:['tor'],kf:[[{t:90,cv:12,hd:160,l1:0,k1:-90,l2:2,k2:-92,f1:-90,f2:-90,a1:0,e1:0,a2:2,e2:0},500],[{t:90,cv:-10,hd:55,l1:0,k1:-90,l2:2,k2:-92,f1:-90,f2:-90,a1:0,e1:0,a2:2,e2:0},500]]},
- bracosY:{n:'Braços pra cima',tipo:'din',anc:'hip',tr:900,feel:['sho'],kf:[[{a1:5,a2:0,e1:5,e2:5},250],[{a1:172,a2:168,e1:0,e2:0,hd:-12},400]]},
  quad:{n:'Quadríceps em pé',tipo:'est',uni:1,anc:'ank2',tr:1200,feel:['th1'],kf:[[{l2:0,a2:60,e2:10},500],[{l1:-14,k1:-138,f1:-60,h1:'ank1',eb1:-1,l2:0,a2:80,e2:5},4000]]},
  post:{n:'Posterior de coxa em pé',tipo:'est',uni:1,anc:'ank2',tr:1300,feel:['th1'],kf:[[{l1:30,k1:0,f1:30,l2:0,a1:10,a2:0},300],[{t:50,l1:38,k1:0,f1:32,l2:16,k2:-32,h1:'knee1',h2:'knee1',eb1:-1,eb2:-1},4000]]},
  pant:{n:'Panturrilha na parede',tipo:'est',uni:1,anc:'ank1',tr:1200,wall:'hand1',feel:['sh1'],kf:[[{t:18,l1:-26,k1:0,l2:30,k2:-42,a1:80,e1:12,a2:82,e2:12},4000]]},
@@ -1751,19 +1751,20 @@ tornozelo:{n:'Tornozelo na parede',tipo:'din',uni:1,anc:'ank1',tr:900,wall:24,fe
  ombro:{n:'Ombro: braço cruzado',tipo:'est',uni:1,anc:'hip',tr:1100,feel:['sho'],kf:[[{a1:10,a2:0},300],[{a1:88,e1:0,a2:55,e2:70},4000]]},
  triceps:{n:'Tríceps atrás da cabeça',tipo:'est',uni:1,anc:'hip',tr:1200,feel:['ua1'],kf:[[{a1:10,a2:0},300],[{a1:165,e1:155,h2:'elb1',eb2:1},4000]]},
  costas:{n:'Costas na parede',tipo:'est',anc:'ank1',tr:1400,wall:'hand1',feel:['up'],kf:[[{t:92,cv:-4,hd:95,l1:8,l2:8,a1:90,e1:0,a2:92,e2:0},4000]]},
+ afundoJ:{n:'Afundo ajoelhado: joelho passa do pé',tipo:'din',uni:1,anc:'knee2',gnd:['knee2'],tr:1100,feel:['th2','sh1'],kf:[[{t:0,l1:85,k1:-88,l2:-10,k2:-80,f2:-90,h1:'knee1',h2:'knee1',eb1:-1,eb2:-1},300],[{t:-4,l1:85,k1:-88,l2:-36,k2:-54,f2:-90,g1:'w0',kb1:1,h1:'knee1',h2:'knee1',eb1:-1,eb2:-1},900]]},
+ pombo:{n:'Pombo',tipo:'est',uni:1,anc:'knee1',gnd:['knee1'],tr:1600,feel:['hip'],kf:[[{t:0,l1:80,k1:-120,s1:.35,l2:-95,k2:0,f2:-85,h1:[-14,175],h2:[-18,175],eb1:-1,eb2:-1},700],[{t:70,cv:6,hd:95,l1:80,k1:-120,s1:.35,l2:-95,k2:0,f2:-85,h1:[42,175],h2:[46,175],eb1:-1,eb2:-1},3000]]},
+ fig4:{n:'Glúteo deitado (perna cruzada)',tipo:'est',uni:1,anc:'sho',gnd:['hip','sho'],tr:1300,feel:['hip'],kf:[[LIE,600],[Object.assign({},LIE,{l2:200,k2:-112,l1:150,k1:-60,s1:.5,g1:'knee2',kb1:-1,h1:'knee2',h2:'knee2',eb1:1,eb2:1}),3500]]},
+ sapo:{n:'Sapinho',tipo:'din',anc:'knee1',gnd:['knee1'],tr:1300,feel:['th1'],kf:[[{t:102,hd:100,l1:0,k1:-90,s1:.3,l2:2,k2:-92,s2:.3,f1:-90,f2:-90,a1:0,e1:90,a2:2,e2:90},300],[{t:92,hd:95,l1:42,k1:-130,s1:.3,l2:44,k2:-132,s2:.3,f1:-90,f2:-90,a1:0,e1:90,a2:2,e2:90,h1:'w0',h2:'w0',eb1:1,eb2:1},700]]},
+ cachorro:{n:'Cachorro olhando pra baixo',tipo:'din',anc:'hand1',gnd:['hand1'],tr:900,feel:['sh1','up'],kf:[[{t:130,hd:150,a1:50,e1:0,a2:52,e2:0,g1:[-108,172],g2:[-104,172],kb1:-1,kb2:-1},300],[{t:130,hd:150,a1:50,e1:0,a2:52,e2:0,g1:[-108,172],gy1:-6,f1:-35,g2:[-104,172],kb1:1,kb2:-1},300],[{t:130,hd:150,a1:50,e1:0,a2:52,e2:0,g1:[-108,172],g2:[-104,172],gy2:-6,f2:-35,kb1:-1,kb2:1},300]]},
+ bastao:{n:'Bastão por cima da cabeça',tipo:'din',anc:'ank1',tr:1000,stick:1,feel:['sho'],kf:[[{a1:12,e1:0,a2:12,e2:0},200],[{a1:180,e1:0,a2:180,e2:0},150],[{a1:330,e1:0,a2:330,e2:0,t:-4},250],[{a1:180,e1:0,a2:180,e2:0},150]]},
+ rotacao4:{n:'Rotação do tronco em 4 apoios',tipo:'din',uni:1,anc:'knee1',gnd:['knee1','hand2'],tr:1200,feel:['up'],kf:[[{t:74,hd:30,l1:0,k1:-90,l2:2,k2:-92,f1:-90,f2:-90,a1:178,e1:0,a2:16,e2:0},500],[{t:82,hd:150,l1:0,k1:-90,l2:2,k2:-92,f1:-90,f2:-90,a1:-62,e1:0,a2:8,e2:0},500]]},
+ cobra:{n:'Cobra',tipo:'din',anc:'hip',gnd:['hip','ank1'],tr:1300,feel:['low','up'],kf:[[{t:90,hd:85,l1:-90,k1:0,l2:-88,k2:0,f1:-85,f2:-85,h1:[36,176],h2:[40,176],eb1:-1,eb2:-1},400],[{t:58,hd:20,l1:-90,k1:0,l2:-88,k2:0,f1:-85,f2:-85,h1:[36,176],h2:[40,176],eb1:-1,eb2:-1},1200]]},
 };
 
 const MOVE_TX={
  braco:{como:['Em pé, com os braços esticados.','Faça círculos grandes pra frente. Na metade do tempo, inverta pra trás.'],sentir:'Os ombros soltando, sem dor.',cuidado:'Movimento controlado, sem trancos.'},
- agach:{como:['Pés na largura do quadril, pontas levemente pra fora.','Leve o quadril pra trás e pra baixo, como se fosse sentar numa cadeira.','Braços à frente pra ajudar no equilíbrio. Segure 2 segundos lá embaixo e suba devagar.'],sentir:'Coxas e glúteos trabalhando.',cuidado:'Calcanhares no chão e joelhos na direção da ponta dos pés. Desça só até onde for confortável.'},
- afundo:{como:['Em pé, dê um passo grande pra trás.','Desça até o joelho de trás quase encostar no chão e suba os braços.','Segure 2 segundos, volte e troque de perna.'],sentir:'A frente do quadril da perna de trás e o glúteo da perna da frente.',cuidado:'Tronco reto e joelho da frente alinhado com o pé. Se precisar, apoie a mão numa parede.'},
- dobradica:{como:['Pés na largura do quadril, joelhos levemente dobrados.','Mãos no peito. Leve o quadril pra trás inclinando o tronco, com as costas retas.','Suba apertando o glúteo.'],sentir:'Atrás das coxas esticando e o glúteo trabalhando.',cuidado:'Não arredonde as costas. Desça só até onde conseguir manter as costas retas.'},
- ponte:{como:['Deite de barriga pra cima, joelhos dobrados e pés no chão.','Suba o quadril apertando o glúteo, até o corpo ficar reto dos ombros aos joelhos.','Desça devagar.'],sentir:'Glúteo e atrás das coxas.',cuidado:'Não force a lombar pra subir mais: quem levanta é o glúteo.'},
  balanco:{como:['Apoie uma mão numa parede ou num aparelho.','Balance a perna pra frente e pra trás, solta e relaxada.','Aumente o movimento aos poucos.'],sentir:'O quadril soltando, na frente e atrás da coxa.',cuidado:'Sem chutar com força: é um balanço controlado.'},
-tornozelo:{como:['De frente pra uma parede, com um pé à frente, a um palmo dela, e as mãos na parede.','Leve o joelho da frente em direção à parede, sem tirar o calcanhar do chão.','Volte e repita.'],sentir:'O tornozelo e a batata da perna soltando.',cuidado:'Calcanhar sempre no chão. Se ficar fácil, afaste um pouco o pé da parede.'},
- abre:{como:['Em pé, braços esticados à frente, na altura dos ombros.','Abra os braços pros lados e um pouco pra trás, juntando as escápulas (os ossinhos das costas).','Volte devagar e repita.'],sentir:'O peito abrindo e o meio das costas trabalhando.',cuidado:'Ombros baixos, longe das orelhas.'},
  gatovaca:{como:['Fique de quatro apoios: mãos embaixo dos ombros e joelhos embaixo do quadril.','Solte o ar arredondando as costas e olhando pro umbigo (gato).','Puxe o ar descendo a barriga e olhando pra frente (vaca).'],sentir:'A coluna inteira se movendo, das costas até a lombar.',cuidado:'Movimento lento, sem forçar o pescoço.'},
- bracosY:{como:['Em pé, braços ao lado do corpo.','Suba os braços esticados pela frente até acima da cabeça, abrindo um Y.','Desça devagar.'],sentir:'Ombros e parte de cima das costas.',cuidado:'Barriga firme pra não arquear a lombar.'},
  quad:{como:['Em pé, apoie uma mão na parede pra se equilibrar.','Dobre o joelho e segure o pé atrás, levando o calcanhar perto do glúteo.','Joelhos juntos, apontando pro chão. Segure e respire.'],sentir:'A frente da coxa esticando.',cuidado:'Se o joelho doer, segure pela barra da calça ou passe uma toalha em volta do pé.'},
  post:{como:['Em pé, coloque uma perna à frente com o calcanhar no chão e a ponta do pé pra cima.','Dobre um pouco a perna de trás e incline o tronco à frente, com as costas retas.','Apoie as mãos na coxa da frente.'],sentir:'Atrás da coxa da perna esticada.',cuidado:'Incline a partir do quadril, sem arredondar as costas.'},
  pant:{como:['De frente pra parede, com as mãos nela.','Leve uma perna pra trás, esticada, com o calcanhar no chão.','Dobre a perna da frente e incline o corpo em direção à parede.'],sentir:'A batata da perna de trás esticando.',cuidado:'Calcanhar de trás sempre no chão e o pé apontando pra frente.'},
@@ -1774,23 +1775,34 @@ tornozelo:{como:['De frente pra uma parede, com um pé à frente, a um palmo del
  ombro:{como:['Leve um braço esticado à frente do peito, cruzando o corpo.','Com a outra mão, puxe esse braço pelo cotovelo em direção ao peito.'],sentir:'A parte de trás do ombro.',cuidado:'Ombro baixo, longe da orelha. Puxe pelo cotovelo, não pela mão.'},
  triceps:{como:['Leve um braço pra cima e dobre o cotovelo, deixando a mão cair atrás da cabeça.','Com a outra mão, empurre o cotovelo de leve pra trás.'],sentir:'A parte de trás do braço.',cuidado:'Cabeça reta, sem empurrar o pescoço pra frente.'},
  costas:{como:['Fique de frente pra uma parede, a um passo largo dela.','Apoie as mãos na parede e leve o quadril pra trás, até o tronco ficar paralelo ao chão.','Braços esticados e cabeça entre os braços.'],sentir:'Costas, laterais do tronco e ombros.',cuidado:'Pode dobrar um pouco os joelhos. Pare se sentir dor na lombar.'},
+ afundoJ:{como:['Ajoelhe no colchonete com uma perna à frente, pé inteiro no chão.','Leve o corpo à frente devagar, até o joelho da frente passar da ponta do pé, sem tirar o calcanhar do chão.','Volte e repita, no seu ritmo.'],sentir:'A frente do quadril da perna de trás e o tornozelo da perna da frente.',cuidado:'Tronco reto e barriga firme. Se o joelho incomodar, coloque uma toalha embaixo.'},
+ pombo:{como:['Sente no colchonete com uma perna dobrada à frente do corpo, com a canela atravessada.','Estique a outra perna pra trás.','Com as mãos no chão, incline o tronco à frente devagar e respire.'],sentir:'O glúteo e a lateral do quadril da perna da frente.',cuidado:'Se o joelho da frente doer, traga o pé mais pra perto do quadril ou faça o glúteo deitado.'},
+ fig4:{como:['Deite de barriga pra cima com os joelhos dobrados.','Cruze um tornozelo em cima do joelho da outra perna, formando um 4.','Segure atrás da coxa da perna de baixo e puxe em direção ao peito.'],sentir:'O glúteo da perna cruzada.',cuidado:'Cabeça e ombros relaxados no chão. Puxe devagar.'},
+ sapo:{como:['Fique de quatro apoios, com os antebraços no chão.','Abra bem os joelhos pros lados, com os pés pra fora.','Leve o quadril pra trás devagar e volte, respirando.'],sentir:'A parte de dentro das coxas.',cuidado:'Abra só até onde for confortável. Use colchonete embaixo dos joelhos.'},
+ cachorro:{como:['Mãos e pés no chão e quadril pro alto, formando um V de cabeça pra baixo.','Dobre um joelho e estique o outro, levando o calcanhar em direção ao chão.','Alterne as pernas, como se estivesse pedalando devagar.'],sentir:'A batata da perna, atrás das coxas e os ombros.',cuidado:'Costas retas. Pode dobrar os joelhos se puxar muito atrás da coxa.'},
+ bastao:{como:['Em pé, segure um bastão (ou cabo de vassoura, ou faixa elástica) com as mãos bem abertas.','Com os braços esticados, leve o bastão da frente do quadril, por cima da cabeça, até atrás do corpo.','Volte pelo mesmo caminho, devagar.'],sentir:'Os ombros e o peito soltando.',cuidado:'Se não passar fácil, abra mais as mãos. Barriga firme pra não arquear a lombar.'},
+ rotacao4:{como:['Fique de quatro apoios: mãos embaixo dos ombros e joelhos embaixo do quadril.','Leve um braço pro alto, girando o tronco e olhando pra mão.','Depois passe esse braço por baixo do corpo, levando o ombro em direção ao chão.'],sentir:'O meio das costas girando.',cuidado:'Quadril parado: quem gira é o tronco.'},
+ cobra:{como:['Deite de barriga pra baixo, com as mãos no chão ao lado do peito.','Empurre o chão e suba o peito devagar, com o quadril encostado no colchonete.','Desça e repita.'],sentir:'A barriga e a frente do tronco alongando.',cuidado:'Suba só até onde a lombar ficar confortável. Ombros longe das orelhas.'},
 };
 
 /* rotinas: o app escolhe pelo treino do dia */
-const AL_R={pernas:{n:'Pernas',aq:['agach','afundo','dobradica','balanco','tornozelo','ponte'],al:['quad','post','pant','flexor','joelho']},
- cima:{n:'Parte de cima',aq:['braco','abre','gatovaca','bracosY','dobradica'],al:['peito','ombro','triceps','costas','crianca']},
- todo:{n:'Corpo todo',aq:['braco','abre','gatovaca','agach','afundo','balanco'],al:['quad','post','peito','ombro','crianca']},
- corrida:{n:'Corrida',aq:['balanco','tornozelo','afundo','agach','dobradica'],al:['quad','post','pant','flexor','joelho']}};
+const AL_R={pernas:{n:'Pernas',k:'mob',l:['afundoJ','pombo','fig4','sapo','cachorro']},
+ cima:{n:'Parte de cima',k:'mob',l:['bastao','braco','gatovaca','rotacao4','cachorro']},
+ todo:{n:'Corpo todo',k:'mob',l:['bastao','gatovaca','afundoJ','pombo','rotacao4','cachorro']},
+ corrida:{n:'Corrida',k:'mob',l:['balanco','afundoJ','pombo','cachorro']},
+ completo:{n:'Corpo todo',k:'al',l:['quad','post','flexor','fig4','pant','joelho','crianca','costas','peito','ombro','triceps']},
+ rapido:{n:'Rapidinho',k:'al',l:['quad','post','fig4','peito','crianca']},
+ poscorrida:{n:'Depois da corrida',k:'al',l:['quad','post','pant','flexor','joelho']}};
 const AL_UP=['costas','peito','ombro','biceps','triceps'];
 function alRegion(w){let lo=0,up=0;(w&&w.items||[]).forEach(it=>{const g=(EX[it.exId]||{}).g;if(LOWER.includes(g))lo++;else if(AL_UP.includes(g))up++;});
  if(lo&&lo>=up*2)return 'pernas';if(up&&up>=lo*2)return 'cima';return 'todo';}
-function alSteps(r,tipo){const out=[];AL_R[r][tipo].forEach(id=>{const m=MOVES[id];const est=m.tipo==='est';const d=est?30:(m.uni?20:40);
+function alSteps(r){const out=[];AL_R[r].l.forEach(id=>{const m=MOVES[id];const d=m.d||(m.uni?30:m.tipo==='est'?30:40);
  if(m.uni){out.push({id,side:1,d});out.push({id,side:2,d});}else out.push({id,side:0,d});});return out;}
-const alMin=(r,tipo)=>Math.max(1,Math.round(alSteps(r,tipo).reduce((s,x)=>s+x.d,0)/60));
-function alBtn(r,tipo,ctx){const R=AL_R[r];const n=AL_R[r][tipo].length;
- return `<button class="alrow ${tipo}" data-a="alGo" data-r="${r}" data-t="${tipo}"><span class="em">${tipo==='aq'?'🤸':'🧘'}</span><span><b>${tipo==='aq'?'Mobilidade antes':'Alongar depois'} · ${alMin(r,tipo)} min</b><span>${ctx||`${n} movimentos pra ${R.n.toLowerCase()}, com bonequinho mostrando como fazer`}</span></span><span class="go">▶</span></button>`;}
+const alMin=r=>Math.max(1,Math.round(alSteps(r).reduce((s,x)=>s+x.d,0)/60));
+function alBtn(r,ctx){const R=AL_R[r];const mob=R.k==='mob';
+ return `<button class="alrow ${mob?'aq':'al'}" data-a="alGo" data-r="${r}"><span class="em">${mob?'🤸':'🧘'}</span><span><b>${mob?'Mobilidade':'Alongamento'} · ${alMin(r)} min</b><span>${ctx||R.l.map(id=>MOVES[id].n.split(':')[0]).join(', ')}</span></span><span class="go">▶</span></button>`;}
 let AL=null;
-function alOpen(r,tipo){alClose(true);try{closeSheet();}catch(e){}AL={r,tipo,steps:alSteps(r,tipo),i:0,left:0,play:false,end:false,t0:performance.now()};AL.left=AL.steps[0].d;
+function alOpen(r){alClose(true);try{closeSheet();}catch(e){}AL={r,tipo:AL_R[r].k==='mob'?'aq':'al',steps:alSteps(r),i:0,left:0,play:false,end:false,t0:performance.now()};AL.left=AL.steps[0].d;
  let ov=document.getElementById('alov');if(!ov){ov=document.createElement('div');ov.id='alov';document.body.appendChild(ov);}
  document.body.style.overflow='hidden';alDraw();AL.raf=requestAnimationFrame(alAnim);AL.iv=setInterval(alTick,200);}
 function alClose(silent){if(!AL)return;cancelAnimationFrame(AL.raf);clearInterval(AL.iv);try{AL.wl&&AL.wl.release();}catch(e){}hush();AL=null;
@@ -1813,7 +1825,7 @@ function alGoStep(i,auto){if(!AL)return;if(i>=AL.steps.length){AL.end=true;AL.pl
  if(auto)alBeep(2);alDraw();if(AL.play)alAnnounce();}
 function alDraw(){const ov=document.getElementById('alov');if(!ov||!AL)return;const R=AL_R[AL.r];const tit=(AL.tipo==='aq'?'Mobilidade':'Alongamento')+' · '+R.n;
  if(AL.end){ov.innerHTML=`<div class="al-in"><div class="al-top"><span class="kicker">${tit}</span><button class="ib" data-a="alClose" aria-label="Fechar">✕</button></div>
-  <div style="text-align:center;padding:40px 10px 10px"><div style="font-size:64px">${AL.tipo==='aq'?'🔥':'🌿'}</div><h2 class="disp" style="font-size:26px;margin:10px 0 6px;font-weight:600">${AL.tipo==='aq'?'Corpo pronto!':'Alongamento feito!'}</h2>
+  <div style="text-align:center;padding:40px 10px 10px"><div style="font-size:64px">${AL.tipo==='aq'?'🔥':'🌿'}</div><h2 class="disp" style="font-size:26px;margin:10px 0 6px;font-weight:600">${AL.tipo==='aq'?'Corpo solto e pronto!':'Alongamento feito!'}</h2>
   <p class="mut" style="margin:0 0 24px">${AL.tipo==='aq'?'Agora é com você: bom treino 💪':'Mandou bem. Seu corpo agradece 💚'}</p>
   <button class="btn alt" data-a="alClose">${AL.tipo==='aq'?'Bora treinar 💪':'Fechar'}</button>
   <button class="btn2" style="margin-top:8px" data-a="alAgain">Fazer de novo</button></div></div>`;return;}
@@ -1828,12 +1840,22 @@ function alDraw(){const ov=document.getElementById('alov');if(!ov||!AL)return;co
   <div class="al-ctl"><button data-a="alPrev" aria-label="Anterior" ${AL.i?'':'disabled'}>⏮</button><button class="main" data-a="alPlay">${AL.play?'⏸ Pausar':AL.i||AL.left<st.d?'▶ Continuar':'▶ Começar'}</button><button data-a="alNext" aria-label="Próximo">⏭</button></div>
   <div class="al-tx"><b>Como fazer</b><ol>${tx.como.map(c=>`<li>${c}</li>`).join('')}</ol>
   <p><b>💗 Onde sentir:</b> ${tx.sentir}</p><p><b>⚠️ Cuidado:</b> ${tx.cuidado}</p>
-  <p class="small mut">${m.tipo==='est'?'Alongamento é um puxão leve, nunca dor. Não balance: segure parada.':'Mobilidade é movimento lento e controlado, até onde for confortável. Sem pulos e sem dor.'}</p>
+  <p class="small mut">${m.tipo==='est'?'Alongamento é um puxão leve, nunca dor. Não balance: segure parada.':'Mobilidade é movimento lento e controlado, até onde for confortável. Sem dor.'}</p>
   <a class="mini o" href="https://www.youtube.com/results?search_query=${encodeURIComponent(m.n+(m.tipo==='est'?' alongamento':' mobilidade')+' como fazer')}" target="_blank" rel="noopener">▶ Ver vídeo</a>
   ${AL.i+1<n?`<p class="small mut" style="margin-top:12px">Próximo: <b>${esc(MOVES[AL.steps[AL.i+1].id].n)}</b>${AL.steps[AL.i+1].id===st.id?' (outro lado)':''}</p>`:''}</div></div>`;
  const s=document.getElementById('al-svg');if(s)s.innerHTML=bqSVG(m,performance.now()-AL.t0,st.side===2);}
 async function alWake(){try{if('wakeLock' in navigator&&!AL.wl)AL.wl=await navigator.wakeLock.request('screen');}catch(e){}}
 
+
+function vMob(){const lst=r=>AL_R[r].l.map(id=>esc(MOVES[id].n.split(':')[0])).join(' · ');
+ const card=(r,e)=>`<button class="mobc" data-a="alGo" data-r="${r}"><span class="em">${e}</span><span><b>${AL_R[r].n}</b><span>${lst(r)}</span></span><span class="min">${alMin(r)} min ▶</span></button>`;
+ return `<button class="back" data-a="go" data-v="hoje">← Hoje</button><span class="kicker">Soltar o corpo</span><h2 class="disp h2">Mobilidade e alongamento</h2>
+ <div class="info">Um bonequinho mostra cada movimento e a bolinha rosa mostra onde você deve sentir. O cronômetro passa sozinho pro próximo. Pegue um colchonete 🧘</div>
+ <h3 class="h3">🤸 Mobilidade antes do treino</h3><p class="small mut" style="margin:-4px 0 10px">Movimentos que soltam as articulações pra você treinar com a amplitude completa. Uns 4 a 5 minutos.</p>
+ ${card('pernas','🦵')}${card('cima','💪')}${card('todo','🙆')}${card('corrida','🏃‍♀️')}
+ <h3 class="h3">🧘 Só alongar</h3><p class="small mut" style="margin:-4px 0 10px">Pra um dia de descanso, depois do treino ou quando quiser. Segure cada posição e respire.</p>
+ ${card('completo','🌿')}${card('rapido','⏱️')}${card('poscorrida','👟')}
+ <p class="small mut" style="text-align:center;margin-top:14px">Alongamento é um puxão leve, nunca dor. Se doer, pare e fale com um profissional de educação física.</p>`;}
 
 /* ---------- Sessão de treino ---------- */
 function vSessao(){
@@ -1858,11 +1880,10 @@ function vSessao(){
   </div>`;}).join('');
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
  <span class="kicker">${w.day?DAYM[w.day]:'Treino'}</span><h2 class="disp h2" style="margin-bottom:8px">${esc(w.name)}</h2>
- ${doneW?'':alBtn(alRegion(w),'aq','Movimentos lentos pra soltar as articulações antes do treino')}
+ ${doneW?'':alBtn(alRegion(w),'Antes de começar: solta o corpo pra treinar com amplitude completa')}
  <div class="info">Em cada exercício: confira o peso e as repetições e toque em <b>Terminei a série</b>. Eu conto as séries e ligo o cronômetro do descanso. <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como subir a carga?</button></div>
  ${cards||'<div class="card empty">Ainda sem exercícios. Adicione o que você fez 👇</div>'}
  <button class="btn2" style="margin:0 0 12px" data-a="addExOpen">＋ Adicionar um exercício que fiz</button>
- ${alBtn(alRegion(w),'al','Pra fazer no fim: segure cada posição e respire')}
  <div class="card">${doneW?`<p style="margin:0 0 10px;font-weight:700;color:var(--a)">✓ Treino registrado hoje${doneW.minutes?' · '+doneW.minutes+' min':''}</p>`:''}
   <label class="lbl" style="margin-top:0">Quanto tempo durou? (min)</label>
   <input class="inp" id="fin-min" inputmode="numeric" placeholder="ex: 60" value="${doneW&&doneW.minutes?doneW.minutes:''}">
@@ -2890,7 +2911,7 @@ function vCorrida(){
   <div style="font-size:13.5px;opacity:.85;margin-bottom:14px">~${stepsMin(fullSteps(NS.steps))} min no total, com 5 min de caminhada antes e depois. Eu te guio por voz 🔊</div>
   <button class="btn alt" data-a="runGo" data-k="${nk}">▶ Começar corrida guiada</button>
   <button style="display:block;width:100%;margin-top:10px;color:#fff;opacity:.9;font-weight:700;font-size:14px" data-a="runManual" data-k="${nk}">Já corri, quero só registrar</button></div>
- <div class="btnrow" style="margin:-4px 0 14px"><button class="btn2" style="padding:11px" data-a="alGo" data-r="corrida" data-t="aq">🤸 Mobilidade · ${alMin('corrida','aq')} min</button><button class="btn2" style="padding:11px" data-a="alGo" data-r="corrida" data-t="al">🧘 Alongar · ${alMin('corrida','al')} min</button></div>`;
+ <div class="btnrow" style="margin:-4px 0 14px"><button class="btn2" style="padding:11px" data-a="alGo" data-r="corrida">🤸 Mobilidade · ${alMin('corrida')} min</button><button class="btn2" style="padding:11px" data-a="alGo" data-r="poscorrida">🧘 Alongar · ${alMin('poscorrida')} min</button></div>`;
  return `${msgsH}
  <span class="kicker">Corrida · nível ${p.lvl}</span><h2 class="disp h2" style="margin-bottom:4px">${esc(L.phase)}</h2>
  <p class="small mut" style="margin:0 0 12px">${nextMs?'Próximo marco: <b>'+nextMs.l+'</b>':'Você já passou de uma meia maratona! 🏆'}${L.recovery?' · Esta é uma semana mais leve 🌿':''}</p>
@@ -2949,7 +2970,7 @@ function vCorridaFim(){const e=UI.runEnd;if(!e)return vCorrida();
   ${e.pain!=='nenhuma'?`<input class="inp" style="margin-top:8px" data-i="re.painWhere" value="${esc(e.painWhere)}" placeholder="Onde? (ex: joelho direito, canela)">`:''}
   <label class="lbl">Observação</label><input class="inp" data-i="re.note" value="${esc(e.note)}" placeholder="ex: subida no fim, calor">
   <button class="btn alt" style="margin-top:14px" data-a="reSave">Salvar corrida</button>
-  ${manual?'':`<div style="margin-top:10px">${alBtn('corrida','al','Pernas e quadril, logo depois de correr')}</div>`}
+  ${manual?'':`<div style="margin-top:10px">${alBtn('poscorrida','Pernas e quadril, logo depois de correr')}</div>`}
   ${manual?'':'<button class="btn2" style="margin-top:8px" data-a="reDiscard">Descartar</button>'}</div>`;}
 
 /* ================== CARD PRA COLAR NA FOTO (musculação e outras atividades) ================== */
@@ -3332,15 +3353,13 @@ const A={
   if(!e.sets.length)D.history[id]=D.history[id].filter(x=>x!==e);else{e.weight=Math.max(...e.sets.map(z=>z.w));e.reps=Math.max(...e.sets.filter(z=>z.w===e.weight).map(z=>z.r||0));}
   if(D.history[id]&&!D.history[id].length)delete D.history[id];persist();restStop();const y=window.scrollY;render();window.scrollTo(0,y);toast('Última série desfeita');},
  progInfo:()=>openSheet(progInfoHtml()),
- alGo:t=>alOpen(t.dataset.r,t.dataset.t),
+ alGo:t=>alOpen(t.dataset.r),
  alClose:()=>alClose(),
  alPlay:()=>{if(!AL)return;if(!AL.ac){try{AL.ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}AL.play=!AL.play;AL.last=performance.now();if(AL.play){alWake();alAnnounce();}else hush();alDraw();},
  alNext:()=>{if(AL)alGoStep(AL.i+1);},alPrev:()=>{if(AL)alGoStep(AL.i-1);},
  alVoz:()=>{D.alVoz=D.alVoz===false;persist();if(D.alVoz===false)hush();alDraw();},
- alAgain:()=>{if(AL)alOpen(AL.r,AL.tipo);},
- alMenu:()=>openSheet(`<span class="kicker">Mobilidade e alongamento</span><h2 class="disp" style="font-size:22px;margin:2px 40px 6px 0;font-weight:600">O que você vai fazer hoje? 🤸</h2>
-  <p class="small mut" style="margin:0 0 12px"><b>Antes</b> do treino, faça a mobilidade: movimentos lentos que soltam as articulações, sem pulos. <b>Depois</b>, alongue segurando cada posição. Um bonequinho mostra como fazer.</p>
-  ${Object.entries(AL_R).map(([k,r])=>`<div class="card" style="padding:12px 14px;margin-bottom:10px"><b>${{pernas:'🦵',cima:'💪',todo:'🙆',corrida:'🏃‍♀️'}[k]} ${r.n}</b><div class="btnrow" style="margin-top:8px"><button class="btn alt sm" data-a="alGo" data-r="${k}" data-t="aq">🤸 Mobilidade · ${alMin(k,'aq')} min</button><button class="btn2" style="padding:10px" data-a="alGo" data-r="${k}" data-t="al">🧘 Alongar · ${alMin(k,'al')} min</button></div></div>`).join('')}`),
+ alAgain:()=>{if(AL)alOpen(AL.r);},
+ alMenu:()=>go('mobilidade'),
  restGo:t=>{const id=t.dataset.id;const r=restFor(id);restStart(r[0],EX[id].n);},
  restAdd:t=>{if(!REST)return;REST.end+=(+t.dataset.v)*1000;if(REST.end<Date.now()+1000)REST.end=Date.now()+1000;REST.done=false;const b=document.getElementById('restbar');if(b)b.classList.remove('fim');restTick();},
  restStop:()=>restStop(),
