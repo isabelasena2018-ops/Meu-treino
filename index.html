@@ -205,7 +205,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.4 · 10/11 16h';
+const APP_VERSION='6.5 · 10/11 17h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1912,7 +1912,8 @@ function vBuilder(){
   help=`<div class="card dark"><b style="font-size:15.5px">Quer ajuda pra montar? 🤝</b><p style="margin:6px 0 12px;font-size:13.5px;opacity:.9;line-height:1.5">Eu sugiro os exercícios, as séries e as repetições pro foco em ${f.l.toLowerCase()} e pro seu objetivo. Você ajusta como quiser depois.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn alt sm" data-a="helpYes">Sim, me ajuda!</button><button class="btn sm" style="background:rgba(255,255,255,.15)" data-a="helpNo">Monto sozinha</button></div></div>`;
  }else if(f&&e.helped){
-  help=`<div class="info"><b>${f.e} Dica pra ${f.l.toLowerCase()}:</b> ${f.t}<br><br>⏱️ ${OBJ[D.profile.obj||'emagrecer'].rest}</div>`;
+  const mexido=e.items.length&&e.autoSig&&JSON.stringify(e.items)!==e.autoSig;
+  help=`<div class="info"><b>${f.e} Dica pra ${f.l.toLowerCase()}:</b> ${f.t}<br><br>⏱️ ${OBJ[D.profile.obj||'emagrecer'].rest}</div>${mexido||!e.autoSig?`<button class="btn2" style="margin-bottom:12px" data-a="helpYes">✨ Trocar pelos exercícios de ${f.l.toLowerCase()}</button>`:''}`;
  }else if(f){
   help=`<button class="btn2" style="margin-bottom:12px" data-a="helpYes">✨ Sugerir exercícios pra ${f.l.toLowerCase()}</button>`;
  }else if(!e.items.length){
@@ -3313,10 +3314,14 @@ const A={
   if(ex){ex.minutes=isNaN(min)?null:min;}else{D.activities.push({id:uid(),ts:Date.now(),date:today(),type:'musculacao',name:w.name,workoutId:w.id,minutes:isNaN(min)?null:min,period:periodNow(),intensity:'moderada'});}
   persist();toast('Treino registrado! 🔥');go('hoje');},
  newW:()=>{UI.edit={name:'',focus:'',day:'',items:[],helped:null};go('builder');},
- suggest:t=>{const f=t.dataset.f;UI.edit={name:'Treino de '+FOCUS[f].l,focus:f,day:'',items:FOCUS[f].ex.map(id=>({exId:id,sets:rec(id)})),helped:true};go('builder');},
+ suggest:t=>{const f=t.dataset.f;UI.edit={name:'Treino de '+FOCUS[f].l,focus:f,day:'',items:FOCUS[f].ex.map(id=>({exId:id,sets:rec(id)})),helped:true};UI.edit.autoSig=JSON.stringify(UI.edit.items);go('builder');},
  editW:t=>{const w=D.workouts.find(x=>x.id===t.dataset.id);UI.edit=JSON.parse(JSON.stringify(w));UI.edit.helped=false;go('builder');},
- focus:t=>{const e=UI.edit;e.focus=t.dataset.f;if(!e.items.length)e.helped=null;else if(e.helped)e.helped=true;render();},
- helpYes:()=>{const e=UI.edit;if(e.items.length&&!confirm('Trocar os exercícios atuais pelos sugeridos?'))return;{const c=profileCfg();c.foci=[e.focus==='superiores'?'peito':e.focus];e.items=planSession(FOCUS2SESS[e.focus]||'F',c,new Set(),c.nivel==='iniciante'?5:6,null).map(({pr,...it})=>it);}e.helped=true;if(!e.name.trim())e.name='Treino de '+FOCUS[e.focus].l;render();},
+ focus:t=>{const e=UI.edit;const old=e.focus,nf=t.dataset.f;e.focus=nf;
+  /* se os exercícios ainda são os sugeridos (ninguém mexeu), troca junto com o foco */
+  if(e.items.length&&e.autoSig&&JSON.stringify(e.items)===e.autoSig&&old!==nf){e.items=FOCUS[nf].ex.map(id=>({exId:id,sets:rec(id)}));e.autoSig=JSON.stringify(e.items);e.helped=true;
+   if(!e.name.trim()||Object.values(FOCUS).some(F=>e.name==='Treino de '+F.l))e.name='Treino de '+FOCUS[nf].l;toast('Troquei os exercícios pra '+FOCUS[nf].l.toLowerCase()+' ✨');}
+  else if(!e.items.length)e.helped=null;else if(e.helped)e.helped=true;render();},
+ helpYes:()=>{const e=UI.edit;if(e.items.length&&!confirm('Trocar os exercícios atuais pelos sugeridos?'))return;{const c=profileCfg();c.foci=[e.focus==='superiores'?'peito':e.focus];e.items=planSession(FOCUS2SESS[e.focus]||'F',c,new Set(),c.nivel==='iniciante'?5:6,null).map(({pr,...it})=>it);}e.helped=true;e.autoSig=JSON.stringify(e.items);if(!e.name.trim()||Object.values(FOCUS).some(F=>e.name==='Treino de '+F.l))e.name='Treino de '+FOCUS[e.focus].l;render();},
  helpNo:()=>{UI.edit.helped=false;render();},
  itUp:t=>{const i=+t.dataset.i2;const it=UI.edit.items;if(i>0){[it[i-1],it[i]]=[it[i],it[i-1]];render();}},
  itDel:t=>{UI.edit.items.splice(+t.dataset.i2,1);render();},
