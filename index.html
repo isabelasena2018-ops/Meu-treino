@@ -127,6 +127,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .wbars{display:flex;gap:6px;align-items:flex-end;height:110px}.wbars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}.wbars b{font-size:12px}.wbars span{width:100%;max-width:26px;background:var(--a);border-radius:6px 6px 3px 3px}.wbars i{font-size:10px;color:var(--mut);font-style:normal}
 html.dark .cal .cd.bom{background:var(--deep)}
 details.card.fold>summary{margin:0}details.card.dark summary .chev{color:rgba(255,255,255,.75)}details.fold:not([open])>summary .kicker{margin-bottom:0}details.card.dark.fold[open] .week{margin-top:14px}
+.psec{border-bottom:1px solid var(--line);margin:0}.psec>summary{display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer;padding:15px 4px;font-weight:800;font-size:16px;color:var(--ink)}.psec>summary::-webkit-details-marker{display:none}.psec[open]>summary .chev{transform:rotate(180deg)}.psec[open]{padding-bottom:6px}.psec+details.card{margin-top:16px}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
 .al-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.al-prog{display:flex;gap:4px;margin-bottom:10px}.al-prog i{flex:1;height:5px;border-radius:5px;background:var(--line)}.al-prog i.ok{background:var(--a)}.al-prog i.now{background:var(--a2)}
@@ -210,7 +211,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='7.1 · 10/11 22h';
+const APP_VERSION='7.2 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2296,7 +2297,10 @@ function vPerfil(){
  if(!PROF)PROF=JSON.parse(JSON.stringify(D.profile));
  PROF.supps=PROF.supps||{};
  return `<button class="back" data-a="go" data-v="hoje">← Voltar</button>
- <span class="kicker">Perfil</span><h2 class="disp h2">Suas informações</h2>
+ <span class="kicker">Perfil</span><h2 class="disp h2">Seu perfil</h2>
+ ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?acctCardHtml():''}
+ ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?`<button class="li" data-a="admOpen" style="border:1.5px solid var(--a)"><span><b>👀 Quem usa o app</b><span>Seu painel de criadora</span></span><span class="mut">›</span></button>`:''}
+ <details class="psec fold" data-fold="p_info"${foldOpen('p_info',false)}><summary><span>📝 Suas informações</span><span class="chev">▾</span></summary>
  <div class="card">
   <label class="lbl" style="margin-top:0">Nome</label><input class="inp" data-i="prof.nome" value="${esc(PROF.nome)}">
   <label class="lbl">Objetivo</label><div class="chips">${Object.entries(OBJ).map(([k,o])=>`<button class="chip ${PROF.obj===k?'on':''}" data-a="profObj" data-k="${k}">${o.l}</button>`).join('')}</div>
@@ -2304,28 +2308,32 @@ function vPerfil(){
   <label class="lbl">Na sua rotina</label>
   ${SUPPS.map(s=>`<button class="toggle ${PROF.supps[s.k]?'on':''}" data-a="profSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
   <button class="btn" style="margin-top:12px" data-a="saveProf">Salvar</button>
- </div>
- ${hasTTS()?`<h3 class="h3">🔊 Voz do app</h3>
+ </div></details>
+ ${hasTTS()?`<details class="psec fold" data-fold="p_voz"${foldOpen('p_voz',false)}><summary><span>🔊 Voz do app</span><span class="chev">▾</span></summary>
  <div class="card">${(()=>{const vs=ptVoices().sort((a,b)=>voiceRank(b)-voiceRank(a));const cur=pickVoice();
   return vs.length?`<label class="lbl" style="margin-top:0">Voz</label><select class="inp" data-c="voice">${vs.map(v=>`<option value="${esc(v.name)}" ${cur&&cur.name===v.name?'selected':''}>${esc(v.name)}${/pt[-_]BR/i.test(v.lang)?'':' ('+esc(v.lang)+')'}${voiceRank(v)>=150?' ⭐':''}</option>`).join('')}</select>
   <label class="lbl">Velocidade</label><div class="chips">${[[0.9,'Mais calma'],[1,'Normal'],[1.1,'Mais rápida']].map(([r,l])=>`<button class="chip ${(D.voiceRate||1)===r?'on':''}" data-a="voiceRate" data-r="${r}">${l}</button>`).join('')}</div>
   <button class="btn2" style="margin-top:10px" data-a="voiceTest">▶ Ouvir exemplo</button>`:'<p class="small mut" style="margin:0">Carregando as vozes do celular…</p>';})()}
-  <p class="small mut" style="margin:10px 0 0;line-height:1.5"><b>Quer uma voz bem mais natural?</b> No iPhone, baixe uma voz "Aprimorada" (é grátis): <b>Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil)</b> e escolha Luciana ou Felipe com a opção <b>Aprimorada</b> ou <b>Premium</b>. Depois feche e abra o app e escolha ela aqui. As marcadas com ⭐ são as melhores.</p></div>`:''}
- <h3 class="h3">🔔 Notificações inteligentes</h3>
+  <p class="small mut" style="margin:10px 0 0;line-height:1.5"><b>Quer uma voz bem mais natural?</b> No iPhone, baixe uma voz "Aprimorada" (é grátis): <b>Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil)</b> e escolha Luciana ou Felipe com a opção <b>Aprimorada</b> ou <b>Premium</b>. Depois feche e abra o app e escolha ela aqui. As marcadas com ⭐ são as melhores.</p></div></details>`:''}
+ <details class="psec fold" data-fold="p_notif"${foldOpen('p_notif',false)}><summary><span>🔔 Notificações e lembretes</span><span class="chev">▾</span></summary>
  <div class="card">${pushCardHtml()}</div>
- <h3 class="h3">Aparência</h3>
+ </details>
+ <details class="psec fold" data-fold="p_apar"${foldOpen('p_apar',false)}><summary><span>🎨 Aparência</span><span class="chev">▾</span></summary>
  <div class="card"><p class="small mut" style="margin:0 0 10px">O modo escuro cansa menos a vista à noite e economiza bateria.</p><div class="chips">${[['auto','📱 Igual ao celular'],['claro','☀️ Claro'],['escuro','🌙 Escuro']].map(([k,l])=>`<button class="chip ${(D.theme||'auto')===k?'on':''}" data-a="setTheme" data-v="${k}">${l}</button>`).join('')}</div></div>
- <h3 class="h3">Privacidade</h3>
+ </details>
+ <details class="psec fold" data-fold="p_priv"${foldOpen('p_priv',false)}><summary><span>🔒 Privacidade</span><span class="chev">▾</span></summary>
  <div class="card"><button class="toggle ${D.usageShare!==false?'on':''}" data-a="usageToggle"><span>Mostrar pra criadora do app que eu uso<br><span class="small mut" style="font-weight:500">Só nome e quando usou. Treinos, peso e comida não.</span></span><span class="tg"></span></button></div>
- ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?acctCardHtml():''}
- ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?`<button class="li" data-a="admOpen" style="border:1.5px solid var(--a)"><span><b>👀 Quem usa o app</b><span>Seu painel de criadora</span></span><span class="mut">›</span></button>`:''}
- <h3 class="h3">Compartilhar</h3>
+ 
+ </details>
+ <details class="psec fold" data-fold="p_comp"${foldOpen('p_comp',false)}><summary><span>📤 Compartilhar o app</span><span class="chev">▾</span></summary>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Mande o link pra quem quiser treinar junto. Cada pessoa cria o próprio perfil e os dados ficam no celular dela.</p><button class="btn alt" data-a="share">📤 Compartilhar o app</button></div>
- <h3 class="h3">Backup</h3>
+ </details>
+ <details class="psec fold" data-fold="p_bkp"${foldOpen('p_bkp',false)}><summary><span>💾 Backup</span><span class="chev">▾</span></summary>
  ${cloudCardHtml()}
  ${!(FB&&FB.au&&FB.au.currentUser&&FB.au.currentUser.email)?`<button class="small" style="display:block;margin:0 auto 12px;font-weight:700;color:var(--mut)" data-a="acctLoginOpen">Trocou de celular e tinha e-mail e senha no app? Entrar</button>`:''}
  <div class="card"><b>📁 Backup em arquivo</b><p class="small mut" style="margin:4px 0 10px">Um arquivo com todos os seus dados, pra guardar onde quiser. <b>Último backup:</b> ${D.lastBackup?new Date(D.lastBackup).toLocaleDateString('pt-BR'):'nunca'}. No iPhone, escolha <i>Salvar em Arquivos</i> ou mande o arquivo pro seu próprio WhatsApp ou e-mail. Pra recuperar, use <b>Importar</b> no celular novo.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
+ </details>
  <details class="card"><summary><span>⚙️ Avançado</span><span class="chev">▾</span></summary>
   <p class="small mut" style="margin:10px 0 6px">ID deste celular no app (só a criadora precisa disso):</p>
   <div style="display:flex;gap:8px;align-items:center"><code style="flex:1;background:var(--soft);border-radius:10px;padding:10px;font-size:12.5px;word-break:break-all">${FB?esc(FB.uid):'carregando… abra com internet'}</code>${FB?`<button class="mini g" data-a="copyId">Copiar</button>`:''}</div></details>
@@ -2768,7 +2776,7 @@ const AUTH_ERR={'auth/email-already-in-use':'Esse e-mail já está em uso numa c
  'auth/too-many-requests':'Muitas tentativas. Espera uns minutos e tenta de novo.','auth/network-request-failed':'Sem internet agora. Tenta de novo daqui a pouco.','auth/provider-already-linked':'Essa conta já tem e-mail e senha.','auth/credential-already-in-use':'Esse e-mail já está ligado a outra conta.'};
 const authMsg=e=>AUTH_ERR[e&&e.code]||'Não deu certo agora. Tenta de novo daqui a pouco.';
 function acctCardHtml(){const u=FB&&FB.au&&FB.au.currentUser;const em=u&&u.email;
- return `<div class="card" style="border:1.5px solid var(--a)"><b>🔐 Seu acesso de administradora</b>${em?`<p class="small" style="margin:6px 0 0;line-height:1.5">✓ Protegido com <b>${esc(em)}</b>. Num celular novo, é só tocar em <b>"Entrar"</b> no fim do Perfil e usar esse e-mail e a senha: o painel, os grupos e os lembretes voltam.</p>
+ return `<div class="card" style="border:1.5px solid var(--a)"><b>🔐 Seu acesso de administradora</b>${em?`<p class="small" style="margin:6px 0 0;line-height:1.5">✓ Protegido com <b>${esc(em)}</b>. Num celular novo, é só abrir <b>Perfil → 💾 Backup</b>, tocar em <b>"Entrar"</b> e usar esse e-mail e a senha: o painel, os grupos e os lembretes voltam.</p>
   <button class="small" style="margin-top:8px;font-weight:700;color:var(--a)" data-a="acctReset" data-e="${esc(em)}">Esqueci a senha</button>`
   :`<p class="small mut" style="margin:6px 0 10px;line-height:1.5">Hoje o painel só abre neste celular. Coloque um e-mail e uma senha: fica a <b>mesma conta</b>, nada muda aqui, e num celular novo você entra de novo.</p>
   <input class="inp" id="acc-e" type="email" autocomplete="username" inputmode="email" placeholder="seu e-mail">
