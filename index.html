@@ -126,6 +126,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 .cal-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--mut);font-weight:600}.cal-leg i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:5px;vertical-align:-1px}.cal-leg .bom{background:var(--a)}.cal-leg .fora{background:var(--a2soft);border:1px solid var(--a2)}.cal-leg .reg{background:var(--asoft)}
 .wbars{display:flex;gap:6px;align-items:flex-end;height:110px}.wbars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}.wbars b{font-size:12px}.wbars span{width:100%;max-width:26px;background:var(--a);border-radius:6px 6px 3px 3px}.wbars i{font-size:10px;color:var(--mut);font-style:normal}
 html.dark .cal .cd.bom{background:var(--deep)}
+details.card.fold>summary{margin:0}details.card.dark summary .chev{color:rgba(255,255,255,.75)}details.fold:not([open])>summary .kicker{margin-bottom:0}details.card.dark.fold[open] .week{margin-top:14px}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
 .al-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.al-prog{display:flex;gap:4px;margin-bottom:10px}.al-prog i{flex:1;height:5px;border-radius:5px;background:var(--line)}.al-prog i.ok{background:var(--a)}.al-prog i.now{background:var(--a2)}
@@ -209,7 +210,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.8 · 10/11 22h';
+const APP_VERSION='6.9 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1570,6 +1571,8 @@ function vOnb(){
 }
 
 /* ---------- Hoje ---------- */
+/* partes do Hoje que a pessoa recolhe pela setinha (fica lembrado) */
+const foldOpen=(k,def)=>{const f=D.fold&&D.fold[k];return (f===undefined?def:!f)?' open':'';};
 function vHoje(){
  const p=D.profile;const h=new Date().getHours();
  const hi=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
@@ -1604,18 +1607,18 @@ function vHoje(){
  ${UI.pendingGroup&&!soc().groups.some(g=>g.id===UI.pendingGroup)?`<button class="ckcard" data-a="go" data-v="turma" style="border-color:var(--a);background:var(--asoft)"><span class="em">👯‍♀️</span><span><b style="color:var(--a)">Você recebeu um convite!</b><span style="color:var(--infotx)">Toque aqui pra entrar no grupo e treinar junto com a galera.</span></span></button>`:''}
  <div style="margin:4px 0 12px"><span class="kicker">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</span><h2 class="disp h2" style="margin-bottom:0">${hi}, ${esc(p.nome)} 👋</h2></div>
  ${bkHtml}
- <div class="card dark">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-   <div><div style="font-size:12.5px;opacity:.8;font-weight:600">Sequência</div><div class="disp" style="font-size:30px;font-weight:600;line-height:1.1">🔥 ${st} ${st===1?'dia':'dias'}</div></div>
-   <div style="text-align:right"><div style="font-size:12.5px;opacity:.8;font-weight:600">Nesta semana</div><div class="disp" style="font-size:26px;font-weight:600;color:var(--a2)">${activeDaysIn(wk)}/7</div></div>
-  </div>
+ <details class="card dark fold" data-fold="seq"${foldOpen('seq',true)}>
+  <summary><span style="flex:1;display:flex;justify-content:space-between;align-items:center;gap:10px">
+   <span><span style="display:block;font-size:12.5px;opacity:.8;font-weight:600">Sequência</span><span class="disp" style="display:block;font-size:30px;font-weight:600;line-height:1.1">🔥 ${st} ${st===1?'dia':'dias'}</span></span>
+   <span style="text-align:right"><span style="display:block;font-size:12.5px;opacity:.8;font-weight:600">Nesta semana</span><span class="disp" style="display:block;font-size:26px;font-weight:600;color:var(--a2)">${activeDaysIn(wk)}/7</span></span>
+  </span><span class="chev" style="margin-left:10px">▾</span></summary>
   <div class="week">${wk.map((d,i)=>`<div class="wd ${set.has(d)?'done':''} ${d===t?'today':''}"><i>${set.has(d)?'✓':''}</i>${lets[i]}</div>`).join('')}</div>
- </div>
+ </details>
  ${(()=>{const tw=alTodayW();return tw?`<button class="li" data-a="alGo" data-r="${alRegion(tw)}" data-w="${tw.id}" style="border:1.5px solid var(--a)"><span><b style="color:var(--a)">🧘 Comece pela mobilidade · ${alMin(alRegion(tw))} min</b><span>Solta o corpo pro treino de ${esc(tw.name)}. No fim, eu te levo pros exercícios.</span></span><span class="mut">▶</span></button>`
   :`<button class="li" data-a="go" data-v="mobilidade" style="border:1.5px solid var(--a)"><span><b style="color:var(--a)">🧘 Mobilidade e alongamento</b><span>Soltar o corpo antes do treino ou só alongar</span></span><span class="mut">›</span></button>`;})()}
  ${treinoHtml}
- <div class="card">
-  <span class="kicker">Rotina do dia</span>
+ <details class="card fold" data-fold="rotina"${foldOpen('rotina',true)}>
+  <summary><span><span class="kicker">Rotina do dia</span><span class="small mut" style="display:block;font-weight:600;margin-top:2px">${supps.length?`✓ ${supps.filter(s=>c.supps[s.k]).length} de ${supps.length} · `:''}💧 ${fmtL(c.aguaMl)} de ${fmtL(meta)}</span></span><span class="chev">▾</span></summary>
   ${supps.map(s=>{const on=!!c.supps[s.k];return `<button class="chk ${on?'on':''}" data-a="supp" data-k="${s.k}"><span class="box">${on?'✓':''}</span><span><span class="t">${s.e} ${s.l}</span><span class="h">${s.h}</span></span></button>`;}).join('')}
   <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px">
    <div><b>💧 Água</b> <span class="mut small">${fmtL(c.aguaMl)} de ${fmtL(meta)}</span></div>
@@ -1625,9 +1628,9 @@ function vHoje(){
   <div class="chips" style="margin-top:10px">${recips().map((r,i)=>`<button class="chip" data-a="aguaAdd" data-i="${i}">+ ${r.e} ${esc(r.n)}${r.ml?' · '+fmtL(r.ml):''}</button>`).join('')}<button class="chip" data-a="aguaOther">+ Outra quantidade</button></div>
   ${aguaAskHtml()}
   ${!supps.length?'<p class="small mut" style="margin:10px 0 0">Dica: ative creatina, whey, vácuo etc. no seu perfil (ícone 👤 lá em cima).</p>':''}
- </div>
+ </details>
  <button class="ckcard" data-a="ckOpen"><span class="em">📝</span><span><b>${c.checkin?'✓ Check-in feito · registrar de novo':'Registrar meu dia'}</b><span>Escreva como foi seu dia (treino, comida, água) que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>
- <details class="card meal"${(c.meals&&Object.values(c.meals).some(v=>v))?' open':''}>
+ <details class="card meal fold" data-fold="alim"${foldOpen('alim',!!(c.meals&&Object.values(c.meals).some(v=>v)))}>
   <summary><span>🥗 Alimentação de hoje</span><span class="chev">▾</span></summary>
   ${meals.map(([k,l])=>`<label class="lbl">${l}</label><textarea class="inp" rows="2" data-i="meal.${k}" placeholder="O que você comeu?">${esc((c.meals||{})[k])}</textarea>`).join('')}
   <label class="lbl">Consegui comer bem hoje?</label>
@@ -3717,6 +3720,7 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)re
 });
 
 document.addEventListener('input',e=>{if(e.target.id==='ckin')grow(e.target);});
+document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset||!d.dataset.fold)return;D.fold=D.fold||{};const v=!d.open;if(D.fold[d.dataset.fold]!==v){D.fold[d.dataset.fold]=v;persist();}},true);
 document.addEventListener('focusin',e=>{if(e.target.id==='ckin')hush();});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
 
