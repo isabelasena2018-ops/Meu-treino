@@ -210,7 +210,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.9 · 10/11 22h';
+const APP_VERSION='7.0 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2317,11 +2317,13 @@ function vPerfil(){
  <div class="card"><p class="small mut" style="margin:0 0 10px">O modo escuro cansa menos a vista à noite e economiza bateria.</p><div class="chips">${[['auto','📱 Igual ao celular'],['claro','☀️ Claro'],['escuro','🌙 Escuro']].map(([k,l])=>`<button class="chip ${(D.theme||'auto')===k?'on':''}" data-a="setTheme" data-v="${k}">${l}</button>`).join('')}</div></div>
  <h3 class="h3">Privacidade</h3>
  <div class="card"><button class="toggle ${D.usageShare!==false?'on':''}" data-a="usageToggle"><span>Mostrar pra criadora do app que eu uso<br><span class="small mut" style="font-weight:500">Só nome e quando usou. Treinos, peso e comida não.</span></span><span class="tg"></span></button></div>
+ ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?acctCardHtml():''}
  ${FB&&ADMIN_UID&&FB.uid===ADMIN_UID?`<button class="li" data-a="admOpen" style="border:1.5px solid var(--a)"><span><b>👀 Quem usa o app</b><span>Seu painel de criadora</span></span><span class="mut">›</span></button>`:''}
  <h3 class="h3">Compartilhar</h3>
  <div class="card"><p class="small mut" style="margin:0 0 10px">Mande o link pra quem quiser treinar junto. Cada pessoa cria o próprio perfil e os dados ficam no celular dela.</p><button class="btn alt" data-a="share">📤 Compartilhar o app</button></div>
  <h3 class="h3">Backup</h3>
  ${cloudCardHtml()}
+ ${!(FB&&FB.au&&FB.au.currentUser&&FB.au.currentUser.email)?`<button class="small" style="display:block;margin:0 auto 12px;font-weight:700;color:var(--mut)" data-a="acctLoginOpen">Trocou de celular e tinha e-mail e senha no app? Entrar</button>`:''}
  <div class="card"><b>📁 Backup em arquivo</b><p class="small mut" style="margin:4px 0 10px">Um arquivo com todos os seus dados, pra guardar onde quiser. <b>Último backup:</b> ${D.lastBackup?new Date(D.lastBackup).toLocaleDateString('pt-BR'):'nunca'}. No iPhone, escolha <i>Salvar em Arquivos</i> ou mande o arquivo pro seu próprio WhatsApp ou e-mail. Pra recuperar, use <b>Importar</b> no celular novo.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="export">⬇️ Exportar</button><label class="btn2" style="text-align:center;cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-c="import" style="display:none"></label></div></div>
  <details class="card"><summary><span>⚙️ Avançado</span><span class="chev">▾</span></summary>
@@ -2663,7 +2665,7 @@ async function fb(){
   const a=app.initializeApp(FIREBASE_CONFIG);const au=auth.getAuth(a);
   await new Promise(res=>{const un=auth.onAuthStateChanged(au,()=>{un();res();});});
   if(!au.currentUser)await auth.signInAnonymously(au);
-  FB={db:fs.getFirestore(a),uid:au.currentUser.uid,f:fs};return FB;})().catch(e=>{FBP=null;throw e;});
+  FB={db:fs.getFirestore(a),uid:au.currentUser.uid,f:fs,A:auth,au};try{au.languageCode='pt';}catch(e){}return FB;})().catch(e=>{FBP=null;throw e;});
  return FBP;}
 function newCode(){const ch='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';const r=new Uint32Array(8);try{crypto.getRandomValues(r);}catch(e){for(let i=0;i<8;i++)r[i]=Math.floor(Math.random()*4e9);}for(let i=0;i<8;i++)s+=ch[r[i]%ch.length];return s;}
 function daySummary(date){
@@ -2760,6 +2762,25 @@ function vTurma(){
   <p class="small mut" style="margin:12px 0 0">Peso, medidas e o que você comeu nunca são compartilhados.</p>
   <button class="btn2 danger" style="margin-top:12px" data-a="socLeave">Sair do grupo "${esc(G.name)}"</button></details>`;}
 /* ===== painel da criadora: quem usa o app (sem dados de saúde) ===== */
+/* conta com e-mail e senha: liga à MESMA conta do celular (não muda nada) e permite entrar de novo num celular novo */
+const AUTH_ERR={'auth/email-already-in-use':'Esse e-mail já está em uso numa conta.','auth/invalid-email':'Confere o e-mail? Parece que tem algo errado.','auth/weak-password':'A senha precisa ter pelo menos 8 caracteres.',
+ 'auth/missing-password':'Coloca a senha.','auth/invalid-credential':'E-mail ou senha não conferem.','auth/wrong-password':'E-mail ou senha não conferem.','auth/user-not-found':'Não achei conta com esse e-mail.',
+ 'auth/too-many-requests':'Muitas tentativas. Espera uns minutos e tenta de novo.','auth/network-request-failed':'Sem internet agora. Tenta de novo daqui a pouco.','auth/provider-already-linked':'Essa conta já tem e-mail e senha.','auth/credential-already-in-use':'Esse e-mail já está ligado a outra conta.'};
+const authMsg=e=>AUTH_ERR[e&&e.code]||'Não deu certo agora. Tenta de novo daqui a pouco.';
+function acctCardHtml(){const u=FB&&FB.au&&FB.au.currentUser;const em=u&&u.email;
+ return `<div class="card" style="border:1.5px solid var(--a)"><b>🔐 Seu acesso de administradora</b>${em?`<p class="small" style="margin:6px 0 0;line-height:1.5">✓ Protegido com <b>${esc(em)}</b>. Num celular novo, é só tocar em <b>"Entrar"</b> no fim do Perfil e usar esse e-mail e a senha: o painel, os grupos e os lembretes voltam.</p>
+  <button class="small" style="margin-top:8px;font-weight:700;color:var(--a)" data-a="acctReset" data-e="${esc(em)}">Esqueci a senha</button>`
+  :`<p class="small mut" style="margin:6px 0 10px;line-height:1.5">Hoje o painel só abre neste celular. Coloque um e-mail e uma senha: fica a <b>mesma conta</b>, nada muda aqui, e num celular novo você entra de novo.</p>
+  <input class="inp" id="acc-e" type="email" autocomplete="username" inputmode="email" placeholder="seu e-mail">
+  <input class="inp" id="acc-p" type="password" autocomplete="new-password" placeholder="senha (pelo menos 8 caracteres)" style="margin-top:8px">
+  <input class="inp" id="acc-p2" type="password" autocomplete="new-password" placeholder="repita a senha" style="margin-top:8px">
+  <button class="btn sm" style="margin-top:10px" data-a="acctLink">Proteger meu acesso</button>`}</div>`;}
+function acctLoginHtml(){return `<span class="kicker">Celular novo</span><h2 class="disp" style="font-size:22px;margin:2px 40px 6px 0;font-weight:600">Entrar com e-mail e senha</h2>
+ <p class="small mut" style="margin:0 0 12px;line-height:1.5">Use se você já tinha colocado e-mail e senha no app em outro celular. Seus grupos, lembretes e o painel (se for a criadora) voltam. Os treinos e registros vêm pelo backup na nuvem.</p>
+ <input class="inp" id="acl-e" type="email" autocomplete="username" inputmode="email" placeholder="e-mail">
+ <input class="inp" id="acl-p" type="password" autocomplete="current-password" placeholder="senha" style="margin-top:8px">
+ <button class="btn" style="margin-top:12px" data-a="acctLogin">Entrar</button>
+ <button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--a)" data-a="acctReset">Esqueci a senha</button>`;}
 const ADMIN_UID='xs6gZ72v1rOeNYgAg69rDvF07UQ2'; /* celular da Isabela */
 let USAGE_T=null,USAGE_LAST=0,USAGE_SIG='';
 const usageOn=()=>!!(FIREBASE_CONFIG&&D.profile&&D.usageShare!==false);
@@ -3457,6 +3478,19 @@ const A={
   ${it.length?it.map((x,i)=>`<button class="li" data-a="bellGo" data-i="${i}"><span><b>${x.e} ${esc(x.b)}</b><span>${esc(x.s)}</span></span><span class="mut">›</span></button>`).join(''):'<p class="small mut" style="margin:0">Quando tiver corrida, backup ou algo pra lembrar, aparece aqui.</p>'}`);
   const hd=document.querySelector('.ibtn.bell i');if(hd)hd.remove();},
  bellGo:t=>{const x=(UI.bellIt||[])[+t.dataset.i];closeSheet();if(!x)return;if(x.a==='go'){go(x.v);window.scrollTo(0,0);}else if(A[x.a])A[x.a](t);},
+ acctLink:async t=>{const e=(document.getElementById('acc-e').value||'').trim(),p=document.getElementById('acc-p').value||'',p2=document.getElementById('acc-p2').value||'';
+  if(!/^\S+@\S+\.\S+$/.test(e)){toast('Confere o e-mail 😉');return;}if(p.length<8){toast('A senha precisa ter pelo menos 8 caracteres');return;}if(p!==p2){toast('As duas senhas não estão iguais');return;}
+  t.disabled=true;t.textContent='Protegendo…';
+  try{const F=await fb();await F.A.linkWithCredential(F.au.currentUser,F.A.EmailAuthProvider.credential(e,p));toast('Pronto! Acesso protegido 🔐');render();}
+  catch(err){toast(authMsg(err));t.disabled=false;t.textContent='Proteger meu acesso';}},
+ acctLoginOpen:()=>openSheet(acctLoginHtml()),
+ acctLogin:async t=>{const e=(document.getElementById('acl-e').value||'').trim(),p=document.getElementById('acl-p').value||'';
+  if(!e||!p){toast('Coloca o e-mail e a senha');return;}t.disabled=true;t.textContent='Entrando…';
+  try{const F=await fb();await F.A.signInWithEmailAndPassword(F.au,e,p);F.uid=F.au.currentUser.uid;closeSheet();toast('Pronto! Você entrou ✓');render();
+   try{if(socOn())syncSocial().catch(()=>{});if(D.push&&D.push.on)syncPush(true).catch(()=>{});}catch(x){}}
+  catch(err){toast(authMsg(err));t.disabled=false;t.textContent='Entrar';}},
+ acctReset:async t=>{const e=(t.dataset.e||(document.getElementById('acl-e')||{}).value||'').trim();if(!e){toast('Coloca seu e-mail no campo de cima');return;}
+  try{const F=await fb();await F.A.sendPasswordResetEmail(F.au,e);toast('Mandei um e-mail pra você criar uma senha nova 📩');}catch(err){toast(authMsg(err));}},
  alGo:t=>alOpen(t.dataset.r,t.dataset.w),
  alToWorkout:()=>{const id=AL&&AL.wid;alClose();if(id&&D.workouts.some(w=>w.id===id)){UI.sessionId=id;go('sessao');window.scrollTo(0,0);}},
  alClose:()=>alClose(),
