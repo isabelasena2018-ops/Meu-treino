@@ -130,9 +130,9 @@ details.card.fold>summary{margin:0}details.card.dark summary .chev{color:rgba(25
 .psec{border-bottom:1px solid var(--line);margin:0}.psec>summary{display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer;padding:15px 4px;font-weight:800;font-size:16px;color:var(--ink)}.psec>summary::-webkit-details-marker{display:none}.psec[open]>summary .chev{transform:rotate(180deg)}.psec[open]{padding-bottom:6px}.psec+details.card{margin-top:16px}
 .ico{width:1.15em;height:1.15em;vertical-align:-.22em;margin-right:.4em;flex-shrink:0}.ib>.ico{margin:0;width:19px;height:19px;vertical-align:middle}.seg .ico{margin-right:.3em}
 .prbox{background:#fff4d6;color:#7a5200;border-radius:12px;padding:9px 12px;margin:0 0 8px;font-size:14px;animation:prpop .5s ease}html.dark .prbox{background:#3a2e12;color:#ffd77a}@keyframes prpop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
-.bodymap{display:flex;gap:10px;align-items:stretch;margin-top:10px}.bfull{flex:1.3;min-width:0;width:100%;height:auto}.bzoom-w{flex:1;min-width:0;background:var(--card);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}.bzoom{width:100%;height:auto}.bzoom-w span{font-size:11px;font-weight:700;color:var(--mut);margin-top:2px}
-.bsil{fill:var(--bodyc)}.bm{fill:var(--bodym);stroke:var(--bodys);stroke-width:1;stroke-linejoin:round}.bm .ln{fill:none;stroke:var(--bodys)}.bm.hl{fill:#E8633A;stroke:#c24e28}.bm.hl .ln{stroke:rgba(255,255,255,.55)}.bcap{font-size:19px;font-weight:700;fill:var(--mut);text-anchor:middle}.blab{fill:#fff;font-weight:800;text-anchor:middle;paint-order:stroke;stroke:#a8401f;stroke-width:.35em;stroke-linejoin:round}.bdot{display:inline-block;width:9px;height:9px;border-radius:9px;background:#E8633A;margin-right:5px;vertical-align:0}
-:root{--bodyc:#f0e7da;--bodym:#e3d6c3;--bodys:#d2c1a9}html.dark{--bodyc:#22312d;--bodym:#2d3f3a;--bodys:#3d524c}
+.bodywrap{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}.bodyh{display:block;font-size:14px;margin-bottom:8px}.bhair{fill:var(--hair)}.bodymap{display:flex;gap:10px;align-items:stretch}.bfull{flex:1.3;min-width:0;width:100%;height:auto}.bzoom-w{flex:1;min-width:0;background:var(--card);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}.bzoom{width:100%;height:auto}.bzoom-w span{font-size:11px;font-weight:700;color:var(--mut);margin-top:2px}
+.bsil{fill:var(--bodyc)}.bm{fill:var(--bodym);stroke:var(--bodys);stroke-width:1;stroke-linejoin:round}.bm .ln{fill:none;stroke:var(--bodys)}.bm.hl{fill:#EE6A3E;stroke:#c9512b}.bm.hl .ln{stroke:rgba(255,255,255,.55)}.bcap{font-size:19px;font-weight:700;fill:var(--mut);text-anchor:middle}.blab{fill:#fff;font-weight:800;text-anchor:middle;paint-order:stroke;stroke:#a8401f;stroke-width:.35em;stroke-linejoin:round}.bdot{display:inline-block;width:9px;height:9px;border-radius:9px;background:#E8633A;margin-right:5px;vertical-align:0}
+:root{--bodyc:#f3e8da;--bodym:#e8d9c5;--bodys:#d7c3a8;--hair:#6b4f3c}html.dark{--bodyc:#2a3a35;--bodym:#34473f;--bodys:#46594f;--hair:#1c2724}
 .rrow{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--line);background:var(--card);border-radius:10px;touch-action:none}.rrow.drag{box-shadow:0 6px 18px rgba(0,0,0,.15);position:relative;z-index:2}.rhandle{font-size:20px;color:var(--mut);padding:4px 8px;cursor:grab;touch-action:none}.rname{flex:1;font-weight:700;font-size:14.5px}.rname span{display:block;font-weight:500;font-size:12.5px;color:var(--mut)}.rrow .ib:disabled{opacity:.3}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
@@ -217,7 +217,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='7.8 · 11/11 09h';
+const APP_VERSION='7.9 · 11/11 09h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1571,12 +1571,16 @@ function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',e
 
 /* ---------- Onboarding ---------- */
 const AVISO=`<div class="aviso"><b>🤝 O Meu Treino é um apoio, não um profissional.</b> Ele ajuda a organizar sua rotina e facilitar o dia a dia, mas não substitui personal ou professor de educação física, nutricionista, médico ou qualquer pessoa da área da saúde. Mostre seu treino pro seu professor, peça ajuda pra ajustar e siga as orientações de quem te acompanha.</div>`;
+const GENEROS=[['fem','Feminino'],['masc','Masculino'],['nb','Não binário'],['nd','Prefiro não dizer']];
 function vOnb(){
  return `<main class="fade" style="padding-bottom:40px">
  <div class="hero"><div style="font-size:44px">🔥</div><h1 class="disp">Meu Treino</h1><p>Seu treino, sua rotina e sua evolução num lugar só.</p></div>
  <div class="card">
   <label class="lbl" style="margin-top:0">Como podemos te chamar?</label>
   <input class="inp" data-i="onb.nome" value="${esc(ONB.nome)}" placeholder="Seu nome" autocomplete="given-name">
+  <label class="lbl">Gênero <span class="mut" style="font-weight:500">(opcional)</span></label>
+  <div class="chips">${GENEROS.map(([k,l])=>`<button class="chip ${ONB.genero===k?'on':''}" data-a="onbGen" data-k="${k}">${l}</button>`).join('')}</div>
+  <p class="small mut" style="margin:6px 0 0">Serve só pra escolher o bonequinho que mostra os músculos. Fica só no seu celular.</p>
   <label class="lbl">Qual seu objetivo principal?</label>
   <div class="chips">${Object.entries(OBJ).map(([k,o])=>`<button class="chip ${ONB.obj===k?'on':''}" data-a="onbObj" data-k="${k}">${o.l}</button>`).join('')}</div>
   <div class="row2"><div><label class="lbl">Peso atual (kg)</label><input class="inp" inputmode="decimal" data-i="onb.peso" value="${esc(ONB.peso)}" placeholder="opcional"></div>
@@ -2271,57 +2275,68 @@ function libList(){
  if(!items.length)return '<div class="empty">Nenhum exercício encontrado.</div>';
  return items.map(([id,x])=>`<button class="li" data-a="info" data-id="${id}"><span><b>${esc(x.n)}</b><span>${x.s.split('.')[0]}</span></span><span class="tag">${GROUPS[x.g]}</span></button>`).join('');
 }
-/* ---------- Mapa do corpo: onde o exercício trabalha (frente e costas, com zoom na região) ---------- */
+/* ---------- Mapa do corpo: frente e costas, com zoom na região (3 formas: feminino, masculino, neutro) ---------- */
 const BODY_G={gluteo:['glu_max'],quadriceps:['quad'],posterior:['post'],panturrilha:['pant'],costas:['dorsal','costas_meio'],peito:['peito'],ombro:['ombro_lat','ombro_ant'],biceps:['biceps'],triceps:['triceps'],abdomen:['reto','obliquos'],adutor:['adutor'],core:['reto','obliquos']};
-/* metade direita de cada músculo (espelhada pra esquerda); c:1 = peça central, não espelha */
-const BODY_F=[
- ['ombro_ant','<path d="M128,84 Q140,78 146,86 L144,104 Q134,104 128,96 Z"/>'],
- ['ombro_lat','<path d="M146,84 Q158,84 160,98 L156,112 Q148,108 145,100 Z"/>'],
- ['peito_sup','<path d="M102,86 Q118,80 132,86 L130,96 Q116,92 102,96 Z"/>'],
- ['peito','<path d="M102,96 Q116,92 130,96 Q142,104 138,118 Q128,128 112,126 Q102,124 102,114 Z"/>'],
- ['biceps','<path d="M150,112 Q160,114 160,132 Q158,150 152,156 Q144,150 144,132 Q144,116 150,112 Z"/>'],
- ['antebraco','<path d="M152,164 Q162,166 164,190 Q164,214 160,230 Q154,232 152,224 Q148,196 148,176 Q148,166 152,164 Z"/>'],
- ['reto','<path d="M90,132 Q100,128 110,132 L110,206 Q100,212 90,206 Z"/><path d="M90,152 L110,152 M90,172 L110,172 M90,190 L110,190 M100,132 L100,210" fill="none" class="ln"/>',1],
- ['obliquos','<path d="M112,136 Q130,142 134,166 Q134,192 124,206 Q116,212 112,208 Z"/>'],
- ['quad','<path d="M104,244 Q122,238 140,244 Q146,276 138,312 Q132,330 120,332 Q110,328 108,314 Q102,280 104,244 Z"/>'],
- ['adutor','<path d="M100,244 L104,244 Q102,270 108,300 Q104,304 100,304 Z"/>'],
- ['pant','<path d="M118,352 Q126,348 130,362 Q130,380 124,388 Q118,382 117,366 Z"/>'],
-];
-const BODY_B=[
- ['costas_meio','<path d="M100,70 L120,84 L124,104 L114,140 L100,152 L86,140 L76,104 L80,84 Z"/>',1],
- ['post_ombro','<path d="M128,84 Q142,78 148,88 L146,104 Q136,104 128,96 Z"/>'],
- ['ombro_lat','<path d="M148,84 Q158,84 160,98 L156,112 Q150,108 147,100 Z"/>'],
- ['dorsal','<path d="M116,108 Q138,104 142,118 Q140,150 126,176 Q116,192 108,196 Q110,160 116,108 Z"/>'],
- ['triceps','<path d="M150,108 Q160,112 160,132 Q158,150 152,156 Q144,148 144,130 Q144,114 150,108 Z"/>'],
- ['antebraco','<path d="M152,164 Q162,166 164,190 Q164,214 160,230 Q154,232 152,224 Q148,196 148,176 Q148,166 152,164 Z"/>'],
- ['lombar','<path d="M88,180 Q100,176 112,180 L112,222 Q100,228 88,222 Z"/>',1],
- ['glu_med','<path d="M124,214 Q142,212 151,226 Q153,240 147,252 Q139,247 133,239 Q125,229 124,214 Z"/>'],
- ['glu_sup','<path d="M100,236 Q118,228 133,236 Q140,243 145,253 Q122,247 100,253 Z"/>'],
- ['glu_max','<path d="M100,253 Q122,247 145,255 Q151,272 141,286 Q125,296 108,292 Q100,286 100,272 Z"/>'],
- ['post','<path d="M106,294 Q124,290 138,296 Q140,316 134,332 Q124,340 114,336 Q106,318 106,294 Z"/>'],
- ['adutor','<path d="M100,292 L104,292 Q104,312 108,328 Q104,330 100,330 Z"/>'],
- ['pant','<path d="M112,350 Q126,344 134,358 Q136,378 126,392 Q116,392 112,378 Q108,362 112,350 Z"/>'],
-];
-const BODY_SIL='<circle cx="100" cy="34" r="19"/><rect x="91" y="50" width="18" height="16" rx="6"/>'
- +'<path d="M62,74 Q100,64 138,74 Q154,78 160,92 Q166,150 166,232 Q166,246 160,252 Q154,254 152,244 L146,164 Q144,150 142,140 Q140,190 146,236 Q150,262 144,300 Q140,330 136,346 Q138,380 132,400 Q126,408 118,404 Q114,380 114,348 Q112,320 106,296 L100,270 L94,296 Q88,320 86,348 Q86,380 82,404 Q74,408 68,400 Q62,380 64,346 Q60,330 56,300 Q50,262 54,236 Q60,190 58,140 Q56,150 54,164 L48,244 Q46,254 40,252 Q34,246 34,232 Q34,150 40,92 Q46,78 62,74 Z"/>';
-function bodySide(list,on,id){return `<g id="${id}"><g class="bsil">${BODY_SIL}</g>${list.map(([k,d,c])=>{const cl='bm'+(on.has(k)?' hl':'');return `<g class="${cl}" data-m="${k}">${d}${c?'':`<g transform="translate(200 0) scale(-1 1)">${d}</g>`}</g>`;}).join('')}</g>`;}
+const BODY_P={fem:{S:40,C:34,W:27,H:44,hair:'fem'},masc:{S:49,C:41,W:34,H:38,hair:'masc'},neutro:{S:44,C:37,W:30,H:41,hair:'neutro'}};
+const bodyKind=()=>{const g=(D.profile||{}).genero;return g==='fem'?'fem':g==='masc'?'masc':'neutro';};
+/* curva suave passando pelos pontos (Catmull-Rom) */
+function crPath(pts,closed){const P=closed?[pts[pts.length-1],...pts,pts[0],pts[1]]:[pts[0],...pts,pts[pts.length-1]];const f=n=>Math.round(n*10)/10;let d=`M${f(P[1][0])},${f(P[1][1])}`;
+ for(let i=1;i<P.length-2;i++){const [p0,p1,p2,p3]=[P[i-1],P[i],P[i+1],P[i+2]];d+=`C${f(p1[0]+(p2[0]-p0[0])/6)},${f(p1[1]+(p2[1]-p0[1])/6)} ${f(p2[0]-(p3[0]-p1[0])/6)},${f(p2[1]-(p3[1]-p1[1])/6)} ${f(p2[0])},${f(p2[1])}`;}return d+(closed?'Z':'');}
+const mir=pts=>pts.map(([x,y])=>[200-x,y]);
+function bodySil(k){const {S,C,W,H}=BODY_P[k];const X=v=>100+v;
+ const half=[[X(6),58],[X(S*.55),68],[X(S-6),76],[X(S),86],[X(C+1),112],[X(C-1),132],[X(W+1),176],[X(W+2),198],[X(H-2),232],[X(H),252],[X(H-2),286],[X(H-9),318],[X(H-13),338],[X(H-11),362],[X(H-16),384],[X(H-19),398],[X(H-14),408],[X(H-26),411],[X(6),408],[X(5),396],[X(4),366],[X(5),340],[X(3),300],[X(1.5),262]];
+ const body=crPath([...half,...mir(half).reverse()],true);
+ const arm=[[X(S-2),84],[X(S+7),94],[X(S+9),118],[X(S+10),150],[X(S+12),186],[X(S+11),222],[X(S+12),240],[X(S+8),254],[X(S+3),250],[X(S+2),236],[X(S+3),222],[X(S+1),190],[X(S-2),154],[X(S-5),118]];
+ return {body,armR:crPath(arm,true),armL:crPath(mir(arm),true)};}
+function bodyHair(k,back){const h=BODY_P[k].hair;
+ if(h==='fem')return back?'<path class="bhair" d="M80,30 Q80,9 100,9 Q120,9 120,30 Q122,44 114,50 L118,64 Q100,72 82,64 L86,50 Q78,44 80,30 Z"/><circle class="bhair" cx="100" cy="14" r="9"/>'
+  :'<path class="bhair" d="M80,32 Q78,10 100,10 Q122,10 120,32 Q114,20 100,22 Q86,22 80,32 Z"/><circle class="bhair" cx="100" cy="12" r="8"/>';
+ if(h==='masc')return back?'<path class="bhair" d="M81,30 Q80,12 100,12 Q120,12 119,30 Q118,40 116,44 Q100,40 84,44 Q82,40 81,30 Z"/>':'<path class="bhair" d="M81,28 Q82,12 100,12 Q118,12 119,28 Q112,19 100,20 Q88,19 81,28 Z"/>';
+ return back?'<path class="bhair" d="M81,30 Q80,11 100,11 Q120,11 119,30 Q119,42 113,47 Q100,44 87,47 Q81,42 81,30 Z"/>':'<path class="bhair" d="M81,30 Q81,11 100,11 Q119,11 119,30 Q110,18 100,19 Q90,18 81,30 Z"/>';}
+/* músculos (metade direita, espelhada; c:1 = central) */
+function bodyMuscles(k,back){const {S,C,W,H}=BODY_P[k];const X=v=>Math.round((100+v)*10)/10;
+ const sh=back?[['post_ombro',`M${X(S-15)},84 Q${X(S-5)},75 ${X(S+1)},86 L${X(S)},106 Q${X(S-11)},106 ${X(S-16)},96 Z`]]:[['ombro_ant',`M${X(S-15)},84 Q${X(S-5)},75 ${X(S+1)},86 L${X(S)},106 Q${X(S-11)},106 ${X(S-16)},96 Z`]];
+ sh.push(['ombro_lat',`M${X(S+1)},85 Q${X(S+9)},87 ${X(S+9)},102 L${X(S+5)},116 Q${X(S+1)},110 ${X(S)},100 Z`]);
+ const arm=[[back?'triceps':'biceps',`M${X(S+3)},110 Q${X(S+10)},114 ${X(S+10)},132 Q${X(S+9)},150 ${X(S+5)},156 Q${X(S-3)},150 ${X(S-3)},132 Q${X(S-3)},114 ${X(S+3)},110 Z`],
+  ['antebraco',`M${X(S+5)},164 Q${X(S+12)},168 ${X(S+12)},192 Q${X(S+12)},214 ${X(S+9)},228 Q${X(S+4)},230 ${X(S+3)},220 Q${X(S)},196 ${X(S+1)},176 Q${X(S+1)},166 ${X(S+5)},164 Z`]];
+ if(!back)return [...sh,...arm,
+  ['peito_sup',`M102,88 Q${X(C*.6)},81 ${X(C-5)},89 L${X(C-7)},98 Q${X(C*.5)},93 102,98 Z`],
+  ['peito',`M102,99 Q${X(C*.5)},94 ${X(C-7)},99 Q${X(C+1)},109 ${X(C-5)},121 Q${X(C*.5)},${k==='fem'?133:129} 104,126 Q102,120 102,110 Z`],
+  ['reto',`M${X(-9)},134 Q100,130 ${X(9)},134 L${X(9)},206 Q100,212 ${X(-9)},206 Z<path class="ln" d="M${X(-9)},154 L${X(9)},154 M${X(-9)},173 L${X(9)},173 M${X(-9)},191 L${X(9)},191 M100,132 L100,210"/>`,1],
+  ['obliquos',`M${X(11)},138 Q${X(C-6)},144 ${X(W+1)},170 Q${X(W+1)},196 ${X(W-4)},210 Q${X(14)},213 ${X(11)},206 Z`],
+  ['quad',`M${X(4)},248 Q${X(H*.6)},240 ${X(H-3)},252 Q${X(H-1)},286 ${X(H-11)},318 Q${X(H*.5)},334 ${X(9)},326 Q${X(3)},292 ${X(4)},248 Z`],
+  ['adutor',`M101.5,248 L${X(5)},248 Q${X(3)},274 ${X(8)},300 Q${X(4)},304 101.5,304 Z`],
+  ['pant',`M${X(H*.45)},350 Q${X(H-12)},350 ${X(H-12)},366 Q${X(H-14)},386 ${X(H*.55)},390 Q${X(H*.4)},376 ${X(H*.45)},350 Z`]];
+ return [...sh,...arm,
+  ['costas_meio',`M100,66 L${X(C*.55)},82 L${X(C*.62)},104 L${X(C*.36)},140 L100,152 L${X(-C*.36)},140 L${X(-C*.62)},104 L${X(-C*.55)},82 Z`,1],
+  ['dorsal',`M${X(C*.42)},108 Q${X(C)},104 ${X(C+1)},120 Q${X(W+4)},160 ${X(W-4)},188 Q${X(14)},197 ${X(9)},196 Q${X(C*.32)},152 ${X(C*.42)},108 Z`],
+  ['lombar',`M${X(-10)},182 Q100,178 ${X(10)},182 L${X(10)},224 Q100,230 ${X(-10)},224 Z`,1],
+  ['glu_med',`M${X(H*.55)},216 Q${X(H-2)},212 ${X(H+3)},230 Q${X(H+3)},246 ${X(H-3)},254 Q${X(H*.78)},246 ${X(H*.62)},236 Z`],
+  ['glu_sup',`M100,236 Q${X(H*.5)},227 ${X(H*.82)},236 Q${X(H-1)},245 ${X(H-1)},254 Q${X(H*.5)},247 100,254 Z`],
+  ['glu_max',`M100,254 Q${X(H*.55)},247 ${X(H-1)},256 Q${X(H+3)},276 ${X(H-7)},289 Q${X(H*.5)},299 ${X(6)},293 Q100,287 100,272 Z`],
+  ['post',`M${X(6)},297 Q${X(H*.6)},291 ${X(H-5)},299 Q${X(H-6)},322 ${X(H-13)},336 Q${X(H*.45)},344 ${X(12)},338 Q${X(5)},320 ${X(6)},297 Z`],
+  ['adutor',`M101.5,296 L${X(5)},296 Q${X(5)},316 ${X(9)},330 Q${X(4)},332 101.5,332 Z`],
+  ['pant',`M${X(H*.32)},350 Q${X(H*.7)},342 ${X(H-11)},360 Q${X(H-11)},382 ${X(H*.55)},394 Q${X(H*.3)},388 ${X(H*.28)},368 Z`]];}
+function bodySide(k,back,on,id){const s=bodySil(k);
+ const mus=bodyMuscles(k,back).map(([m,d,c])=>{const p=d.startsWith('M')?`<path d="${d.split('<')[0]}"/>`+(d.includes('<')?'<'+d.split('<').slice(1).join('<'):''):d;
+  return `<g class="bm${on.has(m)?' hl':''}" data-m="${m}">${p}${c?'':`<g transform="translate(200 0) scale(-1 1)">${p}</g>`}</g>`;}).join('');
+ return `<g id="${id}"><g class="bsil"><path d="${s.armL}"/><path d="${s.armR}"/><path d="${s.body}"/><rect x="92" y="44" width="16" height="20" rx="6"/><ellipse cx="100" cy="30" rx="17" ry="20"/></g>${bodyHair(k,back)}${mus}</g>`;}
 function bodyRegs(x){const r=new Set();(x.foco||[x.g]).forEach(k=>{(BODY_G[k]||[k]).forEach(m=>r.add(m));});if(r.has('core')){r.delete('core');r.add('reto');r.add('obliquos');}return r;}
-/* o glúteo máximo inclui a parte de cima: pinta as duas, mas o nome continua só do que foi pedido */
 const bodyPaint=on=>{const p=new Set(on);if(p.has('glu_max'))p.add('glu_sup');return p;};
-function bodySideOf(x,on){const first=[...on][0];const inF=BODY_F.some(([k])=>k===first),inB=BODY_B.some(([k])=>k===first);
- if(inF&&!inB)return 'f';if(inB&&!inF)return 'b';const nF=BODY_F.filter(([k])=>on.has(k)).length,nB=BODY_B.filter(([k])=>on.has(k)).length;return nB>nF?'b':'f';}
-function bodyMapHtml(x){const on=bodyRegs(x);if(!on.size)return '';const side=bodySideOf(x,on);const paint=bodyPaint(on);
- const svg=(vb,cls)=>`<svg class="${cls}" viewBox="${vb}" aria-hidden="true" data-on="${[...on].join(' ')}">${bodySide(BODY_F,paint,'bf')}<g transform="translate(210 0)">${bodySide(BODY_B,paint,'bb')}</g>${cls==='bfull'?'<text x="100" y="430" class="bcap">frente</text><text x="310" y="430" class="bcap">costas</text>':''}</svg>`;
- const names=[...on].map(k=>REG[k]||k);
- return `<div class="sec"><h4>📍 Onde você vai sentir</h4>
-  <div class="bodymap">${svg('0 0 410 436','bfull')}<div class="bzoom-w" data-side="${side}">${svg('0 0 410 412','bzoom')}<span>${side==='b'?'costas':'frente'} · ampliado</span></div></div>
+const BODY_FRONT=['ombro_ant','ombro_lat','biceps','antebraco','peito_sup','peito','reto','obliquos','quad','adutor','pant'],BODY_BACK=['post_ombro','ombro_lat','triceps','antebraco','costas_meio','dorsal','lombar','glu_med','glu_sup','glu_max','post','adutor','pant'];
+function bodySideOf(x,on){const first=[...on][0];const inF=BODY_FRONT.includes(first),inB=BODY_BACK.includes(first);
+ if(inF&&!inB)return 'f';if(inB&&!inF)return 'b';const nF=BODY_FRONT.filter(k=>on.has(k)).length,nB=BODY_BACK.filter(k=>on.has(k)).length;return nB>nF?'b':'f';}
+function bodyMapHtml(x){const on=bodyRegs(x);if(!on.size)return '';const side=bodySideOf(x,on);const paint=bodyPaint(on);const k=bodyKind();
+ const svg=(vb,cls)=>`<svg class="${cls}" viewBox="${vb}" aria-hidden="true" data-on="${[...on].join(' ')}">${bodySide(k,false,paint,'bf')}<g transform="translate(210 0)">${bodySide(k,true,paint,'bb')}</g>${cls==='bfull'?'<text x="100" y="434" class="bcap">frente</text><text x="310" y="434" class="bcap">costas</text>':''}</svg>`;
+ const names=[...on].map(m=>REG[m]||m);
+ return `<div class="bodywrap"><b class="bodyh">📍 Onde você vai sentir</b>
+  <div class="bodymap">${svg('-6 0 422 440','bfull')}<div class="bzoom-w" data-side="${side}">${svg('0 0 410 412','bzoom')}<span>${side==='b'?'costas':'frente'} · ampliado</span></div></div>
   <div class="chips" style="margin-top:8px">${names.map(n=>`<span class="tag" style="background:var(--a2soft);color:var(--a2t)"><i class="bdot"></i>${esc(n)}</span>`).join('')}</div></div>`;}
-/* depois de abrir: ajusta o zoom pra região marcada (no lado com mais marcação) */
 const BODY_SHORT={glu_max:'máximo',glu_med:'médio',glu_sup:'parte de cima',ombro_ant:'frente',ombro_lat:'lateral',post_ombro:'posterior',peito_sup:'peito superior',costas_meio:'meio das costas',reto:'reto',obliquos:'oblíquos'};
 function bodyZoom(){const z=document.querySelector('#sheet .bzoom');if(!z)return;const side=z.parentNode.dataset.side;const use=z.querySelectorAll(side==='b'?'#bb .hl':'#bf .hl');
  if(!use.length)return;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;const off=side==='b'?210:0;
  use.forEach(g=>{const bb=g.getBBox();x0=Math.min(x0,bb.x);y0=Math.min(y0,bb.y);x1=Math.max(x1,bb.x+bb.width);y1=Math.max(y1,bb.y+bb.height);});
- const pad=16;const w=x1-x0+pad*2,h=y1-y0+pad*2;const sz=Math.max(w,h*0.9,72);const cx=(x0+x1)/2+off,cy=(y0+y1)/2;z.setAttribute('viewBox',`${cx-sz/2} ${cy-sz*0.55} ${sz} ${sz*1.1}`);
+ const pad=24;const w=x1-x0+pad*2,h=y1-y0+pad*2;const sz=Math.max(w,h*0.9,100);const cx=(x0+x1)/2+off,cy=(y0+y1)/2;z.setAttribute('viewBox',`${cx-sz/2} ${cy-sz*0.55} ${sz} ${sz*1.1}`);
  /* nome de cada parte marcada, na metade direita da figura */
  const named=new Set((z.dataset.on||'').split(' '));const lab=[...use].filter(g=>named.has(g.dataset.m));
  if(lab.length>1||(lab[0]&&lab[0].dataset.m.startsWith('glu_'))){const fs=sz/15;const host=z.querySelector(side==='b'?'#bb':'#bf');const placed=[];
@@ -2457,6 +2472,8 @@ function vPerfil(){
  <details class="psec fold" data-fold="p_info"${foldOpen('p_info',false)}><summary><span>📝 Suas informações</span><span class="chev">▾</span></summary>
  <div class="card">
   <label class="lbl" style="margin-top:0">Nome</label><input class="inp" data-i="prof.nome" value="${esc(PROF.nome)}">
+  <label class="lbl">Gênero <span class="mut" style="font-weight:500">(opcional)</span></label><div class="chips">${GENEROS.map(([k,l])=>`<button class="chip ${PROF.genero===k?'on':''}" data-a="profGen" data-k="${k}">${l}</button>`).join('')}</div>
+  <p class="small mut" style="margin:6px 0 0">Muda o bonequinho que mostra os músculos. Fica só no seu celular.</p>
   <label class="lbl">Objetivo</label><div class="chips">${Object.entries(OBJ).map(([k,o])=>`<button class="chip ${PROF.obj===k?'on':''}" data-a="profObj" data-k="${k}">${o.l}</button>`).join('')}</div>
   <div class="row2"><div><label class="lbl">Peso inicial (kg)</label><input class="inp" inputmode="decimal" data-i="prof.pesoInicial" value="${esc(PROF.pesoInicial||'')}"></div><div><label class="lbl">Meta (kg)</label><input class="inp" inputmode="decimal" data-i="prof.meta" value="${esc(PROF.meta||'')}"></div></div>
   <label class="lbl">Na sua rotina</label>
@@ -3550,13 +3567,14 @@ const A={
  go:t=>{PROF=null;if(t.dataset.v==='turma'&&UI.soc){UI.soc.posts=null;UI.soc.err='';}if(t.dataset.v!=='atividades')UI.actForm=null;go(t.dataset.v);},
  close:()=>closeSheet(),
  onbObj:t=>{ONB.obj=t.dataset.k;render();},
+ onbGen:t=>{ONB.genero=ONB.genero===t.dataset.k?'':t.dataset.k;render();},
  onbSupp:t=>{ONB.supps[t.dataset.k]=!ONB.supps[t.dataset.k];render();},
  onbOk:()=>{ONB.ok=!ONB.ok;render();},
  onbStart:t=>{
   if(!ONB.nome.trim()){toast('Coloca seu nome primeiro 😉');return;}
   if(!ONB.ok){toast('Leia e marque o aviso sobre backup 😉');const b=document.querySelector('[data-a=onbOk]');if(b)b.scrollIntoView({behavior:'smooth',block:'center'});return;}
   const peso=num(ONB.peso),meta=num(ONB.meta);
-  D.profile={nome:ONB.nome.trim(),obj:ONB.obj,pesoInicial:peso,meta:meta,supps:{...ONB.supps},criado:today()};D.backupAck=today();
+  D.profile={nome:ONB.nome.trim(),obj:ONB.obj,pesoInicial:peso,meta:meta,supps:{...ONB.supps},criado:today(),genero:ONB.genero||''};D.backupAck=today();
   if(peso)D.weights.push({date:today(),weight:peso});
   if(t.dataset.m==='split'){D.workouts=SPLIT.map(makeWorkout);persist();UI.view='hoje';render();toast('Tudo pronto! Bora 🔥');}
   else if(t.dataset.m==='gen'){persist();A.genOpen();}
@@ -3709,11 +3727,12 @@ const A={
   D.weights=D.weights.filter(e=>e.date!==today());D.weights.push({date:today(),weight:v});if(!D.profile.pesoInicial){D.profile.pesoInicial=v;}persist();render();toast('Peso salvo!');},
  delWeight:t=>{withUndo('Peso apagado',()=>{D.weights=D.weights.filter(e=>e.date!==t.dataset.d);});},
  profObj:t=>{PROF.obj=t.dataset.k;render();},
+ profGen:t=>{PROF.genero=PROF.genero===t.dataset.k?'':t.dataset.k;render();},
  profFlag:t=>{PROF[t.dataset.k]=!PROF[t.dataset.k];render();},
  profGest:t=>{PROF.gest=t.dataset.v;render();},
  profSupp:t=>{PROF.supps[t.dataset.k]=!PROF.supps[t.dataset.k];render();},
  saveProf:()=>{if(!String(PROF.nome||'').trim()){toast('O nome não pode ficar vazio');return;}
-  D.profile={...D.profile,nome:String(PROF.nome).trim(),obj:PROF.obj,pesoInicial:num(PROF.pesoInicial),meta:num(PROF.meta),supps:{...PROF.supps},protOn:!!PROF.protOn,protMeta:num(PROF.protMeta)||null};
+  D.profile={...D.profile,nome:String(PROF.nome).trim(),obj:PROF.obj,pesoInicial:num(PROF.pesoInicial),meta:num(PROF.meta),supps:{...PROF.supps},genero:PROF.genero||'',protOn:!!PROF.protOn,protMeta:num(PROF.protMeta)||null};
   if(PROF.warm!==PROF.warm0)D.warmPref=PROF.warm?'pergunta':'nao';
   if(D.profile.saude&&D.profile.saude.gestante){if(PROF.gest==='nao'){D.profile.saude={...D.profile.saude,gestante:false};D.profile.gest='';}else D.profile.gest=PROF.gest;}
   persist();PROF=null;toast('Perfil salvo!');go('hoje');},
