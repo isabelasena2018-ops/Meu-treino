@@ -205,7 +205,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.6 · 10/11 22h';
+const APP_VERSION='6.7 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -3674,6 +3674,11 @@ setTimeout(checkUpdate,4000);setInterval(checkUpdate,20*60*1000);
 try{if(localStorage.getItem('meutreino:updated')){localStorage.removeItem('meutreino:updated');setTimeout(()=>toast('App atualizado ✨ versão '+APP_VERSION.split(' ')[0]),800);}}catch(e){}
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{}));
 
+/* uma vez só: arruma registros de alimentação dos últimos dias que ficaram com o jeito falado (antes da 6.6) */
+try{if(D.checks&&!D.migMeals1){const lim=new Date(Date.now()-7*864e5).toISOString().slice(0,10);const messy=/\b(na verdade|mesmo|um uma|a[ií] eu|eu fiz|bem simples)\b|\bcharqu$|\s(e|no|na)$/i;
+ Object.entries(D.checks).forEach(([k,c])=>{if(k<lim||!c||!c.meals)return;Object.keys(c.meals).forEach(m=>{const v=c.meals[m];if(!v||!String(v).split('; ').some(x=>messy.test(x.trim())))return;
+  c.meals[m]=String(v).split('; ').map(x=>x.trim().replace(/\bcharqu$/i,'charque')).filter(Boolean).map((x,i)=>{const y=cleanMeal(x);return i?y[0].toLowerCase()+y.slice(1):y;}).join('; ');});});
+ D.migMeals1=1;persist();}}catch(e){}
 runRestore();
 render();
 </script>
