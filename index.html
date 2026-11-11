@@ -134,6 +134,7 @@ details.card.fold>summary{margin:0}details.card.dark summary .chev{color:rgba(25
 .bsil{fill:var(--bodyc)}.bm{fill:var(--bodym);stroke:var(--bodys);stroke-width:1;stroke-linejoin:round}.bm .ln{fill:none;stroke:var(--bodys)}.bm.hl{fill:#EE6A3E;stroke:#c9512b}.bm.hl .ln{stroke:rgba(255,255,255,.55)}.bcap{font-size:19px;font-weight:700;fill:var(--mut);text-anchor:middle}.blab{fill:#fff;font-weight:800;text-anchor:middle;paint-order:stroke;stroke:#a8401f;stroke-width:.35em;stroke-linejoin:round}.bdot{display:inline-block;width:9px;height:9px;border-radius:9px;background:#E8633A;margin-right:5px;vertical-align:0}
 :root{--bodyc:#f3e8da;--bodym:#e8d9c5;--bodys:#d7c3a8;--hair:#6b4f3c}html.dark{--bodyc:#2a3a35;--bodym:#34473f;--bodys:#46594f;--hair:#1c2724}
 .rrow{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--line);background:var(--card);border-radius:10px;touch-action:none}.rrow.drag{box-shadow:0 6px 18px rgba(0,0,0,.15);position:relative;z-index:2}.rhandle{font-size:20px;color:var(--mut);padding:4px 8px;cursor:grab;touch-action:none}.rname{flex:1;font-weight:700;font-size:14.5px}.rname span{display:block;font-weight:500;font-size:12.5px;color:var(--mut)}.rrow .ib:disabled{opacity:.3}
+html,body{overscroll-behavior-x:none}main.sl-l{animation:slL .22s ease-out}main.sl-r{animation:slR .22s ease-out}@keyframes slL{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}@keyframes slR{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
 .al-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.al-prog{display:flex;gap:4px;margin-bottom:10px}.al-prog i{flex:1;height:5px;border-radius:5px;background:var(--line)}.al-prog i.ok{background:var(--a)}.al-prog i.now{background:var(--a2)}
@@ -217,7 +218,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='7.9 · 11/11 09h';
+const APP_VERSION='8.0 · 11/11 09h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1521,7 +1522,8 @@ function restStop(){if(REST){clearInterval(REST.tick);try{REST.ac&&REST.ac.close
 let UNDO=null;
 function withUndo(msg,fn){const snap=JSON.stringify(D);fn();persist();const y=window.scrollY;render();window.scrollTo(0,y);UNDO=snap;
  const t=document.getElementById('toast');t.innerHTML=`<span>${esc(msg)}</span><button data-a="undo">Desfazer</button>`;t.classList.add('show','undo');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show','undo');UNDO=null;},6000);}
-function go(v){if(v!=='sessao'){UI.reorder=false;restStop();UI.nextW={};UI.nextMsg={};}UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
+function go(v,opt){if(!(opt&&opt.pop)&&v!==UI.view&&D.profile){try{history.pushState({v,sid:UI.sessionId},'',location.pathname);UI.hDepth=(UI.hDepth||0)+1;}catch(e){}}
+ if(v!=='sessao'){UI.reorder=false;restStop();UI.nextW={};UI.nextMsg={};}UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
 
 const IC={
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -1545,6 +1547,7 @@ function render(){
  applyTheme();
  app.innerHTML=header()+'<main class="fade"'+(isCk?' style="padding-bottom:calc(150px + env(safe-area-inset-bottom))"':'')+'>'+v()+'</main>'+(isCk?ckBar():noNav?'':nav());
  if(UI.reorder&&UI.view==='sessao')requestAnimationFrame(rDragInit);
+ if(UI.slide){const m=document.querySelector('main');if(m){m.classList.remove('fade');m.classList.add('sl-'+UI.slide);}UI.slide=null;}
  if(isCk)ckScroll();
 }
 /* sininho: avisos do app (corrida, backup, lembretes), sem poluir o Hoje */
@@ -4015,6 +4018,26 @@ try{if(D.checks&&!D.migMeals1){const lim=new Date(Date.now()-7*864e5).toISOStrin
  D.migMeals1=1;persist();}}catch(e){}
 runRestore();
 render();
+/* voltar e avançar: histórico do navegador (gesto do Safari e botão voltar do Android) + arrastar o dedo */
+try{history.replaceState({v:UI.view,sid:UI.sessionId},'',location.pathname);}catch(e){}
+const MAIN_TABS=['hoje','treinos','corrida','atividades','turma','progresso'];
+const sheetOpen=()=>{const s=document.getElementById('sheet');return s&&s.classList.contains('open');};
+window.addEventListener('popstate',e=>{
+ if(sheetOpen()||document.getElementById('alov')||UI.view==='correndo'){if(sheetOpen())closeSheet();else if(document.getElementById('alov'))alClose();try{history.pushState({v:UI.view,sid:UI.sessionId},'',location.pathname);}catch(x){}return;}
+ UI.hDepth=Math.max(0,(UI.hDepth||0)-1);const st=e.state||{v:'hoje'};if(st.sid)UI.sessionId=st.sid;UI.slide='r';go(st.v||'hoje',{pop:true});});
+let SW=null;
+const swBlocked=el=>{if(!el||!el.closest)return false;if(el.closest('input,textarea,select,[contenteditable],.chips,.seg,.cal,.rrow,.al-fig,#alov,canvas,.bodymap,.wbars,#restbar,.no-swipe,.week,svg:not(.ico)'))return true;
+ for(let n=el;n&&n!==document.body;n=n.parentElement){if(n.scrollWidth>n.clientWidth+4){const ov=getComputedStyle(n).overflowX;if(ov==='auto'||ov==='scroll')return true;}}return false;};
+document.addEventListener('touchstart',e=>{if(e.touches.length!==1||!D.profile){SW=null;return;}const t=e.touches[0];SW={x:t.clientX,y:t.clientY,t:Date.now(),el:e.target};},{passive:true});
+document.addEventListener('touchend',e=>{if(!SW)return;const t=e.changedTouches[0];const dx=t.clientX-SW.x,dy=t.clientY-SW.y,dt=Date.now()-SW.t;const st=SW;SW=null;
+ if(dt>800||Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.6||Math.abs(dy)>60)return;
+ if(UI.view==='correndo'||document.getElementById('alov'))return;
+ if(!isStandalone()&&st.x<26)return; /* no Safari, a borda já é o voltar do próprio navegador */
+ if(sheetOpen()){if(dx>0&&!st.el.closest('input,textarea'))closeSheet();return;}
+ if(swBlocked(st.el))return;
+ const i=MAIN_TABS.indexOf(UI.view);
+ if(dx>0){if(i>0){UI.slide='r';go(MAIN_TABS[i-1]);return;}if(i<0){const bk=document.querySelector('.back');if(bk){UI.slide='r';bk.click();return;}if((UI.hDepth||0)>0)history.back();}return;}
+ if(i>=0&&i<MAIN_TABS.length-1){UI.slide='l';go(MAIN_TABS[i+1]);}},{passive:true});
 </script>
 </body>
 </html>
