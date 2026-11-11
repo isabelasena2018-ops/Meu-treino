@@ -122,6 +122,10 @@ select.inp{appearance:none;-webkit-appearance:none}
 .setbtn{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--a);color:#fff;border-radius:14px;padding:12px 14px;margin:10px 0 2px}.setbtn b{display:block;font-size:15px}.setbtn span span{font-size:12.5px;opacity:.85}.setbtn .go{margin-left:auto;width:32px;height:32px;border-radius:32px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:12px;flex-shrink:0}html.dark .setbtn{background:var(--deep)}
 .mobc{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border-radius:16px;padding:13px 14px;margin:0 0 10px;box-shadow:0 1px 0 var(--line)}.mobc .em{font-size:26px}.mobc b{display:block;font-size:15.5px;color:var(--ink)}.mobc span span{font-size:12.5px;color:var(--mut);line-height:1.35}.mobc .min{margin-left:auto;flex-shrink:0;font-weight:800;font-size:13px;color:var(--a2t);white-space:nowrap}
 .ibtn.bell{position:relative}.ibtn.bell i{position:absolute;top:-2px;right:-2px;min-width:17px;height:17px;padding:0 4px;border-radius:17px;background:var(--a2);color:#fff;font-size:10.5px;font-weight:800;font-style:normal;display:grid;place-items:center;line-height:1}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cal .ch{text-align:center;font-size:11.5px;font-weight:800;color:var(--mut);padding-bottom:2px}.cal .cd{position:relative;aspect-ratio:1;border-radius:12px;background:var(--soft);border:1.5px solid transparent;font-weight:700;font-size:13.5px;color:var(--ink)}.cal .cd:disabled{opacity:.3}.cal .cd.hj{border-color:var(--a)}.cal .cd.bom{background:var(--a);color:#fff}.cal .cd.fora{background:var(--a2soft);color:var(--a2t)}.cal .cd.reg{background:var(--asoft)}.cal .cd i{position:absolute;bottom:4px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:5px;background:currentColor;opacity:.6}
+.cal-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--mut);font-weight:600}.cal-leg i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:5px;vertical-align:-1px}.cal-leg .bom{background:var(--a)}.cal-leg .fora{background:var(--a2soft);border:1px solid var(--a2)}.cal-leg .reg{background:var(--asoft)}
+.wbars{display:flex;gap:6px;align-items:flex-end;height:110px}.wbars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}.wbars b{font-size:12px}.wbars span{width:100%;max-width:26px;background:var(--a);border-radius:6px 6px 3px 3px}.wbars i{font-size:10px;color:var(--mut);font-style:normal}
+html.dark .cal .cd.bom{background:var(--deep)}
 .alrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px}.alrow .em{font-size:26px}.alrow b{display:block;font-size:15px;color:var(--ink)}.alrow span span{font-size:12.5px;color:var(--mut)}.alrow .go{margin-left:auto;width:30px;height:30px;border-radius:30px;background:var(--asoft);color:var(--a);display:grid;place-items:center;font-size:11px;flex-shrink:0}.alrow.aq{border-color:var(--a2)}.alrow.aq .go{background:var(--a2soft);color:var(--a2t)}
 #alov{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}.al-in{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px 40px}
 .al-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.al-prog{display:flex;gap:4px;margin-bottom:10px}.al-prog i{flex:1;height:5px;border-radius:5px;background:var(--line)}.al-prog i.ok{background:var(--a)}.al-prog i.now{background:var(--a2)}
@@ -205,7 +209,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.7 · 10/11 22h';
+const APP_VERSION='6.8 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1514,7 +1518,7 @@ function render(){
  const app=document.getElementById('app');
  if(UI.restoreId){document.documentElement.classList.remove('dark');app.innerHTML=vRecuperar();return;}
  if(!D.profile){app.innerHTML=vOnb();return;}
- const v={mobilidade:vMob,hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
+ const v={alimentacao:vAlim,mobilidade:vMob,hoje:vHoje,treinos:vTreinos,sessao:vSessao,builder:vBuilder,exercicios:vLib,atividades:vAtiv,progresso:vProg,ajuda:vAjuda,perfil:vPerfil,checkin:vCheckin,gerador:vGerador,turma:vTurma,admin:vAdmin,corrida:vCorrida,correndo:vCorrendo,corrida_fim:vCorridaFim}[UI.view]||vHoje;
  const isCk=UI.view==='checkin';
  const noNav=UI.view==='correndo'||UI.view==='corrida_fim';
  applyTheme();
@@ -1536,7 +1540,7 @@ const DARK_MQ=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'
 function isDark(){const t=D.theme||'auto';return UI.view==='correndo'||t==='escuro'||(t==='auto'&&!!(DARK_MQ&&DARK_MQ.matches));}
 function applyTheme(){const dk=isDark();document.documentElement.classList.toggle('dark',dk);try{document.querySelector('meta[name=theme-color]').content=dk?'#0b1311':'#FAF6EF';}catch(e){}}
 try{DARK_MQ&&DARK_MQ.addEventListener('change',()=>{applyTheme();});}catch(e){}
-function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',exercicios:'treinos',mobilidade:'treinos',correndo:'corrida',corrida_fim:'corrida'};const cur=map[UI.view]||UI.view;
+function nav(){const map={sessao:'treinos',builder:'treinos',gerador:'treinos',exercicios:'treinos',mobilidade:'treinos',alimentacao:'progresso',correndo:'corrida',corrida_fim:'corrida'};const cur=map[UI.view]||UI.view;
  const items=[['hoje','Hoje',IC.home],['treinos','Treinos',IC.dumb],['corrida','Corrida',IC.run],['atividades','Atividades',IC.pulse],['turma','Grupos',IC.team],['progresso','Progresso',IC.chart]];
  return '<nav class="bottom">'+items.map(i=>`<button class="nbtn ${cur===i[0]?'on':''}" data-a="go" data-v="${i[0]}">${i[2]}${i[1]}</button>`).join('')+'</nav>';}
 
@@ -1623,12 +1627,13 @@ function vHoje(){
   ${!supps.length?'<p class="small mut" style="margin:10px 0 0">Dica: ative creatina, whey, vácuo etc. no seu perfil (ícone 👤 lá em cima).</p>':''}
  </div>
  <button class="ckcard" data-a="ckOpen"><span class="em">📝</span><span><b>${c.checkin?'✓ Check-in feito · registrar de novo':'Registrar meu dia'}</b><span>Escreva como foi seu dia (treino, comida, água) que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>
- <details class="card"${(c.meals&&Object.values(c.meals).some(v=>v))?' open':''}>
+ <details class="card meal"${(c.meals&&Object.values(c.meals).some(v=>v))?' open':''}>
   <summary><span>🥗 Alimentação de hoje</span><span class="chev">▾</span></summary>
   ${meals.map(([k,l])=>`<label class="lbl">${l}</label><textarea class="inp" rows="2" data-i="meal.${k}" placeholder="O que você comeu?">${esc((c.meals||{})[k])}</textarea>`).join('')}
   <label class="lbl">Consegui comer bem hoje?</label>
   <div class="btnrow" style="margin-top:0"><button class="chip ${c.onTrack===true?'on':''}" style="flex:1" data-a="track" data-v="1">Sim 🎯</button><button class="chip ${c.onTrack===false?'on':''}" style="flex:1" data-a="track" data-v="0">Hoje não 😅</button></div>
   <p class="small mut" style="margin:10px 0 0">Sem culpa: um dia fora não derruba a semana. O que conta é a média 🌱</p>
+  <div class="btnrow"><button class="btn sm" data-a="mealSave">Salvar</button><button class="btn2" style="padding:10px" data-a="alimOpen">📅 Calendário</button></div>
  </details>
 `;
 }
@@ -1867,6 +1872,59 @@ function vMob(){const lst=r=>AL_R[r].l.map(id=>esc(MOVES[id].n.split(':')[0])).j
  <h3 class="h3">🧘 Só alongar</h3><p class="small mut" style="margin:-4px 0 10px">Pra um dia de descanso, depois do treino ou quando quiser. Segure cada posição e respire.</p>
  ${card('completo','🌿')}${card('rapido','⏱️')}${card('poscorrida','👟')}
  <p class="small mut" style="text-align:center;margin-top:14px">Alongamento é um puxão leve, nunca dor. Se doer, pare e fale com um profissional de educação física.</p>`;}
+
+/* ---------- Calendário da alimentação (tudo fica só no celular) ---------- */
+const MEALS4=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanches','🍎 Lanches'],['jantar','🌙 Jantar']];
+const isoD=d=>{const z=new Date(d);z.setMinutes(z.getMinutes()-z.getTimezoneOffset());return z.toISOString().slice(0,10);};
+function mealHas(c){return !!(c&&c.meals&&Object.values(c.meals).some(v=>v&&String(v).trim()));}
+function foodCount(days){const cnt={},disp={};days.forEach(d=>{const c=D.checks[d];if(!mealHas(c))return;const seen=new Set();
+ Object.values(c.meals).join(' ').split(/[^A-Za-zÀ-ÿ]+/).forEach(w=>{if(!w||!isFood(w))return;let n=norm(w).replace(/[^a-z]/g,'');if(!FOODS.has(n))n=n.replace(/e?s$/,'');if(seen.has(n))return;seen.add(n);cnt[n]=(cnt[n]||0)+1;if(!disp[n])disp[n]=w.toLowerCase();});});
+ return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([n,k])=>({n:disp[n][0].toUpperCase()+disp[n].slice(1),k}));}
+function vAlim(){const t=today();const ym=UI.calMonth||t.slice(0,7);const [Y,M]=ym.split('-').map(Number);
+ const first=new Date(Y,M-1,1),nd=new Date(Y,M,0).getDate();const off=(first.getDay()+6)%7;const cells=[];
+ for(let i=0;i<off;i++)cells.push('<span></span>');
+ let bom=0,fora=0,reg=0;
+ for(let d=1;d<=nd;d++){const ds=ym+'-'+String(d).padStart(2,'0');const c=D.checks[ds];const has=mealHas(c);const ot=c?c.onTrack:null;
+  if(ot===true)bom++;else if(ot===false)fora++;if(has)reg++;
+  const cls=ot===true?'bom':ot===false?'fora':has?'reg':'';const fut=ds>t;
+  cells.push(`<button class="cd ${cls} ${ds===t?'hj':''}" ${fut?'disabled':`data-a="alimDia" data-d="${ds}"`} aria-label="${d}">${d}${has?'<i></i>':''}</button>`);}
+ let mName=first.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});mName=mName[0].toUpperCase()+mName.slice(1);
+ const prevM=isoD(new Date(Y,M-2,1)).slice(0,7),nextM=isoD(new Date(Y,M,1)).slice(0,7);
+ /* evolução: dias "comi bem" por semana, últimas 8 semanas */
+ const wk=[];for(let w=7;w>=0;w--){let n=0,m=0;const base=new Date();base.setDate(base.getDate()-((base.getDay()+6)%7)-7*w);
+  for(let i=0;i<7;i++){const dd=new Date(base);dd.setDate(base.getDate()+i);const ds=isoD(dd);if(ds>t)continue;const c=D.checks[ds];if(c&&c.onTrack===true)n++;if(c&&c.onTrack!=null)m++;}
+  wk.push({n,m,l:base.getDate()+'/'+(base.getMonth()+1)});}
+ const anyWk=wk.some(x=>x.m);
+ /* o que aparece nos dias bons e nos outros (últimos 60 dias) */
+ const last=[];for(let i=0;i<60;i++){const dd=new Date();dd.setDate(dd.getDate()-i);last.push(isoD(dd));}
+ const bomD=last.filter(d=>D.checks[d]&&D.checks[d].onTrack===true&&mealHas(D.checks[d])),foraD=last.filter(d=>D.checks[d]&&D.checks[d].onTrack===false&&mealHas(D.checks[d]));
+ const fb=foodCount(bomD).slice(0,8),ff=foodCount(foraD).slice(0,6);
+ let sq=0;for(let i=0;i<60;i++){const dd=new Date();dd.setDate(dd.getDate()-i);const c=D.checks[isoD(dd)];if(c&&c.onTrack===true)sq++;else if(i===0&&(!c||c.onTrack==null))continue;else break;}
+ const chips=a=>a.map(x=>`<span class="chip" style="cursor:default">${esc(x.n)} <b style="color:var(--mut);font-weight:700">· ${x.k}</b></span>`).join('');
+ return `<button class="back" data-a="go" data-v="progresso">← Progresso</button><span class="kicker">Alimentação</span><h2 class="disp h2">Seu calendário 🥗</h2>
+ <div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><button class="ib" data-a="alimMes" data-m="${prevM}" aria-label="Mês anterior">‹</button><b>${mName}</b><button class="ib" data-a="alimMes" data-m="${nextM}" ${nextM>t.slice(0,7)?'disabled style="opacity:.3"':''} aria-label="Próximo mês">›</button></div>
+  <div class="cal">${['S','T','Q','Q','S','S','D'].map(x=>`<span class="ch">${x}</span>`).join('')}${cells.join('')}</div>
+  <div class="cal-leg"><span><i class="bom"></i>Comi bem</span><span><i class="fora"></i>Hoje não</span><span><i class="reg"></i>Só anotei</span></div>
+  <p class="small mut" style="margin:10px 0 0">Toque num dia pra ver ou editar o que você comeu.</p>
+ </div>
+ <div class="stats"><div class="st"><b>${bom}</b><span>🎯 comi bem</span></div><div class="st"><b>${fora}</b><span>😅 hoje não</span></div><div class="st"><b>${reg}</b><span>📝 anotados</span></div></div>
+ ${sq>=2?`<div class="info">🔥 <b>${sq} dias seguidos</b> marcando que comeu bem. Mandou bem!</div>`:''}
+ <h3 class="h3">Evolução por semana</h3>
+ ${anyWk?`<div class="card"><div class="wbars">${wk.map(x=>`<div><b>${x.n}</b><span style="height:${Math.max(4,x.n/7*70)}px"></span><i>${x.l}</i></div>`).join('')}</div><p class="small mut" style="margin:8px 0 0">Dias da semana em que você marcou 🎯 "Consegui comer bem".</p></div>`
+  :`<div class="card empty">Marque <b>"Consegui comer bem hoje?"</b> na tela Hoje por alguns dias que a sua evolução aparece aqui 🌱</div>`}
+ <h3 class="h3">O que aparece nos seus dias</h3>
+ ${bomD.length>=3?`<div class="card"><b>🎯 Nos dias em que você comeu bem</b><div class="chips" style="margin-top:8px">${fb.length?chips(fb):'<span class="small mut">Ainda não reconheci alimentos nesses dias.</span>'}</div>
+   ${foraD.length>=2&&ff.length?`<div style="border-top:1px solid var(--line);margin:12px 0"></div><b>😅 Nos dias "hoje não"</b><div class="chips" style="margin-top:8px">${chips(ff)}</div>`:''}
+   <p class="small mut" style="margin:10px 0 0">O número é em quantos dias apareceu. Serve pra você perceber seus padrões. Quem avalia sua alimentação é a sua nutricionista 💚</p></div>`
+  :`<div class="card empty">Depois de uns 3 dias anotando o que comeu e marcando 🎯 "Consegui comer bem", eu te mostro o que mais aparece nos seus dias bons.</div>`}`;}
+function alimSheet(d){const c=D.checks[d]||{meals:{},onTrack:null};UI.mealEdit={d,meals:Object.assign({},c.meals||{}),onTrack:c.onTrack==null?null:c.onTrack};alimDraw();}
+function alimDraw(){const E=UI.mealEdit;let dt=new Date(E.d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});dt=dt[0].toUpperCase()+dt.slice(1);
+ openSheet(`<span class="kicker">Alimentação</span><h2 class="disp" style="font-size:22px;margin:2px 40px 6px 0;font-weight:600">${dt}</h2>
+ ${MEALS4.map(([k,l])=>`<label class="lbl">${l}</label><textarea class="inp" rows="2" data-i="medit.${k}" placeholder="O que você comeu?">${esc(E.meals[k]||'')}</textarea>`).join('')}
+ <label class="lbl">Consegui comer bem nesse dia?</label>
+ <div class="btnrow" style="margin-top:0"><button class="chip ${E.onTrack===true?'on':''}" style="flex:1" data-a="meditTrack" data-v="1">Sim 🎯</button><button class="chip ${E.onTrack===false?'on':''}" style="flex:1" data-a="meditTrack" data-v="0">Hoje não 😅</button></div>
+ <button class="btn" style="margin-top:14px" data-a="meditSave">Salvar</button>`);}
 
 /* ---------- Sessão de treino ---------- */
 function vSessao(){
@@ -2181,6 +2239,7 @@ function vProg(){
  const rev=[...s].reverse().slice(0,8);
  return `<span class="kicker">Evolução</span><h2 class="disp h2">Progresso</h2>
  <button class="ckcard" data-a="weekShare" style="border-color:var(--a);background:var(--asoft)"><span class="em">🗓️</span><span><b style="color:var(--a)">Resumo da semana</b><span>Uma imagem com tudo o que você fez na semana. Você escolhe o que aparece.</span></span></button>
+ <button class="li" data-a="alimOpen" style="border:1.5px solid var(--a)"><span><b style="color:var(--a)">🥗 Calendário da alimentação</b><span>Veja e edite cada dia, e o que aparece nos seus dias bons</span></span><span class="mut">›</span></button>
  <button class="ckcard" data-a="evoShare" style="border-color:var(--a2)"><span class="em">📈</span><span><b>Relatório de evolução</b><span>O quanto você evoluiu: peso, medidas, cargas, corrida e constância. Fica mais completo quanto mais você registra.</span></span></button>
  <div class="card dark">
   <div style="display:flex;justify-content:space-between;align-items:flex-end">
@@ -3316,6 +3375,13 @@ const A={
  aguaMetaReset:()=>{D.aguaMetaMl=null;persist();openSheet(aguaCfgHtml2());toast('Meta pelo peso: '+fmtL(aguaMeta()));},
  recSave:()=>{const list=UI.recEdit.filter(r=>String(r.n||'').trim()).map(r=>({n:String(r.n).trim(),e:r.e||'💧',ml:num(r.ml)?Math.round(num(r.ml)):null}));if(!list.length){toast('Deixe pelo menos um recipiente');return;}
   D.recipientes=list;persist();closeSheet();render();toast('Recipientes salvos! 💧');},
+ alimOpen:()=>{UI.calMonth=today().slice(0,7);go('alimentacao');window.scrollTo(0,0);},
+ alimMes:t=>{if(t.disabled)return;UI.calMonth=t.dataset.m;render();},
+ alimDia:t=>alimSheet(t.dataset.d),
+ meditTrack:t=>{const v=t.dataset.v==='1';UI.mealEdit.onTrack=UI.mealEdit.onTrack===v?null:v;
+  document.querySelectorAll('[data-a=meditTrack]').forEach(b=>b.classList.toggle('on',UI.mealEdit.onTrack!==null&&(b.dataset.v==='1')===UI.mealEdit.onTrack));},
+ meditSave:()=>{const E=UI.mealEdit;if(!E)return;const c=dayCheck(E.d);c.meals={};Object.entries(E.meals).forEach(([k,v])=>{if(v&&v.trim())c.meals[k]=v.trim();});c.onTrack=E.onTrack;persist();UI.mealEdit=null;closeSheet();render();toast('Alimentação salva ✓');},
+ mealSave:()=>{persist();const d=document.querySelector('details.meal');if(d)d.open=false;toast('Alimentação salva ✓');},
  track:t=>{const c=dayCheck(today());c.onTrack=t.dataset.v==='1';persist();render();},
  start:t=>{UI.sessionId=t.dataset.id;go('sessao');},
  info:t=>openSheet(infoHtml(t.dataset.id)),
@@ -3616,6 +3682,7 @@ const A={
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const f=A[t.dataset.a];if(f){e.preventDefault();f(t,e);}});
 document.addEventListener('input',e=>{const el=e.target,k=el.dataset.i;if(!k)return;const v=el.value;
  if(k.startsWith('onb.'))ONB[k.slice(4)]=v;
+ else if(k.startsWith('medit.')){if(UI.mealEdit)UI.mealEdit.meals[k.slice(6)]=v;}
  else if(k.startsWith('meal.')){const c=dayCheck(today());c.meals=c.meals||{};c.meals[k.slice(5)]=v;persist();}
  else if(k==='edit.name')UI.edit.name=v;
  else if(k.startsWith('edit.sets.'))UI.edit.items[+k.slice(10)].sets=v;
