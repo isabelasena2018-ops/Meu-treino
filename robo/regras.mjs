@@ -13,14 +13,14 @@ export function horaLocal(agora, tz) {
 
 const fmtL = ml => { ml = Math.round(ml || 0); return ml >= 1000 ? String(Math.round(ml / 100) / 10).replace('.', ',') + ' L' : ml + ' ml'; };
 
-const PADRAO = { vacuo: '08:00', creatina: '10:00', pre: '06:00', treino: '06:30', whey: '08:30', checkin: '20:30' };
+const PADRAO = { vacuo: '08:00', creatina: '10:00', pre: '06:00', treino: '06:30', whey: '08:30', checkin: '20:30', resumo: '18:00' };
 const hm = v => { const m = /^(\d{1,2}):(\d{2})$/.exec(v || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
 const JANELA = 150; // o lembrete pode sair até 2h30 depois do horário escolhido (se o agendador do GitHub atrasar)
 
 export function lembretesDevidos(doc, agora) {
   if (!doc || !doc.sub || !doc.sub.endpoint) return [];
   const L = horaLocal(agora, doc.tz);
-  const prefs = Object.assign({ agua: true, creatina: true, vacuo: true, pre: true, treino: true, whey: true, checkin: true }, doc.prefs || {});
+  const prefs = Object.assign({ agua: true, creatina: true, vacuo: true, pre: true, treino: true, whey: true, checkin: true, resumo: true }, doc.prefs || {});
   const st0 = doc.status || {};
   const hoje = st0.day === L.dia;               // se o app não foi aberto hoje, nada foi registrado
   const st = {
@@ -56,7 +56,9 @@ export function lembretesDevidos(doc, agora) {
       t: '💧 Ainda dá tempo', b: `Faltam ${fmtL(st.meta - st.aguaMl)} pra sua meta de água hoje.`, u: './?go=hoje' },
     { k: 'creatina2', de: 21 * 60, ate: 23 * 60, ok: prefs.creatina && st.en.creatina && !st.supps.creatina && T('creatina') <= 19 * 60,
       t: '💊 Último lembrete da creatina', b: 'Ela funciona pela constância. Toma antes de dormir? 💪', u: './?go=hoje' },
-    em('checkin', prefs.checkin && !st.checkin, '📝 Como foi seu dia?', 'Leva 1 minutinho pra registrar treino, água e comida 📝', './?go=checkin')
+    em('checkin', prefs.checkin && !st.checkin, '📝 Como foi seu dia?', 'Leva 1 minutinho pra registrar treino, água e comida 📝', './?go=checkin'),
+    /* domingo: só avisa; os números ficam no celular e o app monta o resumo lá */
+    em('resumo', prefs.resumo && L.semana === 'dom', '🗓️ Seu resumo da semana está pronto', 'Veja como foi sua semana e salve a imagem, se quiser 💪', './?go=resumo')
   ];
   return regras.filter(r => r.ok && L.min >= r.de && L.min < r.ate && enviados[r.k] !== L.dia)
     .map(r => ({ chave: r.k, title: r.t, body: r.b, url: r.u, dia: L.dia }));
@@ -65,5 +67,5 @@ export function lembretesDevidos(doc, agora) {
 /* junta vários lembretes do mesmo horário numa notificação só, pra não encher o celular */
 export function montarNotificacao(devidos) {
   if (devidos.length === 1) { const d = devidos[0]; return { title: d.title, body: d.body, url: d.url, tag: d.chave }; }
-  return { title: 'Meu Treino: ' + devidos.length + ' lembretes', body: devidos.map(d => d.title).join('\n'), url: devidos.some(d => d.url.includes('checkin')) ? './?go=checkin' : './?go=hoje', tag: 'varios' };
+  return { title: 'Meu Treino: ' + devidos.length + ' lembretes', body: devidos.map(d => d.title).join('\n'), url: devidos.some(d => d.url.includes('checkin')) ? './?go=checkin' : devidos.some(d => d.url.includes('resumo')) ? './?go=resumo' : './?go=hoje', tag: 'varios' };
 }

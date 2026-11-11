@@ -213,7 +213,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='7.6 · 10/11 23h';
+const APP_VERSION='7.7 · 10/11 23h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1546,6 +1546,7 @@ function bellItems(){if(!D.profile)return [];const t=today(),h=new Date().getHou
  const c=dayCheck(t),meta=aguaMeta();if(h>=15&&c.aguaMl<meta*.5)it.push({k:'agua'+t,e:'💧',b:'Água: '+fmtL(c.aguaMl)+' de '+fmtL(meta),s:'Que tal um copo agora?',a:'go',v:'hoje'});
  {const sd=D.profile.saude||{};if(['coracao','peito','tontura','cronica','remedio','gestante'].some(k=>sd[k])&&!D.parqOk){const since=D.parqAsk||D.profile.saudeEm||D.profile.criado||t;
   if((new Date(t+'T12:00:00')-new Date(since+'T12:00:00'))/864e5>=30)it.push({k:'parq'+since,e:'🩺',b:'Já conversou com seu médico?',s:sd.gestante?'Confirme com seu obstetra que está tudo certo pra treinar.':'Você marcou algo no questionário de saúde. Vale confirmar que pode treinar.',a:'parqAsk'});}}
+ {const wd=new Date().getDay();if((wd===0&&h>=17)||wd===1){const wk=wd===0?t:addDays(t,-1);it.push({k:'resumo'+wk,e:'🗓️',b:wd===0?'Seu resumo da semana está pronto':'O resumo da semana passada está pronto',s:'Veja como foi e salve a imagem, se quiser',a:'resumoOpen'});}}
  if(h>=20&&!c.checkin)it.push({k:'ck'+t,e:'📝',b:'Registrar meu dia',s:'Leva 1 minutinho',a:'ckOpen'});
  return it;}
 const bellNew=()=>bellItems().filter(i=>!(D.bellSeen||[]).includes(i.k)).length;
@@ -2905,11 +2906,11 @@ async function admLoad(){UI.adm=UI.adm||{};const S=UI.adm;S.loading=true;S.err='
 
 /* ===== notificações inteligentes: só avisa o que ainda não foi registrado ===== */
 const VAPID_PUBLIC='BBxIj2dVmCdc8ky50XrbQuqUX6oswFtc8zO6iRMQGFA-CeKrBZ0rRRz9Z9P19U3E-WkpngSbkgtQOZv6tP2EC3E';
-const PUSH_KINDS=[['vacuo','🌬️ Vácuo','Se ainda não marcou'],['creatina','💊 Creatina','Se ainda não marcou (e um último aviso às 21h)'],['pre','⚡ Pré-treino','Nos dias de treino, se ainda não marcou'],['treino','🏋️ Hora do treino','Nos dias de treino, se ainda não registrou'],['whey','🥤 Whey','Nos dias de treino, se ainda não marcou'],['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['checkin','📝 Check-in do dia','Se você ainda não fez']];
-const PUSH_TIME_DEF={vacuo:'08:00',creatina:'10:00',pre:'06:00',treino:'06:30',whey:'08:30',checkin:'20:30'};
+const PUSH_KINDS=[['vacuo','🌬️ Vácuo','Se ainda não marcou'],['creatina','💊 Creatina','Se ainda não marcou (e um último aviso às 21h)'],['pre','⚡ Pré-treino','Nos dias de treino, se ainda não marcou'],['treino','🏋️ Hora do treino','Nos dias de treino, se ainda não registrou'],['whey','🥤 Whey','Nos dias de treino, se ainda não marcou'],['agua','💧 Água','Às 11h, 15h e 19h, se estiver abaixo do esperado'],['checkin','📝 Check-in do dia','Se você ainda não fez'],['resumo','🗓️ Resumo da semana','Aos domingos, avisa que o resumo está pronto']];
+const PUSH_TIME_DEF={vacuo:'08:00',creatina:'10:00',pre:'06:00',treino:'06:30',whey:'08:30',checkin:'20:30',resumo:'18:00'};
 const TREINO_H_MIN={manha:'06:30',almoco:'11:30',tarde:'16:00',noite:'18:30'};
 const TREINO_H=[['manha','🌅 Manhã'],['almoco','☀️ Almoço'],['tarde','🌇 Tarde'],['noite','🌙 Noite']];
-function pushState(){if(!D.push)D.push={on:false,prefs:{agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},treinoHora:'manha'};D.push.prefs=Object.assign({agua:true,creatina:true,vacuo:true,pre:true,treino:true,whey:true,checkin:true},D.push.prefs||{});
+function pushState(){if(!D.push)D.push={on:false,prefs:{agua:true,creatina:true,vacuo:true,treino:true,whey:true,checkin:true},treinoHora:'manha'};D.push.prefs=Object.assign({resumo:true,agua:true,creatina:true,vacuo:true,pre:true,treino:true,whey:true,checkin:true},D.push.prefs||{});
  if(!D.push.times){const tr=TREINO_H_MIN[D.push.treinoHora]||'06:30';const [h,m]=tr.split(':').map(Number);const add=(mm)=>{const t=(h*60+m+mm+1440)%1440;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
   D.push.times=Object.assign({},PUSH_TIME_DEF,{treino:tr,pre:add(-30),whey:add(90)});}
  D.push.times=Object.assign({},PUSH_TIME_DEF,D.push.times);return D.push;}
@@ -3791,6 +3792,7 @@ const A={
  shareRun:t=>{const r=(D.runs||[]).find(x=>x.id===t.dataset.id);if(r)shareOpen(null,r);},
  shareStyle:t=>{SHARE.style=t.dataset.s;shareRender();},
  weekShare:()=>weekOpen(0),
+ resumoOpen:()=>weekOpen(new Date().getDay()===0?0:1),
  weekOff:t=>{const v=t.dataset.v;if(v==='evo')evoOpen('all');else weekOpen(+v);},
  evoPer:t=>evoOpen(t.dataset.v),
  evoShare:()=>evoOpen('all'),
@@ -3868,7 +3870,8 @@ document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset||!d.da
 document.addEventListener('focusin',e=>{if(e.target.id==='ckin')hush();});
 document.addEventListener('keydown',e=>{if(e.target.id==='ckin'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ckSendText();}});
 
-try{const gv=new URLSearchParams(location.search).get('go');if(gv&&D.profile&&['hoje','checkin','treinos','progresso','atividades','corrida','exercicios','turma'].includes(gv)){UI.view=gv;history.replaceState(null,'',location.pathname);}}catch(e){}
+try{const gv=new URLSearchParams(location.search).get('go');if(gv==='resumo'&&D.profile){UI.view='progresso';setTimeout(()=>{try{weekOpen(new Date().getDay()===0?0:1);}catch(e){}},700);history.replaceState(null,'',location.pathname);}
+ else if(gv&&D.profile&&['hoje','checkin','treinos','progresso','atividades','corrida','exercicios','turma'].includes(gv)){UI.view=gv;history.replaceState(null,'',location.pathname);}}catch(e){}
 try{const rp=new URLSearchParams(location.search).get('recuperar');if(rp&&/^[A-Za-z0-9]{10,40}$/.test(rp)){UI.restoreId=rp;history.replaceState(null,'',location.pathname);}}catch(e){}
 if(D.profile)cloudAuto();
 try{const gp=new URLSearchParams(location.search).get('g');if(gp){UI.pendingGroup=gp.toUpperCase().replace(/[^A-Z0-9]/g,'');history.replaceState(null,'',location.pathname);}}catch(e){}
