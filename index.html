@@ -213,7 +213,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='7.5 · 10/11 23h';
+const APP_VERSION='7.6 · 10/11 23h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1971,19 +1971,27 @@ function deloadHtml(){if(deloadOn())return `<div class="info" style="display:fle
  if(!deloadAskShow())return '';
  return `<div class="card" style="border:1.5px solid var(--a)"><b>🌿 ${trainWeeks()} semanas de treino seguidas!</b><p class="small" style="margin:6px 0 10px;line-height:1.5">Quer fazer uma <b>semana de descarga</b>? Por 7 dias você faz metade das séries, com a mesma carga. O corpo se recupera e volta mais forte. É opcional.</p>
   <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="deloadYes">Quero</button><button class="btn2" style="padding:10px" data-a="deloadNo">Agora não</button></div></div>`;}
-function warmHtml(it,base){const x=EX[it.exId];if(!x||x.eq==='corpo'||D.warmPref==='nao'||(UI.warmDone&&UI.warmDone[it.exId]===today()))return '';
- if(!D.warmPref)return `<div class="info" style="margin:0 0 10px"><b>🔥 Quer fazer séries de aquecimento?</b> São 2 séries leves antes do primeiro exercício pesado. Preparam músculos e articulações e <b>não contam</b> como série do treino.
-  <div class="btnrow" style="margin-top:8px"><button class="btn sm" data-a="warmPref" data-v="sim">Sim, quero</button><button class="btn2" style="padding:9px" data-a="warmPref" data-v="nao">Não precisa</button></div></div>`;
- const st=w=>{const k=stepKg(it.exId,w)||1;return Math.max(0,Math.round(w/k)*k);};
- const w1=base>0?st(base*.5):null,w2=base>0?st(base*.75):null;
- return `<div class="info" style="margin:0 0 10px"><b>🔥 Aquecimento</b> <span class="small">(não conta como série)</span><br>
-  1ª: ${w1!=null?nf(w1)+' kg':'uns 50% da carga'} × 8 · 2ª: ${w2!=null?nf(w2)+' kg':'uns 75% da carga'} × 4<br><span class="small">Bem leve e sem cansar. Descanse uns 60 s entre elas e depois comece o treino.</span>
-  <div class="btnrow" style="margin-top:8px"><button class="btn sm" data-a="warmDone" data-id="${it.exId}">Fiz o aquecimento ✓</button><button class="btn2" style="padding:9px" data-a="warmPref" data-v="nao">Não quero mais</button></div></div>`;}
+const warmW=(it,base)=>{const st=w=>{const k=stepKg(it.exId,w)||1;return Math.max(0,Math.round(w/k)*k);};return base>0?[st(base*.5),st(base*.75)]:[null,null];};
+const warmTxt=(it,base)=>{const [w1,w2]=warmW(it,base);return `1ª: ${w1!=null?nf(w1)+' kg':'uns 50% da carga'} × 8 · 2ª: ${w2!=null?nf(w2)+' kg':'uns 75% da carga'} × 4`;};
+const warmToday=()=>D.warmDay&&D.warmDay.d===today()?D.warmDay.v:null;
+/* pergunta uma vez por dia, no topo do treino, e diz por qual exercício começar */
+function warmTopHtml(w,base){if(D.warmPref==='nao')return '';const ix=w.items.findIndex(j=>EX[j.exId]&&EX[j.exId].eq!=='corpo'&&!EX[j.exId].iso&&repRange(j.sets));if(ix<0)return '';
+ const it=w.items[ix],x=EX[it.exId];const h=(D.history[it.exId]||[]).find(e=>e.date===today());if(h&&h.sets&&h.sets.length)return '';if(UI.warmDone&&UI.warmDone[it.exId]===today())return '';
+ const v=warmToday();
+ if(!v)return `<div class="card" style="border:1.5px solid var(--a2)"><b>🔥 Quer fazer séries de aquecimento hoje?</b><p class="small" style="margin:6px 0 10px;line-height:1.5">São 2 séries leves no primeiro exercício do treino (<b>${esc(x.n)}</b>). Preparam músculos e articulações e <b>não contam</b> como série do treino.</p>
+  <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="warmDay" data-v="sim">Sim, quero</button><button class="btn2" style="padding:10px" data-a="warmDay" data-v="nao">Hoje não</button></div>
+  <button class="small" style="display:block;margin:10px auto 0;font-weight:700;color:var(--mut)" data-a="warmPref" data-v="nao">Não perguntar mais</button></div>`;
+ if(v!=='sim')return '';
+ return `<div class="card" style="border:1.5px solid var(--a2)"><b>🔥 Aquecimento de hoje · comece com: ${esc(x.n)}</b><p class="small" style="margin:6px 0 10px;line-height:1.5">${warmTxt(it,base)}<br>Bem leve e sem cansar, uns 60 s de descanso entre elas. Elas <b>não contam</b> como série: depois, siga as séries normais do exercício.</p>
+  <div class="btnrow" style="margin-top:0"><button class="btn sm" data-a="warmGo" data-id="${it.exId}">Ir pro exercício</button><button class="btn2" style="padding:10px" data-a="warmDone" data-id="${it.exId}">Já aqueci ✓</button></div></div>`;}
+function warmHtml(it,base){if(D.warmPref==='nao'||warmToday()!=='sim'||(UI.warmDone&&UI.warmDone[it.exId]===today()))return '';
+ return `<div class="info" style="margin:0 0 10px"><b>🔥 Aquecimento</b> <span class="small">(não conta como série)</span><br>${warmTxt(it,base)}<br><span class="small">Faça antes da 1ª série deste exercício.</span>
+  <div class="btnrow" style="margin-top:8px"><button class="btn sm" data-a="warmDone" data-id="${it.exId}">Fiz o aquecimento ✓</button></div></div>`;}
 /* ---------- Sessão de treino ---------- */
 function vSessao(){
  const w=D.workouts.find(x=>x.id===UI.sessionId);if(!w){UI.view='treinos';return vTreinos();}
  const t=today();const doneW=D.activities.find(a=>a.date===t&&a.workoutId===w.id);
- const wIx=w.items.findIndex(j=>EX[j.exId]&&EX[j.exId].c&&EX[j.exId].eq!=='corpo');
+ const wIx=w.items.findIndex(j=>EX[j.exId]&&EX[j.exId].eq!=='corpo'&&!EX[j.exId].iso&&repRange(j.sets));
  const cards=w.items.map((it,ix)=>{const x=EX[it.exId];if(!x)return '';const list=D.history[it.exId]||[];const last=list[list.length-1];const today_=last&&last.date===t?last:null;
   const prev=[...list].reverse().find(e=>e.date<t);const n=nSetsD(it.sets);const sets=(today_&&today_.sets)||[];const feitas=today_?(sets.length||n):0;const fim=feitas>=n;
   const sug=progSug(it,prev);const nx=w.items.slice(ix+1).find(j=>EX[j.exId]);
@@ -2007,6 +2015,7 @@ function vSessao(){
  <span class="kicker">${w.day?DAYM[w.day]:'Treino'}</span><h2 class="disp h2" style="margin-bottom:8px">${esc(w.name)}</h2>
  ${gestNote()}${deloadHtml()}
  ${doneW?'':alBtn(alRegion(w),'Antes de começar: solta o corpo pra treinar com amplitude completa',w.id)}
+ ${doneW?'':(()=>{const j=w.items.find(i=>EX[i.exId]&&EX[i.exId].eq!=='corpo'&&!EX[i.exId].iso&&repRange(i.sets));if(!j)return '';const L=D.history[j.exId]||[];const pv=[...L].reverse().find(e=>e.date<t);const sg=progSug(j,pv);return warmTopHtml(w,sg&&sg.w!=null?sg.w:(pv?pv.weight:0));})()}
  <div class="info">Em cada exercício: confira o peso e as repetições e toque em <b>Terminei a série</b>. Eu conto as séries e ligo o cronômetro do descanso. <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como subir a carga?</button></div>
  ${cards||'<div class="card empty">Ainda sem exercícios. Adicione o que você fez 👇</div>'}
  <button class="btn2" style="margin:0 0 12px" data-a="addExOpen">＋ Adicionar um exercício que fiz</button>
@@ -2348,7 +2357,7 @@ function vAjuda(){
 
 /* ---------- Perfil ---------- */
 function vPerfil(){
- if(!PROF){PROF=JSON.parse(JSON.stringify(D.profile));PROF.warm=D.warmPref==='sim';PROF.warm0=PROF.warm;PROF.protOn=!!D.profile.protOn;PROF.protMeta=D.profile.protMeta||'';PROF.gest=D.profile.gest||'t1';}
+ if(!PROF){PROF=JSON.parse(JSON.stringify(D.profile));PROF.warm=D.warmPref!=='nao';PROF.warm0=PROF.warm;PROF.protOn=!!D.profile.protOn;PROF.protMeta=D.profile.protMeta||'';PROF.gest=D.profile.gest||'t1';}
  PROF.supps=PROF.supps||{};
  return `<button class="back" data-a="go" data-v="hoje">← Voltar</button>
  <span class="kicker">Perfil</span><h2 class="disp h2">Seu perfil</h2>
@@ -2360,7 +2369,7 @@ function vPerfil(){
   <label class="lbl">Na sua rotina</label>
   ${SUPPS.map(s=>`<button class="toggle ${PROF.supps[s.k]?'on':''}" data-a="profSupp" data-k="${s.k}"><span>${s.e} ${s.l}</span><span class="tg"></span></button>`).join('')}
   <label class="lbl">No treino</label>
-  <button class="toggle ${PROF.warm?'on':''}" data-a="profFlag" data-k="warm"><span>🔥 Sugerir séries de aquecimento<br><span class="small mut" style="font-weight:500">2 séries leves antes do primeiro exercício pesado</span></span><span class="tg"></span></button>
+  <button class="toggle ${PROF.warm?'on':''}" data-a="profFlag" data-k="warm"><span>🔥 Perguntar sobre séries de aquecimento<br><span class="small mut" style="font-weight:500">Uma vez por dia de treino, no topo do treino</span></span><span class="tg"></span></button>
   <label class="lbl">Alimentação</label>
   <button class="toggle ${PROF.protOn?'on':''}" data-a="profFlag" data-k="protOn"><span>🥚 Acompanhar proteína<br><span class="small mut" style="font-weight:500">Por porções, sem balança e sem contar calorias</span></span><span class="tg"></span></button>
   ${PROF.protOn?`<label class="lbl">Meta de proteína por dia (g)</label><input class="inp" inputmode="numeric" data-i="prof.protMeta" value="${esc(PROF.protMeta||'')}" placeholder="${protMetaPeso()} (1,6 g por kg)"><p class="small mut" style="margin:6px 0 0">Se sua nutricionista passou outro valor, coloque aqui.</p>`:''}
@@ -3582,6 +3591,8 @@ const A={
  deloadYes:()=>{D.deload={from:today(),to:addDays(today(),6)};persist();render();toast('Semana de descarga ligada 🌿');},
  deloadNo:()=>{D.deloadAsk=today();persist();render();toast('Tudo bem! Seguimos normal 💪');},
  deloadEnd:()=>{if(D.deload)D.deload.to=addDays(today(),-1);persist();render();toast('Descarga encerrada');},
+ warmDay:t=>{D.warmDay={d:today(),v:t.dataset.v};persist();const y=window.scrollY;render();window.scrollTo(0,y);},
+ warmGo:t=>{const el=document.getElementById('ex-'+t.dataset.id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},
  warmPref:t=>{D.warmPref=t.dataset.v;persist();const y=window.scrollY;render();window.scrollTo(0,y);if(t.dataset.v==='nao')toast('Ok! Dá pra ligar de novo no Perfil');},
  warmDone:t=>{UI.warmDone=UI.warmDone||{};UI.warmDone[t.dataset.id]=today();const y=window.scrollY;render();window.scrollTo(0,y);toast('Aquecido! Bora pro treino 💪');},
  alGo:t=>alOpen(t.dataset.r,t.dataset.w),
@@ -3605,7 +3616,7 @@ const A={
  profSupp:t=>{PROF.supps[t.dataset.k]=!PROF.supps[t.dataset.k];render();},
  saveProf:()=>{if(!String(PROF.nome||'').trim()){toast('O nome não pode ficar vazio');return;}
   D.profile={...D.profile,nome:String(PROF.nome).trim(),obj:PROF.obj,pesoInicial:num(PROF.pesoInicial),meta:num(PROF.meta),supps:{...PROF.supps},protOn:!!PROF.protOn,protMeta:num(PROF.protMeta)||null};
-  if(PROF.warm!==PROF.warm0)D.warmPref=PROF.warm?'sim':'nao';
+  if(PROF.warm!==PROF.warm0)D.warmPref=PROF.warm?'pergunta':'nao';
   if(D.profile.saude&&D.profile.saude.gestante){if(PROF.gest==='nao'){D.profile.saude={...D.profile.saude,gestante:false};D.profile.gest='';}else D.profile.gest=PROF.gest;}
   persist();PROF=null;toast('Perfil salvo!');go('hoje');},
  share:async()=>{const url=location.href.split('#')[0].split('?')[0];
