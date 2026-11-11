@@ -210,7 +210,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='7.0 · 10/11 22h';
+const APP_VERSION='7.1 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1629,7 +1629,7 @@ function vHoje(){
   ${aguaAskHtml()}
   ${!supps.length?'<p class="small mut" style="margin:10px 0 0">Dica: ative creatina, whey, vácuo etc. no seu perfil (ícone 👤 lá em cima).</p>':''}
  </details>
- <button class="ckcard" data-a="ckOpen"><span class="em">📝</span><span><b>${c.checkin?'✓ Check-in feito · registrar de novo':'Registrar meu dia'}</b><span>Escreva como foi seu dia (treino, comida, água) que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>
+ ${c.checkin?'':`<button class="ckcard" data-a="ckOpen"><span class="em">📝</span><span><b>Registrar meu dia</b><span>Escreva como foi seu dia (treino, comida, água) que eu anoto tudo e te dou dicas pra amanhã.</span></span></button>`}
  <details class="card meal fold" data-fold="alim"${foldOpen('alim',!!(c.meals&&Object.values(c.meals).some(v=>v)))}>
   <summary><span>🥗 Alimentação de hoje</span><span class="chev">▾</span></summary>
   ${meals.map(([k,l])=>`<label class="lbl">${l}</label><textarea class="inp" rows="2" data-i="meal.${k}" placeholder="O que você comeu?">${esc((c.meals||{})[k])}</textarea>`).join('')}
