@@ -205,7 +205,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='6.5 · 10/11 17h';
+const APP_VERSION='6.6 · 10/11 22h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -2292,6 +2292,20 @@ function detWater(t){let total=0,found=false;const re=/(\d+(?:[.,]\d+)?)\s*(ml|l
   if(u==='ml'&&!(n>=30&&n<=5000))continue;
   total+=u==='ml'?n:/^l/.test(u)?n*1000:/garraf/.test(u)?n*recMl(/garraf/,500):/squeeze/.test(u)?n*recMl(/squeeze/,600):n*recMl(/copo/,250);found=true;}
  return found?Math.round(total):null;}
+/* limpa o jeito falado: tira "na verdade", "mesmo", "aí eu fiz", repetições, e põe vírgula entre alimentos */
+const FOODS=new Set('arroz feijao macarrao massa salada frango carne peixe ovo omelete batata mandioca aipim macaxeira cuscuz tapioca pao queijo presunto peito iogurte leite cafe banana maca laranja uva morango mamao melao melancia abacaxi manga pera kiwi abacate limao gengibre couve alface rucula tomate cenoura beterraba brocolis abobrinha abobora pepino cebola alho chuchu quiabo vagem espinafre granola aveia chia linhaca castanha amendoim pipoca biscoito bolacha bolo chocolate suco cha whey charque calabresa linguica bacon atum sardinha farofa polenta inhame quinoa lentilha grao milho ervilha requeijao manteiga mel cuscuz acai coco'.split(' '));
+const isFood=w=>{const n=norm(w).replace(/[^a-z]/g,'');return FOODS.has(n)||FOODS.has(n.replace(/e?s$/,''));};
+function cleanMeal(x){let t=' '+String(x).replace(/\s+/g,' ')+' ';
+ t=t.replace(/\b(foi |algo |uma coisa |coisa )?(bem |mais )?simples( demais)?\b/gi,' ').replace(/\bna verdade\b|\btipo assim\b|\bbasicamente\b|\bn[eé]\b(?!\w)|\bmesmo\b/gi,' ');
+ t=t.replace(/(^|\s)(a[ií]|ent[aã]o)(?=\s)/gi,' ').replace(/\beu (fiz|comi|tomei|bebi|almocei|jantei|lanchei|preparei)\b/gi,' ');
+ t=t.replace(/\b(um|uma) (pedacinho|pedaço|pouquinho)( bem)?( pequeno| pequenininho)? de\b/gi,'um pouco de').replace(/\bum uma\b/gi,'uma').replace(/\buma um\b/gi,'um').replace(/\b(\w+) \1\b/gi,'$1');
+ t=t.replace(/\s+/g,' ').trim();
+ let prev;do{prev=t;t=t.replace(/^(foi|teve|era|fiz|comi|tomei|bebi|s[oó]|e|eu|hoje|de|que)\s+/i,'');}while(t!==prev);
+ do{prev=t;t=t.replace(/[\s,;:]+(e|eu|no|na|de|do|da|com|a[ií]|foi)\s*$/i,'').replace(/[\s,;:.\-]+$/,'');}while(t!==prev);
+ if(/^(um|uma)\s+(\S+)/i.test(t)&&!/^(um|uma)\s+(por[cç][aã]o|prato|fatia|copo|pouco|pote|tigela|x[ií]cara|colher|concha|unidade|banda|lata|garrafa|ta[cç]a|bandeja|peda[cç]o)/i.test(t))t=t.replace(/^(um|uma)\s+/i,'');
+ const tk=t.split(' ');for(let i=0;i<tk.length-1;i++){if(/[,;]$/.test(tk[i]))continue;if(isFood(tk[i])&&(isFood(tk[i+1])||/^(um|uma|dois|duas|meia|meio)$/i.test(tk[i+1])))tk[i]+=',';}
+ t=tk.join(' ');
+ return t?t[0].toUpperCase()+t.slice(1):t;}
 function parseMeals(s){
  const out={};const re=/(caf[eé] da manh[aã]|caf[eé]|almo[cç]o|almocei|jantar|jantei|janta|lanches?|lanchei)/gi;const mk=[];let m;
  while((m=re.exec(s))){const w=norm(m[0]);const pre=norm(s.slice(Math.max(0,m.index-12),m.index));
@@ -2303,10 +2317,10 @@ function parseMeals(s){
   let seg=s.slice(x.end,j+1<mk.length?mk[j+1].i:s.length).split(/[.;!?\n]/)[0];
   const parts=seg.split(',');const kept=[];
   for(const p of parts){const np=prep(p);if(kept.length&&(detAct(np)||/agua|creatina|whey|vacuo|pretreino|copo|trein/.test(np)))break;kept.push(p);}
-  seg=kept.join(',').replace(/^[\s,:\-]*(eu\s+)?(comi|tomei|foi|teve|era|fiz)?\s*/i,'').replace(/[\s,]*(e|eu|tomei|comi|bebi|no|na|de)?\s*$/i,'').trim();
+  seg=cleanMeal(kept.join(','));
   if(seg.length<3)return;
   const k=x.w.startsWith('caf')?'cafe':x.w.startsWith('almoc')?'almoco':x.w.startsWith('jant')?'jantar':'lanches';
-  out[k]=out[k]?out[k]+'; '+seg:seg;});
+  out[k]=out[k]?out[k]+'; '+seg[0].toLowerCase()+seg.slice(1):seg;});
  return out;}
 function parseDay(txt){
  const t=prep(txt);const r={acts:[],supps:{},agua:null,meals:parseMeals(txt),ontrack:null,none:false,notYet:false,add:/\b(mais|outra|outro|de novo)\b/.test(t)};
