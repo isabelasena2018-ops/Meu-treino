@@ -218,7 +218,7 @@ details.card[open] summary .chev{transform:rotate(180deg)}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='8.0 · 11/11 09h';
+const APP_VERSION='8.1 · 14/11 16h';
 /* ================== DADOS ================== */
 const GROUPS={gluteo:'Glúteo',quadriceps:'Quadríceps',posterior:'Posterior de coxa',panturrilha:'Panturrilha',costas:'Costas',peito:'Peito',ombro:'Ombro',biceps:'Bíceps',triceps:'Tríceps',abdomen:'Abdômen'};
 
@@ -1469,6 +1469,12 @@ const nf=(v,d=1)=>v==null?'—':String(Math.round(v*Math.pow(10,d))/Math.pow(10,
 const keyOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const today=()=>keyOf(new Date());
 const fmt=iso=>{const p=iso.split('-');return p[2]+'/'+p[1];};
+const sDay=()=>UI.logDate||today();
+const isPast=()=>!!UI.logDate&&UI.logDate<today();
+const dowOf=k=>['dom','seg','ter','qua','qui','sex','sab'][new Date(k+'T12:00').getDay()];
+const dayName=k=>{const y=new Date();y.setDate(y.getDate()-1);const pre=k===today()?'hoje':k===keyOf(y)?'ontem':(DAYM[dowOf(k)]||'').toLowerCase();return (pre?pre+', ':'')+fmt(k);};
+const dayParen=k=>{const n=dayName(k);const i=n.indexOf(', ');return 'dia '+fmt(k)+(i>0?' ('+n.slice(0,i)+')':'');};
+const histSort=a=>a.sort((x,y)=>x.date.localeCompare(y.date));
 const todayDay=()=>['dom','seg','ter','qua','qui','sex','sab'][new Date().getDay()];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1488,7 +1494,7 @@ const protMeta=()=>D.profile.protMeta>0?D.profile.protMeta:protMetaPeso();
 function aguaMeta(){if(D.aguaMetaMl>0)return D.aguaMetaMl;const p=lastWeight();if(!p)return 2000;return Math.min(3500,Math.max(1500,Math.round(p*35/100)*100));}
 const fmtL=ml=>{ml=Math.round(ml||0);return ml>=1000?String(Math.round(ml/100)/10).replace('.',',')+' L':ml+' ml';};
 function recips(){if(!Array.isArray(D.recipientes)||!D.recipientes.length)D.recipientes=[{n:'Copo',e:'🥤',ml:250},{n:'Garrafa',e:'🧴',ml:null}];return D.recipientes;}
-function aguaAddMl(ml){const c=dayCheck(today());const before=c.aguaMl;c.aguaMl=Math.max(0,before+ml);c.aguaLog.push(ml);persist();return before<aguaMeta()&&c.aguaMl>=aguaMeta();}
+function aguaAddMl(ml){const c=dayCheck(typeof ckD==='function'?ckD():today());const before=c.aguaMl;c.aguaMl=Math.max(0,before+ml);c.aguaLog.push(ml);persist();return before<aguaMeta()&&c.aguaMl>=aguaMeta();}
 function lastWeight(){const s=[...D.weights].sort((a,b)=>a.date.localeCompare(b.date));return s.length?s[s.length-1].weight:(D.profile&&D.profile.pesoInicial)||null;}
 function rec(id){let r=rec0(id);if(D.profile&&D.profile.nivel==='iniciante')r=r.replace(/^4 ×/,'3 ×');return r;}
 function rec0(id){const x=EX[id];const o=(D.profile&&D.profile.obj)||'emagrecer';const u=x.uni?' (cada lado)':'';
@@ -1523,7 +1529,7 @@ let UNDO=null;
 function withUndo(msg,fn){const snap=JSON.stringify(D);fn();persist();const y=window.scrollY;render();window.scrollTo(0,y);UNDO=snap;
  const t=document.getElementById('toast');t.innerHTML=`<span>${esc(msg)}</span><button data-a="undo">Desfazer</button>`;t.classList.add('show','undo');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show','undo');UNDO=null;},6000);}
 function go(v,opt){if(!(opt&&opt.pop)&&v!==UI.view&&D.profile){try{history.pushState({v,sid:UI.sessionId},'',location.pathname);UI.hDepth=(UI.hDepth||0)+1;}catch(e){}}
- if(v!=='sessao'){UI.reorder=false;restStop();UI.nextW={};UI.nextMsg={};}UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
+ if(v!=='sessao'){UI.reorder=false;UI.logDate=null;restStop();UI.nextW={};UI.nextMsg={};}UI.view=v;if(UPDATE_PENDING&&updateSafe()){toast('Atualizando o app… ✨');setTimeout(doUpdate,700);}render();window.scrollTo(0,0);}
 
 const IC={
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -1675,6 +1681,7 @@ function vHoje(){
   <p class="small mut" style="margin:10px 0 0">Sem culpa: um dia fora não derruba a semana. O que conta é a média 🌱</p>
   <div class="btnrow"><button class="btn sm" data-a="mealSave">Salvar</button><button class="btn2" style="padding:10px" data-a="alimOpen"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendário</button></div>
  </details>
+ <button class="small" style="display:block;margin:4px auto 10px;font-weight:700;color:var(--mut);text-decoration:underline" data-a="pastOpen">📅 Esqueceu de registrar algum dia?</button>
 `;
 }
 
@@ -2029,9 +2036,9 @@ function rDragInit(){const L=document.getElementById('rlist');if(!L||L._ok)retur
 /* ---------- Sessão de treino ---------- */
 function vSessao(){
  const w=D.workouts.find(x=>x.id===UI.sessionId);if(!w){UI.view='treinos';return vTreinos();}
- const t=today();const doneW=D.activities.find(a=>a.date===t&&a.workoutId===w.id);
+ const t=sDay(),past=isPast();const doneW=D.activities.find(a=>a.date===t&&a.workoutId===w.id);
  const wIx=w.items.findIndex(j=>EX[j.exId]&&EX[j.exId].eq!=='corpo'&&!EX[j.exId].iso&&repRange(j.sets));
- const cards=w.items.map((it,ix)=>{const x=EX[it.exId];if(!x)return '';const list=D.history[it.exId]||[];const last=list[list.length-1];const today_=last&&last.date===t?last:null;
+ const cards=w.items.map((it,ix)=>{const x=EX[it.exId];if(!x)return '';const list=D.history[it.exId]||[];const today_=list.find(e=>e.date===t)||null;
   const prev=[...list].reverse().find(e=>e.date<t);const n=nSetsD(it.sets);const sets=(today_&&today_.sets)||[];const feitas=today_?(sets.length||n):0;const fim=feitas>=n;
   const sug=progSug(it,prev);const nx=w.items.slice(ix+1).find(j=>EX[j.exId]);
   const nxW=UI.nextW&&UI.nextW[it.exId];const vW=nxW!=null&&sets.length?nxW:sets.length?sets[sets.length-1].w:(sug&&sug.w!=null?sug.w:(prev?prev.weight:''));const vR='';
@@ -2039,9 +2046,9 @@ function vSessao(){
    <div style="display:flex;gap:8px;align-items:flex-start">${fim?'<span class="check">✓</span>':''}<div style="flex:1"><h4 class="exn">${esc(x.n)}</h4><span class="sch">${esc(it.sets)}</span>${it.why?`<div class="small mut" style="margin-top:3px">🎯 ${esc(it.why)}</div>`:''}</div></div>
    <div class="exbtns"><button class="mini g" data-a="info" data-id="${it.exId}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg>Como fazer</button><a class="mini o" href="${yt(it.exId)}" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>Vídeo</a><button class="mini g" data-a="swapOpen" data-id="${it.exId}" data-ctx="sessao"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>Trocar</button></div>
    ${prev?`<div class="last"><b>Última vez (${fmt(prev.date)}):</b> ${prev.sets&&prev.sets.length?prev.sets.map(z=>nf(z.w)+' kg × '+(z.r||'—')).join(' · '):nf(prev.weight)+' kg'+(prev.reps?' × '+prev.reps+' reps':'')}</div>`:''}
-   ${sug&&!sets.length?`<div class="hint" style="display:flex;gap:8px;align-items:flex-start"><span>💡</span><span><b>Hoje: ${sug.txt}</b><br><span style="font-weight:500">${sug.why}</span> <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como funciona?</button></span></div>`:''}
+   ${sug&&!sets.length?`<div class="hint" style="display:flex;gap:8px;align-items:flex-start"><span>💡</span><span><b>${past?'Sugestão':'Hoje'}: ${sug.txt}</b><br><span style="font-weight:500">${sug.why}</span> <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como funciona?</button></span></div>`:''}
    ${!sets.length&&!fim?volHtml(it):''}
-   ${ix===wIx&&!sets.length&&!fim?warmHtml(it,sug&&sug.w!=null?sug.w:(prev?prev.weight:0)):''}
+   ${!past&&ix===wIx&&!sets.length&&!fim?warmHtml(it,sug&&sug.w!=null?sug.w:(prev?prev.weight:0)):''}
    ${UI.pr&&UI.pr[it.exId]?`<div class="prbox">🏆 <b>Novo recorde!</b> ${nf(UI.pr[it.exId].w)} kg${UI.pr[it.exId].old?` (antes: ${nf(UI.pr[it.exId].old)} kg)`:''}</div>`:''}
    <div class="setsrow"><span class="small mut" style="font-weight:700">Séries${deloadOn()?' (descarga)':''}</span>${Array.from({length:Math.max(n,feitas)},(_,i)=>`<span class="sdot ${i<feitas?'ok':''} ${i===feitas&&!fim?'now':''}" title="Série ${i+1}${sets[i]?': '+nf(sets[i].w)+' kg × '+(sets[i].r||'—'):''}">${i<feitas?'✓':i+1}</span>`).join('')}<span class="small" style="margin-left:auto;font-weight:700;color:var(--a)">${feitas} de ${n}</span></div>
    ${sets.length?`<div class="small mut" style="margin:-2px 0 8px">${sets.map((z,i)=>`${i+1}ª: ${nf(z.w)} kg × ${z.r||'—'}`).join(' · ')} <button class="small" style="font-weight:700;color:var(--mut);text-decoration:underline" data-a="setUndo" data-id="${it.exId}">desfazer última</button></div>`:''}
@@ -2049,22 +2056,24 @@ function vSessao(){
    ${fim?`<div class="info" style="margin:0 0 8px">✅ <b>Exercício concluído!</b> ${nx?'Bora pro próximo: <b>'+esc(EX[nx.exId].n)+'</b> 💪':'Último exercício feito. Finalize o treino lá embaixo 🎉'}</div>`:''}
    <div class="fr"><div class="fld"><input id="w-${it.exId}" inputmode="decimal" value="${vW!==''&&vW!=null?String(vW).replace('.',','):''}" placeholder="0"><span>KG</span></div><div class="fld"><input id="r-${it.exId}" inputmode="numeric" value="${vR}" placeholder="${sug&&sug.r&&!sets.length?sug.r:repRange(it.sets)?repRange(it.sets).join('-'):'0'}"><span>${repRange(it.sets)||!/\d\s*(s|seg)\b/.test(it.sets)?'REPS':'SEG'}</span></div></div>
    ${fim?`<button class="small" style="display:block;margin:2px auto 0;font-weight:700;color:var(--a)" data-a="setDone" data-id="${it.exId}">+ Fiz mais uma série</button>`
-    :`<button class="setbtn" data-a="setDone" data-id="${it.exId}"><span><b>✓ Terminei a série ${feitas+1} de ${n}</b><span>${feitas+1<n?'Salva o peso e as repetições e começa o descanso de '+restTxt(restFor(it.exId)):'Salva e conclui o exercício'}</span></span><span class="go">▶</span></button>`}
+    :`<button class="setbtn" data-a="setDone" data-id="${it.exId}"><span><b>✓ ${past?'Anotar':'Terminei'} a série ${feitas+1} de ${n}</b><span>${past?'Salva o peso e as repetições dessa série':feitas+1<n?'Salva o peso e as repetições e começa o descanso de '+restTxt(restFor(it.exId)):'Salva e conclui o exercício'}</span></span><span class="go">▶</span></button>`}
   </div>`;}).join('');
  return `<button class="back" data-a="go" data-v="treinos">← Treinos</button>
  <span class="kicker">${w.day?DAYM[w.day]:'Treino'}</span><h2 class="disp h2" style="margin-bottom:8px">${esc(w.name)}</h2>
+ ${past?`<div class="info" style="border-color:var(--a);display:flex;gap:8px;align-items:flex-start"><span>📅</span><span>Registrando o treino de <b>${dayName(t)}</b>. Coloque o peso e as repetições que você lembra (se não lembrar de tudo, sem problema). <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="pastExit">Voltar pra hoje</button></span></div>`:''}
  ${gestNote()}${deloadHtml()}
- ${doneW?'':alBtn(alRegion(w),'Antes de começar: solta o corpo pra treinar com amplitude completa',w.id)}
- ${doneW?'':(()=>{const j=w.items.find(i=>EX[i.exId]&&EX[i.exId].eq!=='corpo'&&!EX[i.exId].iso&&repRange(i.sets));if(!j)return '';const L=D.history[j.exId]||[];const pv=[...L].reverse().find(e=>e.date<t);const sg=progSug(j,pv);return warmTopHtml(w,sg&&sg.w!=null?sg.w:(pv?pv.weight:0));})()}
- <div class="info">Em cada exercício: confira o peso e as repetições e toque em <b>Terminei a série</b>. Eu conto as séries e ligo o cronômetro do descanso. <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como subir a carga?</button></div>
+ ${doneW||past?'':alBtn(alRegion(w),'Antes de começar: solta o corpo pra treinar com amplitude completa',w.id)}
+  ${doneW||past?'':(()=>{const j=w.items.find(i=>EX[i.exId]&&EX[i.exId].eq!=='corpo'&&!EX[i.exId].iso&&repRange(i.sets));if(!j)return '';const L=D.history[j.exId]||[];const pv=[...L].reverse().find(e=>e.date<t);const sg=progSug(j,pv);return warmTopHtml(w,sg&&sg.w!=null?sg.w:(pv?pv.weight:0));})()}
+ <div class="info">Em cada exercício: confira o peso e as repetições e toque em <b>${past?'Anotar':'Terminei'} a série</b>. Eu conto as séries${past?'':' e ligo o cronômetro do descanso'}. <button style="font-weight:800;text-decoration:underline;color:inherit" data-a="progInfo">Como subir a carga?</button></div>
  ${UI.reorder?reorderHtml(w):(cards||'<div class="card empty">Ainda sem exercícios. Adicione o que você fez 👇</div>')}
  ${!UI.reorder&&w.items.length>1?'<button class="small" style="display:block;margin:-4px auto 12px;font-weight:700;color:var(--a)" data-a="reorderOn">↕ Mudar a ordem dos exercícios</button>':''}
  <button class="btn2" style="margin:0 0 12px" data-a="addExOpen">＋ Adicionar um exercício que fiz</button>
- <div class="card">${doneW?`<p style="margin:0 0 10px;font-weight:700;color:var(--a)">✓ Treino registrado hoje${doneW.minutes?' · '+doneW.minutes+' min':''}</p>`:''}
+ <div class="card">${doneW?`<p style="margin:0 0 10px;font-weight:700;color:var(--a)">✓ Treino registrado ${past?'nesse dia':'hoje'}${doneW.minutes?' · '+doneW.minutes+' min':''}</p>`:''}
   <label class="lbl" style="margin-top:0">Quanto tempo durou? (min)</label>
   <input class="inp" id="fin-min" inputmode="numeric" placeholder="ex: 60" value="${doneW&&doneW.minutes?doneW.minutes:''}">
-  <button class="btn alt" style="margin-top:10px" data-a="finish" data-id="${w.id}">${doneW?'Atualizar registro':'Finalizar treino 🔥'}</button>
-  ${doneW?`<button class="btn2 danger" style="margin-top:8px" data-a="delSess" data-id="${doneW.id}">Excluir o treino de hoje</button>`:''}</div>
+  <button class="btn alt" style="margin-top:10px" data-a="finish" data-id="${w.id}">${doneW?'Atualizar registro':past?'Salvar treino de '+fmt(t)+' 🔥':'Finalizar treino 🔥'}</button>
+  ${doneW?`<button class="btn2 danger" style="margin-top:8px" data-a="delSess" data-id="${doneW.id}">Excluir ${past?'esse registro':'o treino de hoje'}</button>`:''}</div>
+ ${past?'':'<button class="small" style="display:block;margin:0 auto 10px;font-weight:700;color:var(--mut);text-decoration:underline" data-a="pastOpen">📅 Esse treino foi em outro dia?</button>'}
  <p class="small mut" style="text-align:center">Sentiu dor forte ou nas articulações? Pare e procure orientação de um profissional de educação física.</p>`;
 }
 
@@ -2374,7 +2383,7 @@ function vAtiv(){
  <button class="ckcard" data-a="go" data-v="corrida" style="padding:11px 14px"><span class="em">🏃‍♀️</span><span><b>${D.run?'Corrida · nível '+D.run.lvl:'Plano de corrida'}</b><span>${D.run?'Próximo: treino '+nextRunKey()+' · '+esc(runSession(nextRunKey()).name):'Do seu nível até onde você quiser ir, com corrida guiada por voz.'}</span></span></button>
  <div class="stats"><div class="st"><b>🔥${streak()}</b><span>dias seguidos</span></div><div class="st"><b>${activeDaysIn(wk)}</b><span>dias na semana</span></div><div class="st"><b>${monthCount()}</b><span>dias no mês</span></div></div>
  <button class="btn2" style="margin:-2px 0 14px" data-a="weekShare"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Resumo da semana em imagem</button>
- <h3 class="h3" style="margin-top:6px">Registrar atividade</h3>
+ <h3 class="h3" style="margin-top:6px">Registrar atividade</h3>${UI.actDate&&!f?`<div class="info" style="display:flex;gap:8px"><span>📅</span><span>Escolha o tipo da atividade de <b>${dayName(UI.actDate)}</b> 👇</span></div>`:''}
  <div class="agrid">${ACT.map(a=>`<button class="at ${f&&f.type===a[0]?'on':''}" data-a="actType" data-t="${a[0]}"><span class="em">${a[2]}</span>${a[1]}</button>`).join('')}</div>
  ${f?`<div class="card" style="margin-top:12px"><b>${ACTM[f.type][2]} ${ACTM[f.type][1]}</b>
   <div class="row2"><div><label class="lbl">Duração (min)</label><input class="inp" inputmode="numeric" data-i="act.minutes" value="${esc(f.minutes)}" placeholder="ex: 40"></div>
@@ -2602,8 +2611,9 @@ function parseDay(txt){
  if(/comi mal|exagerei|besteira|fugi da dieta|jaquei|comi muito doce/.test(t))r.ontrack=false;
  return r;}
 
-function ckTodayWorkout(){const t=today();return D.workouts.find(w=>w.day===todayDay()&&!D.activities.some(a=>a.date===t&&a.workoutId===w.id))||null;}
-function ckSaveAct(a){const t=today();
+const ckD=()=>(UI.view==='checkin'&&CK&&CK.date)||today();
+function ckTodayWorkout(){const t=ckD();return D.workouts.find(w=>w.day===dowOf(ckD())&&!D.activities.some(a=>a.date===t&&a.workoutId===w.id))||null;}
+function ckSaveAct(a){const t=ckD();
  if(a.type==='musculacao'&&!a.workoutId){
   const HINT={costas:/costas|pull/,gluteo:/glut/,perna:/quadr|infer|perna|poster/,pernas:/quadr|infer|perna|poster/,quadriceps:/quadr|infer|perna/,posterior:/poster/,peito:/peito|superior|push/,ombro:/ombro|superior|peito/,ombros:/ombro|superior|peito/,braco:/bra[cç]|b[ií]ceps|tr[ií]ceps|superior/,bracos:/bra[cç]|b[ií]ceps|tr[ií]ceps|superior/,biceps:/b[ií]ceps|costas|bra/,triceps:/tr[ií]ceps|peito|bra/,superiores:/superior/,inferiores:/infer|perna|glut|quadr/,abdomen:/abd/,barriga:/abd/};
   let w=null;if(a.hint){const re=HINT[a.hint];w=D.workouts.find(x=>re&&re.test(norm(x.name)))||null;if(!w)a.name='Treino de '+a.hint;}else w=ckTodayWorkout();
@@ -2624,9 +2634,9 @@ const hourNow=()=>new Date().getHours();
 const MEALQ={cafe:['☕','café da manhã'],almoco:['🍽️','almoço'],lanches:['🍎','lanche'],jantar:['🌙','jantar']};
 
 function mealStep(k,cond){return {cond,
- q:()=>{const c=dayCheck(today());const cur=c.meals&&c.meals[k];return cur?`No ${MEALQ[k][1]} você já anotou: "${cur}". Quer acrescentar algo?`:`${MEALQ[k][0]} E no ${MEALQ[k][1]}, o que você comeu?`;},
- opts:()=>{const c=dayCheck(today());return c.meals&&c.meals[k]?[['Tá certo assim','keep']]:[['Pulei essa refeição','skip'],['Prefiro não anotar','keep']];},
- ans:(v,txt)=>{if(!txt)return;const c=dayCheck(today());c.meals=c.meals||{};c.meals[k]=c.meals[k]?c.meals[k]+'; '+txt:txt;persist();}};}
+ q:()=>{const c=dayCheck(ckD());const cur=c.meals&&c.meals[k];return cur?`No ${MEALQ[k][1]} você já anotou: "${cur}". Quer acrescentar algo?`:`${MEALQ[k][0]} E no ${MEALQ[k][1]}, o que você comeu?`;},
+ opts:()=>{const c=dayCheck(ckD());return c.meals&&c.meals[k]?[['Tá certo assim','keep']]:[['Pulei essa refeição','skip'],['Prefiro não anotar','keep']];},
+ ans:(v,txt)=>{if(!txt)return;const c=dayCheck(ckD());c.meals=c.meals||{};c.meals[k]=c.meals[k]?c.meals[k]+'; '+txt:txt;persist();}};}
 
 const CKS={
  start:{q:()=>'Você treinou ou fez alguma atividade hoje?',
@@ -2662,20 +2672,20 @@ const CKS={
    CK.cmd=false;}},
  cmd_free:{q:()=>'Pode falar! 😊 Ex: "bebi 1 garrafa", "fiz 30 min de bike", "tomei whey".',opts:()=>[],
   ans:(v,txt)=>{if(!txt)return;ckFree(txt,true);CK.q.unshift('act_fix','cmd_more');}},
- end_lite:{q:()=>{const c=dayCheck(today());return `Fechado! Tá tudo salvo ✓ Hoje até agora: ${D.activities.filter(a=>a.date===today()).length?D.activities.filter(a=>a.date===today()).map(actLine).join(', '):'nenhuma atividade'} · 💧 ${fmtL(c.aguaMl)} de água. Quando quiser, é só me chamar de novo 💪`;},
+ end_lite:{q:()=>{const c=dayCheck(ckD());return `Fechado! Tá tudo salvo ✓ Hoje até agora: ${D.activities.filter(a=>a.date===ckD()).length?D.activities.filter(a=>a.date===ckD()).map(actLine).join(', '):'nenhuma atividade'} · 💧 ${fmtL(c.aguaMl)} de água. Quando quiser, é só me chamar de novo 💪`;},
   opts:()=>[['🏠 Voltar pro início','home'],['💬 Registrar mais','more']],
   ans:(v,txt)=>{if(txt){ckFree(txt,true);CK.q.unshift('act_fix','end_lite');return;}if(v==='more'){CK.q.unshift('cmd_free');return;}CK=null;go('hoje');return 'stay';}},
  act_more:{q:()=>'Fez mais alguma atividade hoje?',opts:()=>[['Sim','yes'],['Não, só isso','no']],
   ans:(v,txt)=>{if(txt){const r=parseDay(txt);if(r.acts.length){r.acts.forEach(a=>ckSaveAct(a));bot('Anotado! 🔥\n'+r.acts.map(actLine).join('\n'));CK.q.unshift('act_more');return;}v=/\b(sim|fiz|teve|s)\b/.test(norm(txt))?'yes':'no';}
    if(v==='yes'){CK.tmp={};CK.q.unshift('act_type','act_period','act_min','act_more');}}},
  reason:{q:()=>'Tudo bem, descanso também faz parte 💛 O que pegou hoje?',opts:()=>[['😴 Cansaço','cansaco'],['⏱️ Falta de tempo','tempo'],['🌿 Era dia de descanso','descanso'],['🤕 Dor ou indisposição','dor'],['Outro motivo','outro']],
-  ans:(v,txt)=>{const c=dayCheck(today());if(txt){const n=norm(txt);v=/cans|sono|dormi/.test(n)?'cansaco':/tempo|corrid|trabalh|reuni/.test(n)?'tempo':/descans|folga/.test(n)?'descanso':/dor|doen|mal|colica|gripe/.test(n)?'dor':'outro';c.reasonText=txt;}c.reason=v;persist();}},
+  ans:(v,txt)=>{const c=dayCheck(ckD());if(txt){const n=norm(txt);v=/cans|sono|dormi/.test(n)?'cansaco':/tempo|corrid|trabalh|reuni/.test(n)?'tempo':/descans|folga/.test(n)?'descanso':/dor|doen|mal|colica|gripe/.test(n)?'dor':'outro';c.reasonText=txt;}c.reason=v;persist();}},
  supps:{cond:()=>ckOnSupps().length>0,multi:true,
   q:()=>'E da sua rotina, o que você já fez hoje? Toque em tudo que fez e depois em "Pronto".',
-  ans:(v,txt)=>{const c=dayCheck(today());if(txt){const r=parseDay(txt);Object.assign(c.supps,r.supps);}else ckOnSupps().forEach(s=>c.supps[s.k]=!!CK.multi[s.k]);persist();}},
- agua:{q:()=>{const c=dayCheck(today());return c.aguaMl?`💧 Você já tem ${fmtL(c.aguaMl)} de água registrados hoje. Bebeu mais alguma coisa?`:'💧 E de água, quanto você bebeu hoje? Pode falar em copos, garrafas ou ml.';},
-  opts:()=>{const c=dayCheck(today());return recips().map((r,i)=>[r.e+' '+r.n+(r.ml?' ('+fmtL(r.ml)+')':''),'r:'+i]).concat([['Outra quantidade (ml)','ml'],[c.aguaMl?'Não, só isso':'Não bebi ainda','keep']]);},
-  ans:(v,txt)=>{if(txt){const n=detWater(prep(txt));if(n!=null){const hit=aguaAddMl(n);bot(`Anotado! 💧 +${fmtL(n)} · total de hoje: ${fmtL(dayCheck(today()).aguaMl)}${hit?' — meta batida! 👏':''}`);}
+  ans:(v,txt)=>{const c=dayCheck(ckD());if(txt){const r=parseDay(txt);Object.assign(c.supps,r.supps);}else ckOnSupps().forEach(s=>c.supps[s.k]=!!CK.multi[s.k]);persist();}},
+ agua:{q:()=>{const c=dayCheck(ckD());return c.aguaMl?`💧 Você já tem ${fmtL(c.aguaMl)} de água registrados hoje. Bebeu mais alguma coisa?`:'💧 E de água, quanto você bebeu hoje? Pode falar em copos, garrafas ou ml.';},
+  opts:()=>{const c=dayCheck(ckD());return recips().map((r,i)=>[r.e+' '+r.n+(r.ml?' ('+fmtL(r.ml)+')':''),'r:'+i]).concat([['Outra quantidade (ml)','ml'],[c.aguaMl?'Não, só isso':'Não bebi ainda','keep']]);},
+  ans:(v,txt)=>{if(txt){const n=detWater(prep(txt));if(n!=null){const hit=aguaAddMl(n);bot(`Anotado! 💧 +${fmtL(n)} · total de hoje: ${fmtL(dayCheck(ckD()).aguaMl)}${hit?' — meta batida! 👏':''}`);}
     else if(/^\s*\d+\s*$/.test(txt)){CK.tmpN=parseInt(txt,10);CK.q.unshift('agua_unit');}
     else if(/\b(nao|nada|so isso)\b/.test(norm(txt))){}
     else{bot('Hmm, não entendi a quantidade 😅 Escolhe uma opção aqui embaixo:');CK.q.unshift('agua');}return;}
@@ -2685,36 +2695,36 @@ const CKS={
   ans:(v,txt)=>{let ml=txt?detWater(prep(txt))||parseFloat(prep(txt).replace(',','.').match(/\d+(\.\d+)?/)||'0'):+v;if(txt&&ml&&ml<=5)ml=ml*1000;if(ml>0){recips()[CK.rec].ml=Math.round(ml);persist();}else{CK.q.unshift('agua_recml');}}},
  agua_qty:{q:()=>{const r=recips()[CK.rec];const nm=r.n.toLowerCase();return `${/garraf|squeeze|caneca|xicara|jarra/.test(norm(nm))?'Quantas':'Quantos'} ${/garraf/.test(nm)?'garrafas':/copo/.test(nm)?'copos':nm+'s'} você bebeu?`;},opts:()=>[['½','0.5'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['6','6']],
   ans:(v,txt)=>{let n=txt?parseFloat(prep(txt).replace(',','.').match(/\d+(\.\d+)?/)||'0'):parseFloat(v);if(!(n>0)){CK.q.unshift('agua_qty');return;}
-   const ml=n*recips()[CK.rec].ml;const hit=aguaAddMl(ml);bot(`Anotado! 💧 +${fmtL(ml)} · total de hoje: ${fmtL(dayCheck(today()).aguaMl)}${hit?' — meta batida! 👏':''}`);CK.q.unshift('agua');}},
+   const ml=n*recips()[CK.rec].ml;const hit=aguaAddMl(ml);bot(`Anotado! 💧 +${fmtL(ml)} · total de hoje: ${fmtL(dayCheck(ckD()).aguaMl)}${hit?' — meta batida! 👏':''}`);CK.q.unshift('agua');}},
  agua_unit:{q:()=>`${CK.tmpN} de quê?`,opts:()=>recips().filter(r=>r.ml).map(r=>[r.e+' '+r.n,'r:'+recips().indexOf(r)]).concat([['ml','ml']]),
   ans:(v,txt)=>{const n=CK.tmpN;let ml=null;if(v==='ml'||(txt&&/ml/.test(norm(txt))))ml=n;else if(v&&v.startsWith('r:'))ml=n*recips()[+v.slice(2)].ml;else if(txt)ml=detWater(prep(n+' '+txt));
-   if(ml){const hit=aguaAddMl(ml);bot(`Anotado! 💧 +${fmtL(ml)} · total de hoje: ${fmtL(dayCheck(today()).aguaMl)}${hit?' — meta batida! 👏':''}`);CK.q.unshift('agua');}}},
+   if(ml){const hit=aguaAddMl(ml);bot(`Anotado! 💧 +${fmtL(ml)} · total de hoje: ${fmtL(dayCheck(ckD()).aguaMl)}${hit?' — meta batida! 👏':''}`);CK.q.unshift('agua');}}},
  agua_free:{q:()=>'Quantos ml?',opts:()=>[100,200,300,500,750,1000].map(n=>[fmtL(n),String(n)]),
   ans:(v,txt)=>{let ml=txt?(detWater(prep(txt))||parseInt(prep(txt).match(/\d+/)||'',10)):+v;if(!(ml>0)){CK.q.unshift('agua_free');return;}
-   const hit=aguaAddMl(ml);bot(`Anotado! 💧 +${fmtL(ml)} · total de hoje: ${fmtL(dayCheck(today()).aguaMl)}${hit?' — meta batida! 👏':''}`);CK.q.unshift('agua');}},
+   const hit=aguaAddMl(ml);bot(`Anotado! 💧 +${fmtL(ml)} · total de hoje: ${fmtL(dayCheck(ckD()).aguaMl)}${hit?' — meta batida! 👏':''}`);CK.q.unshift('agua');}},
  meal_cafe:mealStep('cafe',()=>true),
  meal_almoco:mealStep('almoco',()=>hourNow()>=11),
  meal_lanches:mealStep('lanches',()=>hourNow()>=15),
  meal_jantar:mealStep('jantar',()=>hourNow()>=18),
  ontrack:{q:()=>'No geral, você sente que comeu bem hoje?',opts:()=>[['Sim 🎯','1'],['Mais ou menos','m'],['Não muito 😅','0']],
-  ans:(v,txt)=>{const c=dayCheck(today());if(txt){const n=norm(txt);v=/mais ou menos|meio|razoav/.test(n)?'m':/\b(nao|mal|exagerei)\b/.test(n)?'0':'1';}c.onTrack=v==='1'?true:v==='0'?false:'meio';persist();}},
- sono:{cond:()=>!dayCheck(today()).sono,q:()=>'😴 E o sono: quantas horas você dormiu na última noite?',opts:()=>[['5 ou menos','5'],['6 h','6'],['7 h','7'],['8 h','8'],['9 ou mais','9'],['Pular','skip']],
-  ans:(v,txt)=>{if(txt){const m=prep(txt).match(/(\d+)/);v=m?String(Math.min(9,Math.max(5,+m[1]))):'skip';}if(v==='skip')return;const c=dayCheck(today());c.sono=+v;persist();}},
+  ans:(v,txt)=>{const c=dayCheck(ckD());if(txt){const n=norm(txt);v=/mais ou menos|meio|razoav/.test(n)?'m':/\b(nao|mal|exagerei)\b/.test(n)?'0':'1';}c.onTrack=v==='1'?true:v==='0'?false:'meio';persist();}},
+ sono:{cond:()=>!dayCheck(ckD()).sono,q:()=>'😴 E o sono: quantas horas você dormiu na última noite?',opts:()=>[['5 ou menos','5'],['6 h','6'],['7 h','7'],['8 h','8'],['9 ou mais','9'],['Pular','skip']],
+  ans:(v,txt)=>{if(txt){const m=prep(txt).match(/(\d+)/);v=m?String(Math.min(9,Math.max(5,+m[1]))):'skip';}if(v==='skip')return;const c=dayCheck(ckD());c.sono=+v;persist();}},
  note:{q:()=>'Quer me contar mais alguma coisa? Como você se sentiu, se doeu algo, uma conquista…',opts:()=>[['Não, é isso','no']],
-  ans:(v,txt)=>{if(txt){const c=dayCheck(today());c.note=c.note?c.note+'\n'+txt:txt;persist();bot('Anotei 📝');}}},
+  ans:(v,txt)=>{if(txt){const c=dayCheck(ckD());c.note=c.note?c.note+'\n'+txt:txt;persist();bot('Anotei 📝');}}},
  end:{q:()=>ckEndMsg(),opts:()=>[['🏠 Voltar pro início','home'],['📈 Ver progresso','prog']],
-  ans:(v,txt)=>{if(txt){const c=dayCheck(today());c.note=c.note?c.note+'\n'+txt:txt;persist();bot('Anotei 📝 Mais alguma coisa? Senão é só voltar pro início.');return 'stay';}
+  ans:(v,txt)=>{if(txt){const c=dayCheck(ckD());c.note=c.note?c.note+'\n'+txt:txt;persist();bot('Anotei 📝 Mais alguma coisa? Senão é só voltar pro início.');return 'stay';}
    CK=null;go(v==='prog'?'progresso':'hoje');return 'stay';}}
 };
 
 function ckFree(txt,quick){
- const r=parseDay(txt);const c=dayCheck(today());const L=[];
+ const r=parseDay(txt);const c=dayCheck(ckD());const L=[];
  r.acts.forEach(a=>{const rec=ckSaveAct(a);ckNeedFix(rec);L.push(actLine(rec));});
  if(r.none&&!r.acts.length){if(r.notYet){L.push('⏳ Treino ainda não rolou hoje (ainda dá tempo! 💪)');}else{L.push('😴 Sem treino hoje');CK.q.unshift('reason');}}
  const sk=Object.keys(r.supps);if(sk.length){Object.assign(c.supps,r.supps);sk.forEach(k=>{const s=SUPPS.find(x=>x.k===k);L.push((r.supps[k]?'✅ ':'⬜ ')+s.l);});
   if(ckOnSupps().every(s=>s.k in r.supps))CK.skip.add('supps');}
  if(r.agua!=null){const cur=c.aguaMl;if(r.add||!cur||r.agua<=cur)aguaAddMl(r.agua);else{c.aguaLog.push(r.agua-cur);c.aguaMl=r.agua;persist();}
-  L.push(`💧 Água: ${fmtL(dayCheck(today()).aguaMl)} hoje`);CK.skip.add('agua');}
+  L.push(`💧 Água: ${fmtL(dayCheck(ckD()).aguaMl)} hoje`);CK.skip.add('agua');}
  Object.entries(r.meals).forEach(([k,v])=>{c.meals=c.meals||{};c.meals[k]=c.meals[k]?c.meals[k]+'; '+v:v;CK.skip.add('meal_'+k);L.push(MEALQ[k][0]+' '+v);});
  if(r.ontrack!=null){c.onTrack=r.ontrack;CK.skip.add('ontrack');}
  if(r.sono){c.sono=r.sono;CK.skip.add('sono');L.push('😴 Sono: '+r.sono+(r.sono>=9?'+':'')+' h');}
@@ -2729,12 +2739,12 @@ function ckFree(txt,quick){
  CK.q.unshift('act_fix');if(r.acts.length&&!r.acts.some(a=>!a.minutes))CK.q.splice(1,0,'act_more');
 }
 
-function ckSuggest(){const c=dayCheck(today());const p=D.profile;const s=[];
- const acts=D.activities.filter(a=>a.date===today());
+function ckSuggest(){const c=dayCheck(ckD());const p=D.profile;const s=[];
+ const acts=D.activities.filter(a=>a.date===ckD());
  const tmr=['dom','seg','ter','qua','qui','sex','sab'][(new Date().getDay()+1)%7];const tw=D.workouts.filter(w=>w.day===tmr);
  if(tw.length)s.push(`🏋️ Amanhã é dia de ${tw.map(w=>w.name).join(' + ')}. Deixa a roupa separada hoje.`);
  if(!acts.length){
-  if(c.reason==='cansaco')s.push('😴 Tenta dormir mais cedo hoje: treinar descansada rende muito mais.');
+  if(c.reason==='cansaco')s.push('😴 Tenta dormir mais cedo hoje: treinar com o corpo descansado rende muito mais.');
   else if(c.reason==='tempo')s.push('⏱️ Sem tempo? 30 min no almoço já contam. O treino "Corpo todo" é ótimo pra dias corridos.');
   else if(c.reason==='dor')s.push('💛 Se a dor continuar, procure um profissional. Um alongamento leve pode ajudar.');
   else if(c.reason!=='descanso')s.push('🌅 Se a manhã não rolar, o horário do almoço é seu plano B.');
@@ -2745,15 +2755,16 @@ function ckSuggest(){const c=dayCheck(today());const p=D.profile;const s=[];
  if(c.onTrack===false||c.onTrack==='meio')s.push('🥗 Deixa o almoço e um lanche já planejados pra amanhã — ajuda muito a não improvisar.');
  if(!s.length)s.push('✨ Dia redondinho! Repete a dose amanhã.');
  return s.slice(0,4);}
-function ckEndMsg(){const c=dayCheck(today());c.checkin=true;persist();
- const acts=D.activities.filter(a=>a.date===today());const L=acts.length?acts.map(actLine):['😴 Sem atividade hoje'];
+function ckEndMsg(){const c=dayCheck(ckD());c.checkin=true;persist();
+ const acts=D.activities.filter(a=>a.date===ckD());const L=acts.length?acts.map(actLine):['😴 Sem atividade hoje'];
  ckOnSupps().forEach(s=>L.push((c.supps[s.k]?'✅ ':'⬜ ')+s.l));
  L.push(`💧 ${fmtL(c.aguaMl)} de ${fmtL(aguaMeta())} de água`);
  Object.keys(MEALQ).forEach(k=>{if(c.meals&&c.meals[k])L.push(MEALQ[k][0]+' '+c.meals[k]);});
- bot('Prontinho, salvei tudo! ✓\n\nSeu dia:\n'+L.join('\n'));
+ bot('Prontinho, salvei tudo! ✓\n\n'+(CK.date?'Seu '+dayParen(CK.date)+':':'Seu dia:')+'\n'+L.join('\n'));
+ if(CK.date)return 'Esse dia já entra na sua sequência e no seu progresso 🔥';
  return 'Sugestões pra amanhã:\n\n'+ckSuggest().join('\n\n');}
 
-function bot(t,say){CK.msgs.push({r:'bot',t,say});}
+function bot(t,say){if(CK.date){const f=x=>x&&x.replace(/\bhoje\b/g,'nesse dia').replace(/\bHoje\b/g,'Nesse dia');t=f(t);say=f(say);}CK.msgs.push({r:'bot',t,say});}
 /* ---- voz: o app fala as perguntas ---- */
 let VOICE=null;
 const hasTTS=()=>typeof window!=='undefined'&&'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined';
@@ -2770,23 +2781,23 @@ function speakAll(list,force){if((!ttsOn()&&!force)||!list.length)return;try{spe
  list.forEach(t=>{const c=sayClean(t);if(!c)return;(c.match(/[^.!?…]+[.!?…]*/g)||[c]).map(x=>x.trim()).filter(x=>x.length>1).forEach(fr=>{
   const u=new SpeechSynthesisUtterance(fr);u.lang=(VOICE&&VOICE.lang)||'pt-BR';if(VOICE)u.voice=VOICE;u.rate=(D.voiceRate||1);u.pitch=1;u.volume=1;speechSynthesis.speak(u);});});}catch(e){}}
 function ckSpeakNew(){if(!CK)return;const from=CK.spoken||0;const out=CK.msgs.slice(from).filter(m=>m.r==='bot').map(m=>m.say!=null?m.say:m.t);CK.spoken=CK.msgs.length;speakAll(out);}
-function ckStart(){const p=D.profile;const h=hourNow();
- CK={msgs:[],q:['start','supps','agua','meal_cafe','meal_almoco','meal_lanches','meal_jantar','ontrack','sono','note','end'],skip:new Set(),tmp:{},multi:{},step:null,opts:[]};
- bot(`Oi, ${p.nome}! ${h<17?'Bora registrar o que rolou até agora?':'Como foi seu dia?'} 😊`);
+function ckStart(){const p=D.profile;const h=hourNow();const pd=UI.ckDate&&UI.ckDate<today()?UI.ckDate:null;UI.ckDate=null;
+ CK={msgs:[],q:['start','supps','agua','meal_cafe','meal_almoco','meal_lanches','meal_jantar','ontrack','sono','note','end'],skip:new Set(),tmp:{},multi:{},step:null,opts:[],date:pd};
+ bot(pd?`Oi, ${p.nome}! Bora registrar o ${dayParen(pd)}? Me conta o que você lembra 😊`:`Oi, ${p.nome}! ${h<17?'Bora registrar o que rolou até agora?':'Como foi seu dia?'} 😊`);
  bot('Você pode me contar tudo de uma vez por escrito. Por exemplo:\n"Fiz o treino de manhã por 1 hora, tomei creatina e whey, bebi 6 copos de água. No almoço comi arroz, feijão e frango."\n\nOu é só ir respondendo minhas perguntas 👇','Pode me contar tudo de uma vez, ou ir respondendo minhas perguntas.');
  ckNext();ckSpeakNew();}
 function ckNext(){
  while(CK.q.length){const s=CK.q.shift();if(CK.skip.has(s))continue;const st=CKS[s];if(st.cond&&!st.cond())continue;
   CK.step=s;const msg=st.q();if(msg)bot(msg);
-  if(st.multi){const c=dayCheck(today());CK.multi={};ckOnSupps().forEach(x=>CK.multi[x.k]=!!c.supps[x.k]);CK.opts=[];}
-  else CK.opts=st.opts?st.opts():[];
+  if(st.multi){const c=dayCheck(ckD());CK.multi={};ckOnSupps().forEach(x=>CK.multi[x.k]=!!c.supps[x.k]);CK.opts=[];}
+  else{CK.opts=st.opts?st.opts():[];if(CK.date)CK.opts=CK.opts.map(o=>[o[0].replace(/\bhoje\b/g,'nesse dia'),o[1]]);}
   return;}
  CK.step=null;CK.opts=[];}
 const SUPRE=[['creatina',/creatina/],['whey',/whey|proteina|shake/],['pre',/pretreino/],['vacuo',/vacuo/]];
 function ckSide(txt){
  /* entende água, suplementos e atividades em qualquer pergunta; devolve o resto do texto */
  const parts=txt.split(/[,.;!?\n]|\s+e\s+(?=(?:bebi|tomei|fiz|corri|caminhei|treinei|nadei|pedalei|mais)\b)|\s+mas\s+/i).map(x=>x.trim()).filter(Boolean);
- const c=dayCheck(today());const L=[];const rest=[];
+ const c=dayCheck(ckD());const L=[];const rest=[];
  parts.forEach(pt=>{const t=prep(pt);let used=false;
   const w=/\b(bebi|tomei|mais|agua)\b/.test(t)||/\b(ml|litros?|garraf|copos? de agua)/.test(t)?detWater(t):null;
   if(w){const hit=aguaAddMl(w);L.push(`💧 +${fmtL(w)} de água (total ${fmtL(c.aguaMl)})${hit?' — meta batida! 👏':''}`);used=true;}
@@ -2806,7 +2817,7 @@ function ckAnswer(v,label,txt){
   if(sd.L.length){bot('Anotado! '+sd.L.join(' · '));
    if(CK.sideFix.length){CK.sideFix.forEach(id=>ckNeedFix(actRec(id)));CK.sideFix=[];CK.q.unshift('act_fix',CK.step);ckNext();ckPaint();ckSpeakNew();return;}
    if(CK.step==='end'){ckPaint();ckSpeakNew();return;}
-   if(sd.rest.replace(/[^a-zà-ú]/gi,'').length<4){if(CKS[CK.step].multi){const c=dayCheck(today());ckOnSupps().forEach(x=>CK.multi[x.k]=!!c.supps[x.k]);}
+   if(sd.rest.replace(/[^a-zà-ú]/gi,'').length<4){if(CKS[CK.step].multi){const c=dayCheck(ckD());ckOnSupps().forEach(x=>CK.multi[x.k]=!!c.supps[x.k]);}
     bot('E sobre a pergunta: '+CKS[CK.step].q().replace(/^[^\wÀ-ú]+/,''));ckPaint();ckSpeakNew();return;}
    txt=sd.rest;}
  }
@@ -2818,7 +2829,7 @@ function ckOptsHtml(){if(!CK.step)return '';const st=CKS[CK.step];
  if(st.multi)return '<div class="qr">'+ckOnSupps().map(s=>`<button class="chip ${CK.multi[s.k]?'on':''}" data-a="ckTog" data-k="${s.k}">${s.e} ${s.l}</button>`).join('')+'<button class="chip" data-a="ckNone">Nenhum</button><button class="chip go" data-a="ckDone">Pronto ✓</button></div>';
  return '<div class="qr">'+CK.opts.map((o,i)=>`<button class="chip" data-a="ckOpt" data-i="${i}">${esc(o[0])}</button>`).join('')+'</div>';}
 function vCheckin(){if(!CK)ckStart();
- return `<button class="back" data-a="ckExit">← Sair</button><span class="kicker">Check-in do dia</span><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="disp h2" style="margin-bottom:12px">Me conta 📝</h2>${hasTTS()?`<button class="ib" style="width:auto;padding:0 12px;font-size:13px;gap:5px;display:inline-flex;align-items:center" data-a="ckTts">${ttsOn()?'🔊 Voz ligada':'🔇 Voz desligada'}</button>`:''}</div><div class="ck" id="ckmsgs">${ckMsgsHtml()}</div><div id="ckopts">${ckOptsHtml()}</div>`;}
+ return `<button class="back" data-a="ckExit">← Sair</button><span class="kicker">${CK&&CK.date?'Check-in de '+dayName(CK.date):'Check-in do dia'}</span><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="disp h2" style="margin-bottom:12px">Me conta 📝</h2>${hasTTS()?`<button class="ib" style="width:auto;padding:0 12px;font-size:13px;gap:5px;display:inline-flex;align-items:center" data-a="ckTts">${ttsOn()?'🔊 Voz ligada':'🔇 Voz desligada'}</button>`:''}</div><div class="ck" id="ckmsgs">${ckMsgsHtml()}</div><div id="ckopts">${ckOptsHtml()}</div>`;}
 function ckBar(){return `<div class="ckbar"><p class="small mut" style="max-width:560px;margin:0 auto 6px;text-align:center;line-height:1.4">Prefere falar? Use o microfone 🎤 do teclado do celular. Como o app ainda não é de loja, ele não consegue usar o microfone direto.</p><div class="ckin"><textarea id="ckin" rows="1" placeholder="Escreva aqui…"></textarea><button class="cb send" data-a="ckSend" aria-label="Enviar">➤</button></div></div>`;}
 function ckPaint(){const m=document.getElementById('ckmsgs'),o=document.getElementById('ckopts');if(!m)return;m.innerHTML=ckMsgsHtml();o.innerHTML=ckOptsHtml();ckScroll();}
 function ckScroll(){setTimeout(()=>window.scrollTo(0,document.body.scrollHeight),30);}
@@ -3525,6 +3536,20 @@ function admBackupsHtml(){const S=UI.adm||{};const B=S.bk;
 
 /* ================== SHEET ================== */
 function openSheet(html){const s=document.getElementById('sheet');s.innerHTML=`<div class="backdrop" data-a="close"></div><div class="panel"><div class="grab"></div><button class="x" data-a="close" aria-label="Fechar">×</button>${html}</div>`;s.classList.add('open');document.body.style.overflow='hidden';}
+function pastHtml(){const P=UI.past;const d=P.d;const y=new Date();y.setDate(y.getDate()-1);const y1=keyOf(y);y.setDate(y.getDate()-1);const y2=keyOf(y);
+ const acts=D.activities.filter(a=>a.date===d);const c=D.checks[d];
+ const tem=acts.map(actLine).concat(c&&c.checkin?['📝 check-in feito']:[]);
+ const ws=D.workouts;const dw=dowOf(d);const ord=[...ws].sort((a,b)=>(b.id===P.only)-(a.id===P.only)||(b.day===dw)-(a.day===dw));
+ return `<h3 class="h3" style="margin-top:0">📅 Registrar um dia que passou</h3>
+ <p class="small mut" style="margin:-4px 0 10px">Esqueceu de marcar? Acontece. Escolha o dia e o que quer colocar: entra na sua sequência e no progresso como se fosse no dia.</p>
+ <div class="chips"><button class="chip ${d===y1?'on':''}" data-a="pastDay" data-v="${y1}">Ontem · ${fmt(y1)}</button><button class="chip ${d===y2?'on':''}" data-a="pastDay" data-v="${y2}">Anteontem · ${fmt(y2)}</button></div>
+ <label class="lbl">Ou escolha a data</label><input class="inp" type="date" id="past-d" value="${d}" max="${y1}" data-c="pastDate">
+ <p class="small" style="margin:10px 0 4px"><b>${dayName(d).replace(/^./,m=>m.toUpperCase())}</b>${tem.length?' · já tem: '+esc(tem.join(', ')):' · nada registrado ainda'}</p>
+ ${P.pick?`<p class="small mut" style="margin:8px 0 6px">Qual treino você fez?</p>${ord.map(w=>`<button class="ckcard" style="padding:10px 14px" data-a="pastGo" data-k="w" data-id="${w.id}"><span class="em">🏋️</span><span><b>${esc(w.name)}</b><span>${w.id===P.only?'O treino que está aberto':w.day===dw?'Era o treino desse dia':w.day?DAYM[w.day]:''}</span></span></button>`).join('')}<button class="small" style="display:block;margin:6px auto 0;font-weight:700;color:var(--mut);text-decoration:underline" data-a="pastBack">← Voltar</button>`
+ :`${ws.length?`<button class="ckcard" data-a="pastPick"><span class="em">🏋️</span><span><b>Treino da academia</b><span>Com as séries, o peso e as repetições de cada exercício</span></span></button>`:''}
+ <button class="ckcard" data-a="pastGo" data-k="act"><span class="em">🏃‍♀️</span><span><b>Outra atividade</b><span>Corrida, caminhada, bike, yoga, dança…</span></span></button>
+ <button class="ckcard" data-a="pastGo" data-k="ck"><span class="em">📝</span><span><b>Check-in do dia</b><span>Suplementos, água, alimentação e sono, do jeito de sempre</span></span></button>
+ <button class="ckcard" data-a="pastGo" data-k="alim"><span class="em">🥗</span><span><b>Só a alimentação</b><span>Abre o calendário da alimentação nesse dia</span></span></button>`}`;}
 function closeSheet(){const s=document.getElementById('sheet');s.classList.remove('open');s.innerHTML='';document.body.style.overflow='';}
 function pickerHtml(){const added=new Set(UI.edit.items.map(i=>i.exId));
  return `<h2 class="disp" style="font-size:22px;margin:0 40px 12px 0;font-weight:600">Adicionar exercício</h2>`+Object.entries(GROUPS).map(([g,l])=>{const list=Object.entries(EX).filter(([id,x])=>x.g===g);
@@ -3612,15 +3637,25 @@ const A={
  sono:t=>{const c=dayCheck(today());const h=+t.dataset.v;c.sono=c.sono===h?null:h;persist();const y=window.scrollY;render();window.scrollTo(0,y);},
  track:t=>{const c=dayCheck(today());c.onTrack=t.dataset.v==='1';persist();render();},
  start:t=>{UI.sessionId=t.dataset.id;go('sessao');},
+ pastOpen:()=>{const y=new Date();y.setDate(y.getDate()-1);UI.past={d:UI.view==='sessao'&&UI.logDate?UI.logDate:keyOf(y),pick:UI.view==='sessao'};if(UI.view==='sessao'){UI.past.only=UI.sessionId;}openSheet(pastHtml());},
+ pastDay:t=>{UI.past.d=t.dataset.v;openSheet(pastHtml());},
+ pastPick:()=>{UI.past.pick=true;openSheet(pastHtml());},
+ pastBack:()=>{UI.past.pick=false;openSheet(pastHtml());},
+ pastExit:()=>{UI.logDate=null;render();window.scrollTo(0,0);},
+ pastGo:t=>{const d=UI.past.d,k=t.dataset.k;if(!d||d>=today()){toast('Escolha um dia que já passou 😉');return;}closeSheet();
+  if(k==='w'){UI.sessionId=t.dataset.id;if(UI.view==='sessao'){UI.logDate=d;render();window.scrollTo(0,0);}else{go('sessao');UI.logDate=d;render();}}
+  else if(k==='act'){UI.actDate=d;UI.actForm=null;go('atividades');}
+  else if(k==='ck'){UI.ckDate=d;CK=null;go('checkin');}
+  else if(k==='alim'){UI.calMonth=d.slice(0,7);go('alimentacao');setTimeout(()=>alimSheet(d),60);}},
  info:t=>{openSheet(infoHtml(t.dataset.id));requestAnimationFrame(bodyZoom);},
  saveSet:t=>{const id=t.dataset.id;const w=num(document.getElementById('w-'+id).value);const r=parseInt(document.getElementById('r-'+id).value,10);
   if(w==null){toast('Coloca o peso (kg) 😉');return;}
-  const arr=(D.history[id]||[]).filter(e=>e.date!==today());arr.push({date:today(),weight:w,reps:isNaN(r)?null:r});D.history[id]=arr;persist();
+  const d0=sDay();const arr=(D.history[id]||[]).filter(e=>e.date!==d0);arr.push({date:d0,weight:w,reps:isNaN(r)?null:r});D.history[id]=histSort(arr);persist();
   const y=window.scrollY;render();window.scrollTo(0,y);toast('Salvo! 💪');},
  finish:t=>{const w=D.workouts.find(x=>x.id===t.dataset.id);const min=parseInt(document.getElementById('fin-min').value,10);
-  const ex=D.activities.find(a=>a.date===today()&&a.workoutId===w.id);
-  if(ex){ex.minutes=isNaN(min)?null:min;}else{D.activities.push({id:uid(),ts:Date.now(),date:today(),type:'musculacao',name:w.name,workoutId:w.id,minutes:isNaN(min)?null:min,period:periodNow(),intensity:'moderada'});}
-  persist();toast('Treino registrado! 🔥');go('hoje');},
+  const d0=sDay(),past=isPast();const ex=D.activities.find(a=>a.date===d0&&a.workoutId===w.id);
+  if(ex){ex.minutes=isNaN(min)?null:min;}else{D.activities.push({id:uid(),ts:Date.now(),date:d0,type:'musculacao',name:w.name,workoutId:w.id,minutes:isNaN(min)?null:min,period:past?'':periodNow(),intensity:'moderada'});}
+  persist();toast(past?'Treino de '+fmt(d0)+' registrado! 🔥':'Treino registrado! 🔥');go('hoje');},
  newW:()=>{UI.edit={name:'',focus:'',day:'',items:[],helped:null};go('builder');},
  suggest:t=>{const f=t.dataset.f;UI.edit={name:'Treino de '+FOCUS[f].l,focus:f,day:'',items:FOCUS[f].ex.map(id=>({exId:id,sets:rec(id)})),helped:true};UI.edit.autoSig=JSON.stringify(UI.edit.items);go('builder');},
  editW:t=>{const w=D.workouts.find(x=>x.id===t.dataset.id);UI.edit=JSON.parse(JSON.stringify(w));UI.edit.helped=false;go('builder');},
@@ -3641,7 +3676,7 @@ const A={
   persist();UI.edit=null;toast('Treino salvo! ✅');go('treinos');},
  delW:()=>{const id=UI.edit.id;UI.edit=null;UI.view='treinos';withUndo('Treino excluído',()=>{D.workouts=D.workouts.filter(w=>w.id!==id);});window.scrollTo(0,0);},
  lg:t=>{UI.libGroup=t.dataset.g;render();},
- actType:t=>{UI.actForm={type:t.dataset.t,minutes:'',intensity:'moderada',note:'',date:today(),d:{}};render();},
+ actType:t=>{UI.actForm={type:t.dataset.t,minutes:'',intensity:'moderada',note:'',date:UI.actDate||today(),d:{}};render();},
  actChip:t=>{const f=UI.actForm;f.d=f.d||{};const k=t.dataset.k,v=t.dataset.v;if(t.dataset.m){const a=f.d[k]||[];f.d[k]=a.includes(v)?a.filter(x=>x!==v):a.concat(v);}else f.d[k]=f.d[k]===v?'':v;render();},
  actInt:t=>{UI.actForm.intensity=t.dataset.v;render();},
  cancelAct:()=>{UI.actForm=null;render();},
@@ -3655,26 +3690,27 @@ const A={
   Object.keys(d).forEach(k=>{if(d[k]===''||d[k]==null||(Array.isArray(d[k])&&!d[k].length))delete d[k];});
   if(Object.keys(d).length)a.det=d;const nm=actTitle(a);if(nm!==(ACTM[a.type]||ACTM.outro)[1])a.name=nm;
   D.activities.push(a);
-  persist();UI.actForm=null;render();toast('Atividade registrada! 🔥');},
+  persist();const dd=UI.actForm.date;UI.actForm=null;UI.actDate=null;render();toast(dd&&dd!==today()?'Atividade de '+fmt(dd)+' registrada! 🔥':'Atividade registrada! 🔥');},
  delAct:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;
   withUndo(a.type==='musculacao'?'Treino apagado':'Atividade apagada',()=>delActivity(a));},
  delSess:t=>{const a=D.activities.find(x=>x.id===t.dataset.id);if(!a)return;
-  withUndo('Treino de hoje excluído',()=>delActivity(a));},
- delSet:t=>{const id=t.dataset.id;withUndo('Carga de hoje apagada',()=>{D.history[id]=(D.history[id]||[]).filter(e=>e.date!==today());if(!D.history[id].length)delete D.history[id];});},
+  withUndo(a.date===today()?'Treino de hoje excluído':'Treino de '+fmt(a.date)+' excluído',()=>delActivity(a));},
+ delSet:t=>{const id=t.dataset.id;const d0=sDay();withUndo('Carga apagada',()=>{D.history[id]=(D.history[id]||[]).filter(e=>e.date!==d0);if(!D.history[id].length)delete D.history[id];});},
  setDone:t=>{const id=t.dataset.id;const w=D.workouts.find(x=>x.id===UI.sessionId);const it=w&&w.items.find(i=>i.exId===id);if(!it)return;
   let kg=num(document.getElementById('w-'+id).value);const r=parseInt(document.getElementById('r-'+id).value,10);
   if(kg==null){if(EX[id].eq==='corpo')kg=0;else{toast('Coloca o peso (kg) 😉');document.getElementById('w-'+id).focus();return;}}
   if(isNaN(r)){toast(/\d\s*(s|seg)\b/.test(it.sets)?'Quantos segundos você fez?':'Quantas repetições você fez?');document.getElementById('r-'+id).focus();return;}
-  const t0=today();const arr=D.history[id]||[];const oldMax=Math.max(0,...arr.filter(x=>x.date<t0).map(x=>x.weight||0));let e=arr.find(x=>x.date===t0);if(!e){e={date:t0,weight:kg,reps:r,sets:[]};arr.push(e);}if(!e.sets)e.sets=[];
+  const t0=sDay(),past=isPast();const arr=D.history[id]||[];const oldMax=Math.max(0,...arr.filter(x=>x.date<t0).map(x=>x.weight||0));let e=arr.find(x=>x.date===t0);if(!e){e={date:t0,weight:kg,reps:r,sets:[]};arr.push(e);histSort(arr);}if(!e.sets)e.sets=[];
   e.sets.push({w:kg,r});e.weight=Math.max(...e.sets.map(z=>z.w));e.reps=Math.max(...e.sets.filter(z=>z.w===e.weight).map(z=>z.r||0));D.history[id]=arr;persist();
   const n=nSetsD(it.sets);const done=e.sets.length;const ns=done<n?nextSetSug(id,it,kg,r):null;
   UI.pr=UI.pr||{};let isPR=false;if(oldMax>0&&kg>oldMax&&(!UI.pr[id]||kg>UI.pr[id].w)){UI.pr[id]={w:kg,old:oldMax};isPR=true;}
   UI.nextW=UI.nextW||{};UI.nextMsg=UI.nextMsg||{};if(ns){UI.nextW[id]=ns.w;UI.nextMsg[id]=ns.msg;}else{delete UI.nextW[id];delete UI.nextMsg[id];}
   const y=window.scrollY;render();window.scrollTo(0,y);
   if(isPR){toast('🏆 Novo recorde no '+EX[id].n.toLowerCase()+': '+nf(kg)+' kg!');try{navigator.vibrate&&navigator.vibrate([80,60,80,60,160]);}catch(x){}}
-  if(done<n)restStart(restFor(id)[0],'série '+done+' de '+n+' feita'+(ns&&ns.w!==kg?' · próxima: '+nf(ns.w)+' kg':''));
+  if(past){if(done>=n)toast('Exercício anotado ✓');else toast('Série '+done+' anotada ✓');}
+  else if(done<n)restStart(restFor(id)[0],'série '+done+' de '+n+' feita'+(ns&&ns.w!==kg?' · próxima: '+nf(ns.w)+' kg':''));
   else{restStop();if(!isPR)toast('Exercício concluído! 🎉');const ix=w.items.findIndex(i=>i.exId===id);const nx=w.items.slice(ix+1).find(j=>EX[j.exId]);if(nx)setTimeout(()=>{const el=document.getElementById('ex-'+nx.exId);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},400);}},
- setUndo:t=>{const id=t.dataset.id;const e=(D.history[id]||[]).find(x=>x.date===today());if(!e||!e.sets||!e.sets.length)return;e.sets.pop();
+ setUndo:t=>{const id=t.dataset.id;const e=(D.history[id]||[]).find(x=>x.date===sDay());if(!e||!e.sets||!e.sets.length)return;e.sets.pop();
   if(UI.nextW)delete UI.nextW[id];if(UI.nextMsg)delete UI.nextMsg[id];
   if(!e.sets.length)D.history[id]=D.history[id].filter(x=>x!==e);else{e.weight=Math.max(...e.sets.map(z=>z.w));e.reps=Math.max(...e.sets.filter(z=>z.w===e.weight).map(z=>z.r||0));}
   if(D.history[id]&&!D.history[id].length)delete D.history[id];persist();restStop();const y=window.scrollY;render();window.scrollTo(0,y);toast('Última série desfeita');},
@@ -3979,6 +4015,7 @@ document.addEventListener('change',e=>{const el=e.target,k=el.dataset.c;if(!k)re
  else if(k==='pushTime'){const P=pushState();if(/^\d{2}:\d{2}$/.test(el.value)){P.times[el.dataset.k]=el.value;persist();syncPush(true).catch(()=>{});toast('Lembrete às '+el.value+' ✓');}}
  else if(k==='voice'){D.voiceName=el.value;persist();speakAll(['Oi! Essa é a minha voz.'],true);}
  else if(k==='act.date')UI.actForm.date=el.value||today();
+ else if(k==='pastDate'){if(el.value&&el.value<today()){UI.past.d=el.value;openSheet(pastHtml());}}
  else if(k==='import'){const file=el.files&&el.files[0];if(!file)return;const r=new FileReader();
   r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!o.profile||!Array.isArray(o.workouts))throw 0;if(!confirm('Substituir os dados atuais por esse backup?'))return;D=Object.assign(fresh(),o);persist();PROF=null;UI.view='hoje';render();toast('Backup restaurado!');}catch(err){toast('Arquivo de backup inválido');}};
   r.readAsText(file);}
